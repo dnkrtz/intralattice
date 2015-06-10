@@ -16,8 +16,8 @@ namespace PrimitiveCylinder
         /// </summary>
         public PrimitiveCylinderComponent()
             : base("PrimitiveCylinder", "PCylinder",
-                "Description",
-                "Category", "Subcategory")
+                "Generates a simple lattice cylinder",
+                "INTRA|LATTICE", "Wireframe")
         {
         }
 

@@ -19,8 +19,8 @@ namespace PrimitiveTorus
         /// </summary>
         public PrimitiveTorusComponent()
             : base("PrimitiveTorus", "PTorus",
-                "Description",
-                "Category", "Subcategory")
+                "Generates a simple torus lattice",
+                "INTRA|LATTICE", "Wireframe")
         {
         }
 

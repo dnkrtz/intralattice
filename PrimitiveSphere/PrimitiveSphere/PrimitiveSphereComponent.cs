@@ -14,9 +14,9 @@ namespace PrimitiveSphere
         /// Public constructor
         /// </summary>
         public PrimitiveSphereComponent()
-            : base("PrimitiveSphere", "P_Sphere",
-                "Description",
-                "Category", "Subcategory")
+            : base("PrimitiveSphere", "PSphere",
+                "Generates a simple sphere lattice",
+                "INTRA|LATTICE", "Wireframe")
         {
         }
 

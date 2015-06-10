@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Data;
@@ -14,15 +13,16 @@ namespace LatticeMesh
 
         public LatticeMeshComponent()
             : base("LatticeMesh", "LatticeMesh",
-                "Description",
-                "Category", "Subcategory")
+                "Generates solid mesh of lattice wireframe.",
+                "INTRA|LATTICE", "Meshing")
         {
         }
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            //pManager.AddLineParameter("Lines", "L", "Line network", GH_ParamAccess.list);
-            //pManager.AddPointParameter("Nodes", "P", "Lattice nodes", GH_ParamAccess.tree);
+            pManager.AddLineParameter("Lines", "L", "Line network", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Radius (start)", "Rs", "List of radii for start of struts", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Radius (end)", "Re", "List of radii for end of struts", GH_ParamAccess.list);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -35,28 +35,40 @@ namespace LatticeMesh
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            List<Line> L = new List<Line>();
+            List<double> Rs = new List<double>();
+            List<double> Re = new List<double>();
+            
+            if (!DA.GetDataList(0, L)) { return; }
+            if (!DA.GetDataList(1, Rs)) { return; }
+            if (!DA.GetDataList(2, Re)) { return; }
+
+            /*
             // DUMMY INPUT
-            int S = 6;
             List<Point3d> P = new List<Point3d>(); // useless, just for dummy data
             P.Add(new Point3d(0, 0, 0));
             P.Add(new Point3d(0, 0, 50));
             P.Add(new Point3d(0, 50, 0));
             P.Add(new Point3d(50, 0, 0));
-            List<LineCurve> L = new List<LineCurve>();
             L.Add(new LineCurve(P[0], P[1]));
             L.Add(new LineCurve(P[0], P[2]));
             L.Add(new LineCurve(P[0], P[3]));
-            List<double> Rs = new List<double>();   // start radius
-            List<double> Re = new List<double>();   // end radius
             Rs.Add(4); Re.Add(4);
             Rs.Add(4); Re.Add(4);
             Rs.Add(4); Re.Add(4);
+             */
+
+            // 3. If data is invalid, set dummy data.
+            if (L == null || L.Count == 0) { return; }
+            if (Rs == null || Rs.Count == 0 || Rs.Contains(0)) { return; }
+            if (Re == null || Re.Count == 0 || Rs.Contains(0)) { return; }           
 
 
             // STEP 1 - BUILD LATTICE MODEL
             List<LatticePlate> Plates = new List<LatticePlate>();
             List<LatticeNode> Nodes = new List<LatticeNode>();
 
+            int S = 6;  // number of sides of strut
             Point3dList NodeLookup = new Point3dList(); // This is used to quickly locate node pts
 
             // Cycle through all the struts, building the model as we go
@@ -65,21 +77,21 @@ namespace LatticeMesh
                 // Define plates for current strut
                 Plates.Add(new LatticePlate());     // PlatePoints[2*i+0] (from)
                 Plates.Add(new LatticePlate());     // PlatePoints[2*i+1] (to)
-                Plates[2*i].Radius = Rs[i];
-                Plates[2*i+1].Radius = Re[i];
-                Plates[2*i].Normal = L[i].TangentAtStart;
+                Plates[2*i].Radius = Rs[i % Rs.Count];
+                Plates[2*i+1].Radius = Re[i % Re.Count];
+                Plates[2*i].Normal = L[i].UnitTangent;
                 Plates[2*i+1].Normal = - Plates[2*i].Normal;
                 
                 // Setup nodes (start point first)
                 List<Point3d> Pts = new List<Point3d>();
-                Pts.Add(L[i].Line.From); Pts.Add(L[i].Line.To);
+                Pts.Add(L[i].From); Pts.Add(L[i].To);
 
                 // Loops over the 2 nodes, updating the lattice model
                 for (int j=0; j<2; j++)
                 {
                     int NodeIndex;
                     
-                    // check if node already exists (TO FIX - NEED TO USE A TOLERANCE PARAMETER)
+                    // check if node already exists (FIX THIS - NEED TO USE A TOLERANCE PARAMETER)
                     if (NodeLookup.Contains(Pts[j])) NodeIndex = NodeLookup.ClosestIndex(Pts[j]);
                     // if it doesn't exist, create it and update the nodelookup list
                     else
@@ -89,7 +101,7 @@ namespace LatticeMesh
                         NodeLookup.Add(Pts[j]);             // node won't be created again
                     }
 
-                    Plates[2*i+j].NodeIndex = NodeIndex;
+                    Plates[2*i+j].NodeIndex = NodeIndex;        // 2*i+j is the correct index, recall that we must order them start to finish
                     Nodes[NodeIndex].PlateIndices.Add(2*i+j);
         
                 }
@@ -115,7 +127,6 @@ namespace LatticeMesh
 
                     }
                 }
-
                 // Set the plate locations
                 foreach (int index in Nodes[i].PlateIndices)
                 {

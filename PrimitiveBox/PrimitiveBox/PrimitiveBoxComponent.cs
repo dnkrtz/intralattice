@@ -12,9 +12,9 @@ namespace PrimitiveBox
     {
         /// Public constructor
         public PrimitiveBoxComponent()
-            : base("PrimitiveBox", "P_Box",
-                "Description",
-                "Category", "Subcategory")
+            : base("PrimitiveBox", "PBox",
+                "Generates a simple lattice box",
+                "INTRA|LATTICE", "Wireframe")
         {
         }
 

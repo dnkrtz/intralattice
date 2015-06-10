@@ -8,10 +8,9 @@ namespace LatticeMesh
 {
     public class MeshTools
     {
-        // CREATES STRUT MESH FACES
+        // Constructs sleeve mesh
         public static void SleeveStitch(ref Mesh StrutMesh, double D, int S)
         {
-            // Make stocking mesh
             int V1, V2, V3, V4;
             for (int j = 0; j < D; j++)
             {
@@ -28,14 +27,11 @@ namespace LatticeMesh
             }
         }
 
-        // CREATES ENDFACE MESH FACES
+        /// Construts endface mesh (single strut nodes)
         public static void EndFaceStitch(ref Mesh EndMesh, int S)
         {
-            // Make endface mesh
-            for (int i = 1; i < S; i++)
-            {
-                EndMesh.Faces.AddFace(0, i, i + 1);
-            }
+            // Stitch faces
+            for (int i = 1; i < S; i++) EndMesh.Faces.AddFace(0, i, i + 1);
             EndMesh.Faces.AddFace(0, S, 1); // last face wraps*/
         }
     }
@@ -43,27 +39,19 @@ namespace LatticeMesh
     // The LatticePlate object
     public class LatticePlate
     {
-        public int NodeIndex;
-        public double Offset;
-        public Plane Plane;
-        public Vector3d Normal;     // oriented for offset
-        public List<Point3d> Vtc = new List<Point3d>();    // The first item in this list is the center point of the plate
-        public double Radius;
-
-        /*public LatticePlate(LineCurve SetStrut)
-        {
-            Strut = SetStrut;
-            Strut.PerpendicularFrameAt(0.0, out HullPlane);
-            Normal = HullPlane.ZAxis;
-        }*/
+        public int NodeIndex;       // index of its parent node
+        public double Offset;       // offset value
+        public Vector3d Normal;     // direction of offset
+        public double Radius;       // radius of the plate
+        public List<Point3d> Vtc = new List<Point3d>();    // vertices (at index 0 is the centerpoint vertex)
     }
 
     public class LatticeNode
     {
-        public Point3d Point3d;
-        public List<int> PlateIndices = new List<int>();    // Ordered
+        public Point3d Point3d;     // coordinates of node
+        public List<int> PlateIndices = new List<int>();    // indices of the plates associated to this node
         
-        // constructor
+        // constructor sets coordinate
         public LatticeNode(Point3d SetPoint3d)
         {
             Point3d = SetPoint3d;
