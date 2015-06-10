@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Data;
@@ -14,7 +13,7 @@ namespace PrimitiveBox
         public PrimitiveBoxComponent()
             : base("PrimitiveBox", "PBox",
                 "Generates a simple lattice box",
-                "INTRA|LATTICE", "Wireframe")
+                "IntraLattice2", "Wireframe")
         {
         }
 

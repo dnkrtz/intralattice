@@ -10,7 +10,7 @@ namespace ViewReport
         public ViewReportComponent()
             : base("ViewReport", "ViewRep",
                 "Verifies the validity of the mesh, and generates a preview",
-                "INTRA|LATTICE", "Meshing")
+                "IntraLattice2", "Meshing")
         {
         }
 

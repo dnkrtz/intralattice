@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Data;
@@ -10,23 +9,13 @@ namespace PrimitiveTorus
 {
     public class PrimitiveTorusComponent : GH_Component
     {
-        /// <summary>
-        /// Each implementation of GH_Component must provide a public 
-        /// constructor without any arguments.
-        /// Category represents the Tab in which the component will appear, 
-        /// Subcategory the panel. If you use non-existing tab or panel names, 
-        /// new tabs/panels will automatically be created.
-        /// </summary>
         public PrimitiveTorusComponent()
             : base("PrimitiveTorus", "PTorus",
                 "Generates a simple torus lattice",
-                "INTRA|LATTICE", "Wireframe")
+                "IntraLattice2", "Wireframe")
         {
         }
 
-        /// <summary>
-        /// Registers all the input parameters for this component.
-        /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("Donut Radius", "Rd", "Donut radius (mm)", GH_ParamAccess.item);
@@ -37,20 +26,12 @@ namespace PrimitiveTorus
             pManager.AddNumberParameter("Number d", "dNum", "# of unit cells in donut-direction", GH_ParamAccess.item);
         }
 
-        /// <summary>
-        /// Registers all the output parameters for this component.
-        /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddPointParameter("Points", "P", "Point Grid", GH_ParamAccess.tree);
             pManager.AddLineParameter("Lines", "L", "Lattice Wireframe", GH_ParamAccess.list);
         }
 
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
-        /// <param name="DA">The DA object can be used to retrieve data from input parameters and 
-        /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Declare placeholder variables and assign initial invalid data.

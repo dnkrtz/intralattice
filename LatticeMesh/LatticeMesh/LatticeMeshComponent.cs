@@ -14,7 +14,7 @@ namespace LatticeMesh
         public LatticeMeshComponent()
             : base("LatticeMesh", "LatticeMesh",
                 "Generates solid mesh of lattice wireframe.",
-                "INTRA|LATTICE", "Meshing")
+                "IntraLattice2", "Meshing")
         {
         }
 

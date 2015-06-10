@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Data;
@@ -10,19 +9,13 @@ namespace PrimitiveSphere
 {
     public class PrimitiveSphereComponent : GH_Component
     {
-        /// <summary>
-        /// Public constructor
-        /// </summary>
         public PrimitiveSphereComponent()
             : base("PrimitiveSphere", "PSphere",
                 "Generates a simple sphere lattice",
-                "INTRA|LATTICE", "Wireframe")
+                "IntraLattice2", "Wireframe")
         {
         }
 
-        /// <summary>
-        /// Registers all the input parameters for this component.
-        /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("Radius", "Ro", "Sphere outer radius (mm)", GH_ParamAccess.item);
@@ -32,18 +25,12 @@ namespace PrimitiveSphere
             pManager.AddNumberParameter("Number o", "oNum", "# of unit cells in theta-direction (vertical rotation)", GH_ParamAccess.item);
         }
 
-        /// <summary>
-        /// Registers all the output parameters for this component.
-        /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddPointParameter("Points", "P", "Point Grid", GH_ParamAccess.tree);
             pManager.AddLineParameter("Lines", "L", "Lattice Wireframe", GH_ParamAccess.list);
         }
 
-        /// <summary>
-        /// This is the method that actually does the work.
-        /// </summary>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Declare placeholder variables and assign initial invalid data.
