@@ -2,15 +2,15 @@
 using System.Drawing;
 using Grasshopper.Kernel;
 
-namespace PrimitiveTorus
+namespace ConformSA
 {
-    public class PrimitiveTorusInfo : GH_AssemblyInfo
+    public class ConformSAInfo : GH_AssemblyInfo
     {
         public override string Name
         {
             get
             {
-                return "PrimitiveTorus";
+                return "ConformSA";
             }
         }
         public override Bitmap Icon
@@ -33,7 +33,7 @@ namespace PrimitiveTorus
         {
             get
             {
-                return new Guid("a721d053-0bca-477c-a4f4-4f006f03bcd1");
+                return new Guid("5784a0d7-3fbe-4083-817f-1d721cba8aa6");
             }
         }
 

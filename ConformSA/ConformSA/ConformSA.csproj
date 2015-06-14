@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{963A8A54-9E4F-45EF-B140-8EB8A723D7E9}</ProjectGuid>
+    <ProjectGuid>{0E04CB4D-FF76-42BF-8911-DDDE140B9413}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PrimitiveTorus</RootNamespace>
-    <AssemblyName>PrimitiveTorus</AssemblyName>
+    <RootNamespace>ConformSA</RootNamespace>
+    <AssemblyName>ConformSA</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -62,8 +62,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PrimitiveTorusComponent.cs" />
-    <Compile Include="PrimitiveTorusInfo.cs" />
+    <Compile Include="ConformSAComponent.cs" />
+    <Compile Include="ConformSAInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
