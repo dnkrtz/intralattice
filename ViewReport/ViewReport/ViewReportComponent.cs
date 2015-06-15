@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
+// This component is a post-processing tool used to inspect a mesh
+// Checks that the mesh represents a solid
+
 namespace ViewReport
 {
     public class ViewReportComponent : GH_Component
     {
         public ViewReportComponent()
-            : base("ViewReport", "ViewRep",
+            : base("ViewReport", "ViewReport",
                 "Verifies the validity of the mesh, and generates a preview",
-                "IntraLattice2", "Meshing")
+                "IntraLattice2", "Mesh")
         {
         }
 
@@ -53,10 +56,14 @@ namespace ViewReport
 
         }
 
-        /// <summary>
-        /// Provides an Icon for every component that will be visible in the User Interface.
-        /// Icons need to be 24x24 pixels.
-        /// </summary>
+        public override GH_Exposure Exposure
+        {
+            get
+            {
+                return GH_Exposure.secondary;
+            }
+        }
+
         protected override System.Drawing.Bitmap Icon
         {
             get
@@ -67,11 +74,6 @@ namespace ViewReport
             }
         }
 
-        /// <summary>
-        /// Each component must have a unique Guid to identify it. 
-        /// It is vital this Guid doesn't change otherwise old ghx files 
-        /// that use the old ID will partially fail during loading.
-        /// </summary>
         public override Guid ComponentGuid
         {
             get { return new Guid("{c5e3b143-5534-4ad3-a711-33881772d683}"); }

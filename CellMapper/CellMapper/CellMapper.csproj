@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{1B6C494F-D108-469F-9895-5E217B0822CB}</ProjectGuid>
+    <ProjectGuid>{E6B66265-44BB-41B1-939E-28799131F7E0}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PrimitiveBox</RootNamespace>
-    <AssemblyName>PrimitiveBox</AssemblyName>
+    <RootNamespace>CellMapper</RootNamespace>
+    <AssemblyName>CellMapper</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -62,8 +62,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PrimitiveBoxComponent.cs" />
-    <Compile Include="PrimitiveBoxInfo.cs" />
+    <Compile Include="CellMapperComponent.cs" />
+    <Compile Include="CellMapperInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

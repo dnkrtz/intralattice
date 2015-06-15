@@ -8,7 +8,9 @@ namespace LatticeMesh
 {
     public class MeshTools
     {
+        ////
         // Constructs sleeve mesh
+        ////
         public static void SleeveStitch(ref Mesh StrutMesh, double D, int S)
         {
             int V1, V2, V3, V4;

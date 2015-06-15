@@ -2,15 +2,15 @@
 using System.Drawing;
 using Grasshopper.Kernel;
 
-namespace PrimitiveBox
+namespace GridSphere
 {
-    public class PrimitiveBoxInfo : GH_AssemblyInfo
+    public class GridSphereInfo : GH_AssemblyInfo
     {
         public override string Name
         {
             get
             {
-                return "PrimitiveBox";
+                return "GridSphere";
             }
         }
         public override Bitmap Icon
@@ -33,7 +33,7 @@ namespace PrimitiveBox
         {
             get
             {
-                return new Guid("ef7417d4-7498-4d7e-9f33-835d6f02f881");
+                return new Guid("45fc64c9-cb9a-4518-a2ea-b2fa195d56a6");
             }
         }
 

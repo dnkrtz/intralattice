@@ -2,15 +2,15 @@
 using System.Drawing;
 using Grasshopper.Kernel;
 
-namespace PrimitiveCylinder
+namespace GridCylinder
 {
-    public class PrimitiveCylinderInfo : GH_AssemblyInfo
+    public class GridCylinderInfo : GH_AssemblyInfo
     {
         public override string Name
         {
             get
             {
-                return "PrimitiveCylinder";
+                return "GridCylinder";
             }
         }
         public override Bitmap Icon
@@ -33,7 +33,7 @@ namespace PrimitiveCylinder
         {
             get
             {
-                return new Guid("7bca5c23-4ab4-4a7a-b486-d39f28eb2364");
+                return new Guid("cfb5f521-d326-421f-bc15-0d19e9501cdc");
             }
         }
 

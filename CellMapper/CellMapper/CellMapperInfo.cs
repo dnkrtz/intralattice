@@ -2,15 +2,15 @@
 using System.Drawing;
 using Grasshopper.Kernel;
 
-namespace PrimitiveSphere
+namespace CellMapper
 {
-    public class PrimitiveSphereInfo : GH_AssemblyInfo
+    public class CellMapperInfo : GH_AssemblyInfo
     {
         public override string Name
         {
             get
             {
-                return "PrimitiveSphere";
+                return "CellMapper";
             }
         }
         public override Bitmap Icon
@@ -33,7 +33,7 @@ namespace PrimitiveSphere
         {
             get
             {
-                return new Guid("78fa1a93-e56d-499d-83ed-54747f03a820");
+                return new Guid("687cf5a2-cbdc-40eb-af14-037b9fe4eabe");
             }
         }
 

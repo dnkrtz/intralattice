@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{B6916027-8E94-411A-9F60-1C53840353D4}</ProjectGuid>
+    <ProjectGuid>{06BB6E9D-9439-4A45-8D83-96EA1B035504}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PrimitiveCylinder</RootNamespace>
-    <AssemblyName>PrimitiveCylinder</AssemblyName>
+    <RootNamespace>GridSphere</RootNamespace>
+    <AssemblyName>GridSphere</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -62,8 +62,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PrimitiveCylinderComponent.cs" />
-    <Compile Include="PrimitiveCylinderInfo.cs" />
+    <Compile Include="GridSphereComponent.cs" />
+    <Compile Include="GridSphereInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

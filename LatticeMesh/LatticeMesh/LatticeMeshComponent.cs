@@ -6,6 +6,11 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 
+// Based on Exoskeleton by David Stasiuk.
+// This component generates a solid mesh in place of the lattice frame.
+// It takes as input a list of lines and two radius lists (start-end).
+// Assumption: none
+
 namespace LatticeMesh
 {
     public class LatticeMeshComponent : GH_Component
@@ -14,7 +19,7 @@ namespace LatticeMesh
         public LatticeMeshComponent()
             : base("LatticeMesh", "LatticeMesh",
                 "Generates solid mesh of lattice wireframe.",
-                "IntraLattice2", "Meshing")
+                "IntraLattice2", "Mesh")
         {
         }
 
@@ -35,36 +40,22 @@ namespace LatticeMesh
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            // Declare placeholder variables
             List<Line> L = new List<Line>();
             List<double> Rs = new List<double>();
             List<double> Re = new List<double>();
             
+            // Attempt to fetch data inputs
             if (!DA.GetDataList(0, L)) { return; }
             if (!DA.GetDataList(1, Rs)) { return; }
             if (!DA.GetDataList(2, Re)) { return; }
 
-            /*
-            // DUMMY INPUT
-            List<Point3d> P = new List<Point3d>(); // useless, just for dummy data
-            P.Add(new Point3d(0, 0, 0));
-            P.Add(new Point3d(0, 0, 50));
-            P.Add(new Point3d(0, 50, 0));
-            P.Add(new Point3d(50, 0, 0));
-            L.Add(new LineCurve(P[0], P[1]));
-            L.Add(new LineCurve(P[0], P[2]));
-            L.Add(new LineCurve(P[0], P[3]));
-            Rs.Add(4); Re.Add(4);
-            Rs.Add(4); Re.Add(4);
-            Rs.Add(4); Re.Add(4);
-             */
-
-            // 3. If data is invalid, set dummy data.
+            // Validate data
             if (L == null || L.Count == 0) { return; }
             if (Rs == null || Rs.Count == 0 || Rs.Contains(0)) { return; }
             if (Re == null || Re.Count == 0 || Rs.Contains(0)) { return; }           
 
-
-            // STEP 1 - BUILD LATTICE MODEL
+            // STEP 1 - Build Lattice Model
             List<LatticePlate> Plates = new List<LatticePlate>();
             List<LatticeNode> Nodes = new List<LatticeNode>();
 
@@ -107,8 +98,7 @@ namespace LatticeMesh
                 }
             }
 
-            // STEP 2 - COMPUTE PLATE OFFSETS
-            
+            // STEP 2 - Compute Plate Offsets
             for (int i=0; i<Nodes.Count; i++)   // Loop over all nodes
             {
                 double Offset = 0;
@@ -138,8 +128,7 @@ namespace LatticeMesh
             }
 
             
-
-            // STEP 3 - BUILD MESH
+            // STEP 3 - Build Mesh
             Mesh FullMesh = new Mesh(); // This is what will be output, contains all meshes
             Mesh strutmesh;
             
@@ -208,10 +197,14 @@ namespace LatticeMesh
             DA.SetDataList(2, L);
         }
 
-        /// <summary>
-        /// Provides an Icon for every component that will be visible in the User Interface.
-        /// Icons need to be 24x24 pixels.
-        /// </summary>
+        public override GH_Exposure Exposure
+        {
+            get
+            {
+                return GH_Exposure.primary;
+            }
+        }
+
         protected override System.Drawing.Bitmap Icon
         {
             get
@@ -222,11 +215,6 @@ namespace LatticeMesh
             }
         }
 
-        /// <summary>
-        /// Each component must have a unique Guid to identify it. 
-        /// It is vital this Guid doesn't change otherwise old ghx files 
-        /// that use the old ID will partially fail during loading.
-        /// </summary>
         public override Guid ComponentGuid
         {
             get { return new Guid("{dee24b08-fcb2-46f9-b772-9bece0903d9a}"); }
