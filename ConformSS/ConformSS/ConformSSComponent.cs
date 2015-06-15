@@ -66,9 +66,17 @@ namespace ConformSS
                 for (int j=0; j<=Nv; j++)
                 {
                     // Find the pair of points on both surfaces
-                    Point3d Pt1; Point3d Pt2;
-                    S1.Evaluate((i / Nu) * S1.Domain(0).Length, (j / Nv) * S1.Domain(1).Length, 0, out Pt1, out derivatives);
-                    S2.Evaluate((i / Nu) * S2.Domain(0).Length, (j / Nv) * S2.Domain(1).Length, 0, out Pt2, out derivatives);
+                    // On surface 1
+                    Point3d Pt1;
+                    double Uparam = S1.Domain(0).T0 + (i / Nu) * S1.Domain(0).Length;
+                    double Vparam = S1.Domain(1).T0 + (j / Nv) * S1.Domain(1).Length;
+                    S1.Evaluate(Uparam, Vparam, 0, out Pt1, out derivatives);  // Evaluate point
+                    // On surface 2
+                    Point3d Pt2;
+                    Uparam = S2.Domain(0).T0 + (i / Nu) * S2.Domain(0).Length;
+                    Vparam = S2.Domain(1).T0 + (j / Nv) * S2.Domain(1).Length;
+                    S2.Evaluate(Uparam, Vparam, 0, out Pt2, out derivatives);   // Evaluate point
+                    
                     // Create vector joining these two points
                     Vector3d wVect = Pt2 - Pt1;
 
@@ -76,6 +84,7 @@ namespace ConformSS
                     for (int k=0; k<=Nw; k++)
                     {
                         Point3d NewPt = Pt1 + wVect * k / Nw;
+
                         GH_Path TreePath = new GH_Path(0, i, j);
                         GridTree.Append(new GH_Point(NewPt), TreePath);
                     }
