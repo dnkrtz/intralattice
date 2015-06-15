@@ -16,3 +16,15 @@ The algorithm is divided into the following modules.
   * [LatticeMesh](../master/LatticeMesh/LatticeMesh/LatticeMeshComponent.cs) - Under Development
   * [ViewReport](../master/ViewReport/ViewReport/ViewReportComponent.cs) - Validification of Mesh
 
+***
+### Stuff that isn't done yet
+
+Task | Description 
+--- | --- 
+`CellMapper` | Component to map unit cell to conformal grid 
+`LatticeMesh` | Needs to be finished by friday
+`ConformSP` | Point grid conforming from Surface to point
+`Uniform` | Component that uses our published kernell approach
+`ViewReport` | Add preview functionality
+`FEA` | Add Nastran interface
+`Icons` | Find icons for the component toolbar
