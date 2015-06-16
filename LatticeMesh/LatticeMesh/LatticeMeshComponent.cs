@@ -133,10 +133,11 @@ namespace LatticeMesh
 
                         // If theta is more than 90deg, offset is simply based on a sphere at the node
                         if (Theta >= Math.PI * 0.5) TestOffset = R / Math.Cos(Math.PI / S);
-                        // Else, need to use Trig
+                        // Else, use simple trig
                         else TestOffset = R / Math.Sin(Theta*0.5);
 
-                        // If current test offset is greater
+                        // If current test offset is greater (could be faster if we just set these in the loop below)
+                        // But it wouldn't support variable offsets, which are beneficial in some scenarios
                         if (TestOffset > Plates[I1].Offset) Plates[I1].Offset = TestOffset;
                         if (TestOffset > Plates[I2].Offset) Plates[I2].Offset = TestOffset;
 
@@ -193,26 +194,26 @@ namespace LatticeMesh
                 MeshTools.SleeveStitch(ref SleeveMesh, D, S);
                 FullMesh.Append(SleeveMesh);
 
-            }              
-
-            // ENDFACE MESHES (DUMMY HULL)
-            Mesh endmesh = new Mesh();
-            Mesh endmesh2 = new Mesh();
-
-            foreach (Point3d PlatePoint in Plates[0].Vtc)
+            }        
+      
+            // Loop over all nodes
+            for (int i=0; i<Nodes.Count; i++)
             {
-                endmesh.Vertices.Add(PlatePoint);
+                if (Nodes[i].PlateIndices.Count < 2)
+                {
+                    Mesh EndMesh = new Mesh();
+
+                    foreach (Point3d PlatePoint in Plates[Nodes[i].PlateIndices[0]].Vtc) EndMesh.Vertices.Add(PlatePoint);
+                    MeshTools.EndFaceStitch(ref EndMesh, S);
+
+                    FullMesh.Append(EndMesh);
+                }
+                else
+                {
+
+                }
             }
-            foreach (Point3d PlatePoint2 in Plates[1].Vtc)
-            {
-                endmesh2.Vertices.Add(PlatePoint2);
-            }            
 
-            MeshTools.EndFaceStitch(ref endmesh, S);
-            FullMesh.Append(endmesh);
-
-            MeshTools.EndFaceStitch(ref endmesh2, S);
-            FullMesh.Append(endmesh2);
 
             // POST-PROCESS FINAL MESH
             FullMesh.Vertices.CombineIdentical(true, true);
