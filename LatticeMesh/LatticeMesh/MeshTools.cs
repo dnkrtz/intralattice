@@ -8,17 +8,7 @@ namespace LatticeMesh
 {
     public class MeshTools
     {
-        /// <summary>
-        /// Computes offset for a pair of struts
-        /// </summary>
-        public static double ComputeOffset(double Theta, double R)
-        {
-
-
-            return 2;
-        }
-
-
+        
         /// <summary>
         /// Constructs sleeve mesh faces (stitches the vertices)
         /// </summary>

@@ -113,7 +113,6 @@ namespace LatticeMesh
             // Loop over all nodes
             for (int i=0; i<Nodes.Count; i++)
             {
-                double Offset = 0;
                 double TestOffset = 0;
 
                 // Loop over all possible pairs of plates on the node
@@ -122,28 +121,33 @@ namespace LatticeMesh
                 {
                     for (int k = j + 1; k < Nodes[i].PlateIndices.Count; k++)
                     {
+                        int I1 = Nodes[i].PlateIndices[j];
+                        int I2 = Nodes[i].PlateIndices[k];
+
                         // Evaluate based on largest radius
-                        double R1 = Plates[Nodes[i].PlateIndices[j]].Radius;
-                        double R2 = Plates[Nodes[i].PlateIndices[k]].Radius;
+                        double R1 = Plates[I1].Radius;
+                        double R2 = Plates[I2].Radius;
                         double R = Math.Max(R1, R2);
                         // Compute angle between normals
-                        double Theta = Vector3d.VectorAngle(Plates[Nodes[i].PlateIndices[j]].Normal, Plates[Nodes[i].PlateIndices[k]].Normal);
+                        double Theta = Vector3d.VectorAngle(Plates[I1].Normal, Plates[I2].Normal);
 
                         // If theta is more than 90deg, offset is simply based on a sphere at the node
                         if (Theta >= Math.PI * 0.5) TestOffset = R / Math.Cos(Math.PI / S);
                         // Else, need to use Trig
                         else TestOffset = R / Math.Sin(Theta*0.5);
 
-                        if (TestOffset > Offset) Offset = TestOffset;
+                        // If current test offset is greater
+                        if (TestOffset > Plates[I1].Offset) Plates[I1].Offset = TestOffset;
+                        if (TestOffset > Plates[I2].Offset) Plates[I2].Offset = TestOffset;
 
                     }
                 }
+
                 // Set the plate locations
                 foreach (int index in Nodes[i].PlateIndices)
                 {
                     LatticePlate Plate = Plates[index];
-                    Plate.Offset = Offset;
-                    Plate.Vtc.Add(Nodes[Plate.NodeIndex].Point3d + Plate.Normal * Plate.Offset);    // add plate centerpoint
+                    Plates[index].Vtc.Add(Nodes[Plate.NodeIndex].Point3d + Plate.Normal * Plate.Offset);    // add plate centerpoint
                 }
 
             }
