@@ -55,12 +55,19 @@ namespace LatticeMesh
             if (Rs == null || Rs.Count == 0 || Rs.Contains(0)) { return; }
             if (Re == null || Re.Count == 0 || Rs.Contains(0)) { return; }           
 
-            // STEP 1 - Build Lattice Model
+            /////////////////////////////////////////////////////////////////////////////////////
+            // STEP 1 - Data structure
+            // In this first section, the network of lines and nodes is structured.
+            // See MeshTools.cs for comments about the two objects (LatticePlate and LatticeNode)
+            /////////////////////////////////////////////////////////////////////////////////////
+
+            // Initialize lists of objects
             List<LatticePlate> Plates = new List<LatticePlate>();
             List<LatticeNode> Nodes = new List<LatticeNode>();
+            // To avoid creating duplicates nodes, this list stores which nodes have been created
+            Point3dList NodeLookup = new Point3dList();
 
-            int S = 6;  // number of sides of strut
-            Point3dList NodeLookup = new Point3dList(); // This is used to quickly locate node pts
+            int S = 6;  // Number of sides on each strut
 
             // Cycle through all the struts, building the model as we go
             for (int i = 0; i < L.Count; i++ )
