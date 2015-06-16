@@ -26,8 +26,8 @@ namespace LatticeMesh
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddLineParameter("Lines", "L", "Line network", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Radius (start)", "Rs", "List of radii for start of struts", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Radius (end)", "Re", "List of radii for end of struts", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Radius (start)", "Rs", "List of radii for start of struts", GH_ParamAccess.list, 0.6);
+            pManager.AddNumberParameter("Radius (end)", "Re", "List of radii for end of struts", GH_ParamAccess.list, 0.6);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -58,7 +58,7 @@ namespace LatticeMesh
             /////////////////////////////////////////////////////////////////////////////////////
             // STEP 1 - Data structure
             // In this first section, the network of lines and nodes is structured.
-            // See MeshTools.cs for comments about the two objects (LatticePlate and LatticeNode)
+            // See MeshTools.cs for descriptions of the two objects (LatticePlate and LatticeNode)
             /////////////////////////////////////////////////////////////////////////////////////
 
             // Initialize lists of objects
@@ -75,28 +75,28 @@ namespace LatticeMesh
                 // Define plates for current strut
                 Plates.Add(new LatticePlate());     // PlatePoints[2*i+0] (from)
                 Plates.Add(new LatticePlate());     // PlatePoints[2*i+1] (to)
-                Plates[2*i].Radius = Rs[i % Rs.Count];
+                Plates[2*i].Radius = Rs[i % Rs.Count]; 
                 Plates[2*i+1].Radius = Re[i % Re.Count];
                 Plates[2*i].Normal = L[i].UnitTangent;
                 Plates[2*i+1].Normal = - Plates[2*i].Normal;
                 
-                // Setup nodes (start point first)
+                // Setup nodes by checking endpoints of strut
                 List<Point3d> Pts = new List<Point3d>();
-                Pts.Add(L[i].From); Pts.Add(L[i].To);
+                Pts.Add(L[i].From); Pts.Add(L[i].To);   // Start point first
 
                 // Loops over the 2 nodes, updating the lattice model
                 for (int j=0; j<2; j++)
                 {
                     int NodeIndex;
                     
-                    // check if node already exists (FIX THIS - NEED TO USE A TOLERANCE PARAMETER)
+                    // Check if node already exists (FIX THIS - NEED TO USE A TOLERANCE PARAMETER)
                     if (NodeLookup.Contains(Pts[j])) NodeIndex = NodeLookup.ClosestIndex(Pts[j]);
-                    // if it doesn't exist, create it and update the nodelookup list
+                    // If node doesn't exist, create it and update the nodelookup list
                     else
                     {
                         Nodes.Add(new LatticeNode(Pts[j]));
                         NodeIndex = Nodes.Count - 1;
-                        NodeLookup.Add(Pts[j]);             // node won't be created again
+                        NodeLookup.Add(Pts[j]);
                     }
 
                     Plates[2*i+j].NodeIndex = NodeIndex;        // 2*i+j is the correct index, recall that we must order them start to finish
@@ -105,72 +105,89 @@ namespace LatticeMesh
                 }
             }
 
-            // STEP 2 - Compute Plate Offsets
-            for (int i=0; i<Nodes.Count; i++)   // Loop over all nodes
+            /////////////////////////////////////////////////////////////////////////////////////
+            // STEP 2 - Compute plate offsets
+            // In this section, the plate offsets are computed to avoid overlapping sleeve meshes
+            /////////////////////////////////////////////////////////////////////////////////////
+
+            // Loop over all nodes
+            for (int i=0; i<Nodes.Count; i++)
             {
                 double Offset = 0;
+                double TestOffset = 0;
 
                 // Loop over all possible pairs of plates on the node
+                // This automatically avoids setting offsets for nodes with a single strut
                 for (int j = 0; j < Nodes[i].PlateIndices.Count; j++) 
                 {
                     for (int k = j + 1; k < Nodes[i].PlateIndices.Count; k++)
                     {
+                        // Evaluate based on largest radius
+                        double R1 = Plates[Nodes[i].PlateIndices[j]].Radius;
+                        double R2 = Plates[Nodes[i].PlateIndices[k]].Radius;
+                        double R = Math.Max(R1, R2);
+                        // Compute angle between normals
+                        double Theta = Vector3d.VectorAngle(Plates[Nodes[i].PlateIndices[j]].Normal, Plates[Nodes[i].PlateIndices[k]].Normal);
 
-                        // Minimum offset is the strut radius
-                        Offset = Plates[Nodes[i].PlateIndices[0]].Radius / Math.Cos(Math.PI / S);        // this is sloppy, fix later
+                        // If theta is more than 90deg, offset is simply based on a sphere at the node
+                        if (Theta >= Math.PI * 0.5) TestOffset = R / Math.Cos(Math.PI / S);
+                        // Else, need to use Trig
+                        else TestOffset = R / Math.Sin(Theta*0.5);
 
-                        double Theta = Vector3d.VectorAngle(Plates[j].Normal, Plates[k].Normal);
-                        double StepOffset = Offset * Math.Cos(Theta * 0.5) / Math.Sin(Theta * 0.5);
+                        if (TestOffset > Offset) Offset = TestOffset;
 
                     }
                 }
                 // Set the plate locations
                 foreach (int index in Nodes[i].PlateIndices)
                 {
-                    LatticePlate plate = Plates[index];
-                    plate.Offset = Offset;
-                    plate.Vtc.Add(Nodes[plate.NodeIndex].Point3d + plate.Normal * plate.Offset);    // add plate centerpoints
+                    LatticePlate Plate = Plates[index];
+                    Plate.Offset = Offset;
+                    Plate.Vtc.Add(Nodes[Plate.NodeIndex].Point3d + Plate.Normal * Plate.Offset);    // add plate centerpoint
                 }
 
             }
 
+            /////////////////////////////////////////////////////////////////////////////////////
+            // STEP 3 - Build actual mesh
+            // In this section, we compute all the sleeve (strut) and hull (node) meshes
+            // Recall, coincident points between the strut & hull meshes are the plate vertices
+            /////////////////////////////////////////////////////////////////////////////////////
+
+            // Initialize the output mesh
+            Mesh FullMesh = new Mesh();
             
-            // STEP 3 - Build Mesh
-            Mesh FullMesh = new Mesh(); // This is what will be output, contains all meshes
-            Mesh strutmesh;
-            
-            // Create sleeve vertices
-            // Here, as we create the vertices of the sleeve mesh, we also save the PlatePoints
+            // Loop over all pairs of plates (struts)
+            // Create all plate vertices and sleeve vertices
             for (int i=0; i < L.Count; i++)
             {
-                strutmesh = new Mesh();
-                double avgRadius = (Plates[2*i].Radius + Plates[2*i+1].Radius) / 2;
-                double length = Plates[2*i].Vtc[0].DistanceTo(Plates[2*i+1].Vtc[0]);
-                double D = (Math.Round(length * 0.5 / avgRadius) * 2) + 2; // Number of sleeve divisions (must be even)
+                Mesh SleeveMesh = new Mesh();
+                double AvgRadius = (Plates[2*i].Radius + Plates[2*i+1].Radius) / 2;
+                double Length = Plates[2*i].Vtc[0].DistanceTo(Plates[2*i+1].Vtc[0]);
+                double D = (Math.Round(Length * 0.5 / AvgRadius) * 2) + 2; // Number of sleeve divisions (must be even)
 
                 // Create sleeve vertices
-                // j-loop travels along strut
+                // Loops: j along strut, k around strut
                 for (int j = 0; j <= D; j++)
                 {
-                    Point3d Knuckle = Plates[2*i].Vtc[0] + (Plates[2*i].Normal * ( length * j / D));
+                    Point3d Knuckle = Plates[2*i].Vtc[0] + (Plates[2*i].Normal * ( Length * j / D));
                     Plane plane = new Plane(Knuckle, Plates[2*i].Normal);
-                    double radius = Plates[2*i].Radius - j / (double)D * (Plates[2*i].Radius - Plates[2*i+1].Radius); //variable radius
+                    double R = Plates[2*i].Radius - j / (double)D * (Plates[2*i].Radius - Plates[2*i+1].Radius); //variable radius
                     
-                    // k-loop travels about strut
                     for (int k = 0; k < S; k++)
                     {
                         double angle = k * 2 * Math.PI / S + j * Math.PI / S;
-                        strutmesh.Vertices.Add(plane.PointAt(radius * Math.Cos(angle), radius * Math.Sin(angle))); // create vertex
+                        SleeveMesh.Vertices.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle))); // create vertex
 
                         // if hullpoints, save them for hulling
-                        if (j == 0) Plates[2*i].Vtc.Add(plane.PointAt(radius * Math.Cos(angle), radius * Math.Sin(angle)));
-                        if (j == D) Plates[2*i+1].Vtc.Add(plane.PointAt(radius * Math.Cos(angle), radius * Math.Sin(angle)));
+                        if (j == 0) Plates[2*i].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
+                        if (j == D) Plates[2*i+1].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
                     }
                 }
 
                 // Create sleeve faces
-                MeshTools.SleeveStitch(ref strutmesh, D, S);
-                FullMesh.Append(strutmesh);
+                MeshTools.SleeveStitch(ref SleeveMesh, D, S);
+                FullMesh.Append(SleeveMesh);
 
             }              
 
