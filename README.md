@@ -14,6 +14,7 @@ The algorithm is divided into the following modules.
 
 3. **MESH** - Generates solid mesh of the lattice frame.
   * [LatticeMesh](../master/LatticeMesh/LatticeMesh/LatticeMeshComponent.cs) - Under Development
+    * [MeshTools](../master/LatticeMesh/LatticeMesh/MeshTools.cs) - Mesh Stitching, 3D Convex Hull, Data Structure
   * [ViewReport](../master/ViewReport/ViewReport/ViewReportComponent.cs) - Validification of Mesh
 
 ***
