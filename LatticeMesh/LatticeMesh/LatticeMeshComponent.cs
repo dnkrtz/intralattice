@@ -5,6 +5,7 @@ using Rhino.Geometry;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Collections;
+using Rhino;
 
 // Based on Exoskeleton by David Stasiuk.
 // This component generates a solid mesh in place of the lattice frame.
@@ -35,7 +36,7 @@ namespace LatticeMesh
             pManager.AddPointParameter("Vertices", "V", "Lattice Mesh Vertices", GH_ParamAccess.list);
             pManager.AddMeshParameter("Mesh", "M", "Lattice Mesh", GH_ParamAccess.item);
             pManager.AddCurveParameter("Lines", "L", "Lattice Wireframe", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Nodes", "P", "Lattice Nodes", GH_ParamAccess.list);
+            pManager.AddPointParameter("Nodes", "P", "Lattice Nodes", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -53,21 +54,22 @@ namespace LatticeMesh
             // Validate data
             if (L == null || L.Count == 0) { return; }
             if (Rs == null || Rs.Count == 0 || Rs.Contains(0)) { return; }
-            if (Re == null || Re.Count == 0 || Rs.Contains(0)) { return; }           
+            if (Re == null || Re.Count == 0 || Rs.Contains(0)) { return; }
 
-            /////////////////////////////////////////////////////////////////////////////////////
+            // Number of sides on each strut
+            int S = 6;
+
+            //====================================================================================
             // STEP 1 - Data structure
-            // In this first section, the network of lines and nodes is structured.
+            // In this section, the network of lines and nodes is structured.
             // See MeshTools.cs for descriptions of the two objects (LatticePlate and LatticeNode)
-            /////////////////////////////////////////////////////////////////////////////////////
+            //====================================================================================
 
             // Initialize lists of objects
             List<LatticePlate> Plates = new List<LatticePlate>();
             List<LatticeNode> Nodes = new List<LatticeNode>();
             // To avoid creating duplicates nodes, this list stores which nodes have been created
             Point3dList NodeLookup = new Point3dList();
-
-            int S = 6;  // Number of sides on each strut
 
             // Cycle through all the struts, building the model as we go
             for (int i = 0; i < L.Count; i++ )
@@ -88,9 +90,21 @@ namespace LatticeMesh
                 for (int j=0; j<2; j++)
                 {
                     int NodeIndex;
-                    
-                    // Check if node already exists (FIX THIS - NEED TO USE A TOLERANCE PARAMETER)
-                    if (NodeLookup.Contains(Pts[j])) NodeIndex = NodeLookup.ClosestIndex(Pts[j]);
+
+                    int NI = NodeLookup.ClosestIndex(Pts[j]);
+
+                    if (i==0)
+                    {
+                        Nodes.Add(new LatticeNode(Pts[j]));
+                        NodeIndex = Nodes.Count - 1;
+                        NodeLookup.Add(Pts[j]);
+                    }
+                    else if (NodeLookup[NI].DistanceTo(Pts[j]) < RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)
+                    {
+                        NodeIndex = NI;
+                    }
+                    // Check if node already exists
+                    //if ( NodeLookup.Contains(Pts[j]) ) NodeIndex = NodeLookup.ClosestIndex(Pts[j]);
                     // If node doesn't exist, create it and update the nodelookup list
                     else
                     {
@@ -105,10 +119,10 @@ namespace LatticeMesh
                 }
             }
 
-            /////////////////////////////////////////////////////////////////////////////////////
+            //====================================================================================
             // STEP 2 - Compute plate offsets
             // In this section, the plate offsets are computed to avoid overlapping sleeve meshes
-            /////////////////////////////////////////////////////////////////////////////////////
+            //====================================================================================
 
             // Loop over all nodes
             for (int i=0; i<Nodes.Count; i++)
@@ -145,24 +159,24 @@ namespace LatticeMesh
                 }
 
                 // Set the plate locations
-                foreach (int index in Nodes[i].PlateIndices)
+                foreach (int P in Nodes[i].PlateIndices)
                 {
-                    LatticePlate Plate = Plates[index];
-                    Plates[index].Vtc.Add(Nodes[Plate.NodeIndex].Point3d + Plate.Normal * Plate.Offset);    // add plate centerpoint
+                    LatticePlate Plate = Plates[P];
+                    Plates[P].Vtc.Add(Nodes[Plate.NodeIndex].Point3d + Plate.Normal * Plate.Offset);    // add plate centerpoint
                 }
 
             }
 
-            /////////////////////////////////////////////////////////////////////////////////////
+            //====================================================================================
             // STEP 3 - Build actual mesh
             // In this section, we compute all the sleeve (strut) and hull (node) meshes
             // Recall, coincident points between the strut & hull meshes are the plate vertices
-            /////////////////////////////////////////////////////////////////////////////////////
+            //====================================================================================
 
             // Initialize the output mesh
             Mesh FullMesh = new Mesh();
             
-            // Loop over all pairs of plates (struts)
+            // SLEEVES - Loop over all pairs of plates (struts)
             // Create all plate vertices and sleeve vertices
             for (int i=0; i < L.Count; i++)
             {
@@ -194,26 +208,33 @@ namespace LatticeMesh
                 MeshTools.SleeveStitch(ref SleeveMesh, D, S);
                 FullMesh.Append(SleeveMesh);
 
-            }        
-      
-            // Loop over all nodes
-            for (int i=0; i<Nodes.Count; i++)
-            {
-                if (Nodes[i].PlateIndices.Count < 2)
-                {
-                    Mesh EndMesh = new Mesh();
-
-                    foreach (Point3d PlatePoint in Plates[Nodes[i].PlateIndices[0]].Vtc) EndMesh.Vertices.Add(PlatePoint);
-                    MeshTools.EndFaceStitch(ref EndMesh, S);
-
-                    FullMesh.Append(EndMesh);
-                }
-                else
-                {
-
-                }
             }
 
+            // HULLS - Loop over all nodes
+            for (int i=0; i<Nodes.Count; i++)
+            {
+                int PlateCount = Nodes[i].PlateIndices.Count;
+                // If node has a single plate, create an endmesh
+                if (PlateCount < 2)
+                {
+                    Mesh EndMesh = new Mesh();
+                    // Add all plate points to mesh vertices
+                    foreach (Point3d PlatePoint in Plates[Nodes[i].PlateIndices[0]].Vtc) EndMesh.Vertices.Add(PlatePoint);
+                    MeshTools.EndFaceStitch(ref EndMesh, S);
+                    FullMesh.Append(EndMesh);
+                }
+                // If node has more than 1 plate, create a hullmesh
+                else
+                {
+                    Mesh HullMesh = new Mesh();
+
+                    // Gather all hull points (i.e. all plate points of the node)
+                    List<Point3d> HullPoints = new List<Point3d>();
+                    foreach (int P in Nodes[i].PlateIndices) HullPoints.AddRange(Plates[P].Vtc);
+                    MeshTools.ConvexHull(ref HullMesh, HullPoints, S);
+                    FullMesh.Append(HullMesh);
+                }
+            }
 
             // POST-PROCESS FINAL MESH
             FullMesh.Vertices.CombineIdentical(true, true);

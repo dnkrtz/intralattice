@@ -1,4 +1,5 @@
-﻿using Rhino.Geometry;
+﻿using Rhino;
+using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,28 @@ namespace LatticeMesh
 {
     public class MeshTools
     {
+
+        public static void ConvexHull(ref Mesh HullMesh, List<Point3d> Pts, int S)
+        {
+            HullMesh.Vertices.Add(Pts[0]);
+            HullMesh.Vertices.Add(Pts[1]);
+            HullMesh.Vertices.Add(Pts[2]);
+            Plane PlaneStart = new Plane(Pts[0], Pts[1], Pts[2]);
+
+            for (int i = S + 1; i < Pts.Count; i++ )
+            {
+                if ( Math.Abs(PlaneStart.DistanceTo(Pts[i])) > 0.1)
+                {
+                    HullMesh.Vertices.Add(Pts[i]);
+                    break;
+                }
+            }
+
+            HullMesh.Faces.AddFace(0, 2, 1);
+            HullMesh.Faces.AddFace(0, 3, 2);
+            HullMesh.Faces.AddFace(0, 1, 3);
+            HullMesh.Faces.AddFace(1, 2, 3);            
+        }
         
         /// <summary>
         /// Constructs sleeve mesh faces (stitches the vertices)
