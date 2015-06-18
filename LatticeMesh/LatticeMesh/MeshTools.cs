@@ -10,26 +10,86 @@ namespace LatticeMesh
     public class MeshTools
     {
 
+        /// <summary>
+        /// Incremental 3D convex hull algorithm
+        /// This approach is modified to take advantage of certain assumptions about the input
+        /// - All points lie on the hull
+        /// </summary>
         public static void ConvexHull(ref Mesh HullMesh, List<Point3d> Pts, int S)
         {
+            int TotalPts = Pts.Count;
+
+            // 1. Create initial tetrahedron.
+            // Form triangle from 3 first points (lie on same plate, thus, same plane)
             HullMesh.Vertices.Add(Pts[0]);
             HullMesh.Vertices.Add(Pts[1]);
             HullMesh.Vertices.Add(Pts[2]);
             Plane PlaneStart = new Plane(Pts[0], Pts[1], Pts[2]);
-
-            for (int i = S + 1; i < Pts.Count; i++ )
-            {
-                if ( Math.Abs(PlaneStart.DistanceTo(Pts[i])) > 0.1)
-                {
-                    HullMesh.Vertices.Add(Pts[i]);
-                    break;
-                }
-            }
-
-            HullMesh.Faces.AddFace(0, 2, 1);
+            // Form tetrahedron with a 4th point which does not lie on the same plane
+            // Point S+1 is the centerpoint of another plate, therefore it is surely on a different plane.
+            HullMesh.Vertices.Add(Pts[S + 1]);
+            // Stitch faces of tetrahedron
+            HullMesh.Faces.AddFace(0, 2, 1);  
             HullMesh.Faces.AddFace(0, 3, 2);
             HullMesh.Faces.AddFace(0, 1, 3);
-            HullMesh.Faces.AddFace(1, 2, 3);            
+            HullMesh.Faces.AddFace(1, 2, 3);
+
+            // 2. Begin the incremental hulling process
+            // Remove points already checked
+            Pts.RemoveAt(S + 1);
+            Pts.RemoveRange(0, 3);
+            double Tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 0.1;
+
+
+            // Loop through the remaining points
+            for (int i=0; i<Pts.Count; i++)
+            {
+                NormaliseMesh(ref HullMesh);
+
+                List<int> SeenFaces = new List<int>();
+                // Find visible faces
+                for (int FaceIndex = 0; FaceIndex < HullMesh.Faces.Count; FaceIndex++)
+                {
+                    Vector3d TestVect = Pts[i] - HullMesh.Faces.GetFaceCenter(FaceIndex);
+                    double Angle = Vector3d.VectorAngle(HullMesh.FaceNormals[FaceIndex], TestVect);
+                    Plane PlaneTest = new Plane(HullMesh.Faces.GetFaceCenter(FaceIndex), HullMesh.FaceNormals[FaceIndex]);
+                    if (Angle < Math.PI * 0.5 || Math.Abs(PlaneTest.DistanceTo(Pts[i])) < Tol) { SeenFaces.Add(FaceIndex); }
+                }
+
+                // Remove visible faces
+                HullMesh.Faces.DeleteFaces(SeenFaces);
+                // Add current point
+                HullMesh.Vertices.Add(Pts[i]);
+
+                List<MeshFace> AddFaces = new List<MeshFace>();
+                // Close open hull with new vertex
+                for (int EdgeIndex = 0; EdgeIndex < HullMesh.TopologyEdges.Count; EdgeIndex++)
+                {
+                    if (!HullMesh.TopologyEdges.IsSwappableEdge(EdgeIndex))
+                    {
+                        IndexPair V = HullMesh.TopologyEdges.GetTopologyVertices(EdgeIndex);
+                        int I1 = HullMesh.TopologyVertices.MeshVertexIndices(V.I)[0];
+                        int I2 = HullMesh.TopologyVertices.MeshVertexIndices(V.J)[0];
+                        AddFaces.Add(new MeshFace(I1, I2, HullMesh.Vertices.Count - 1));
+                    }
+                }
+                HullMesh.Faces.AddFaces(AddFaces);
+            }
+
+            NormaliseMesh(ref HullMesh);
+
+            // 3. Remove plate faces
+            List<int> DeleteFaces = new List<int>();
+
+                
+        }
+
+        public static void NormaliseMesh(ref Mesh Msh)
+        {
+            if (Msh.SolidOrientation() == -1) Msh.Flip(true,true,true);
+            Msh.FaceNormals.ComputeFaceNormals();
+            Msh.UnifyNormals();
+            Msh.Normals.ComputeNormals();
         }
         
         /// <summary>

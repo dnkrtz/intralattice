@@ -36,7 +36,7 @@ namespace LatticeMesh
             pManager.AddPointParameter("Vertices", "V", "Lattice Mesh Vertices", GH_ParamAccess.list);
             pManager.AddMeshParameter("Mesh", "M", "Lattice Mesh", GH_ParamAccess.item);
             pManager.AddCurveParameter("Lines", "L", "Lattice Wireframe", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "P", "Lattice Nodes", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Nodes", "P", "Lattice Nodes", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -93,18 +93,11 @@ namespace LatticeMesh
 
                     int NI = NodeLookup.ClosestIndex(Pts[j]);
 
-                    if (i==0)
-                    {
-                        Nodes.Add(new LatticeNode(Pts[j]));
-                        NodeIndex = Nodes.Count - 1;
-                        NodeLookup.Add(Pts[j]);
-                    }
-                    else if (NodeLookup[NI].DistanceTo(Pts[j]) < RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)
+                    // Check if node already exists (also, catch first iteration)
+                    if ( i!= 0 && NodeLookup[NI].DistanceTo(Pts[j]) < RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)
                     {
                         NodeIndex = NI;
                     }
-                    // Check if node already exists
-                    //if ( NodeLookup.Contains(Pts[j]) ) NodeIndex = NodeLookup.ClosestIndex(Pts[j]);
                     // If node doesn't exist, create it and update the nodelookup list
                     else
                     {
@@ -183,7 +176,7 @@ namespace LatticeMesh
                 Mesh SleeveMesh = new Mesh();
                 double AvgRadius = (Plates[2*i].Radius + Plates[2*i+1].Radius) / 2;
                 double Length = Plates[2*i].Vtc[0].DistanceTo(Plates[2*i+1].Vtc[0]);
-                double D = (Math.Round(Length * 0.5 / AvgRadius) * 2) + 2; // Number of sleeve divisions (must be even)
+                double D = Math.Max((Math.Round(Length * 0.5 / AvgRadius) * 2),2); // Number of sleeve divisions (must be even)
 
                 // Create sleeve vertices
                 // Loops: j along strut, k around strut
@@ -210,6 +203,9 @@ namespace LatticeMesh
 
             }
 
+
+            List<Mesh> HullMeshes = new List<Mesh>();
+
             // HULLS - Loop over all nodes
             for (int i=0; i<Nodes.Count; i++)
             {
@@ -232,7 +228,7 @@ namespace LatticeMesh
                     List<Point3d> HullPoints = new List<Point3d>();
                     foreach (int P in Nodes[i].PlateIndices) HullPoints.AddRange(Plates[P].Vtc);
                     MeshTools.ConvexHull(ref HullMesh, HullPoints, S);
-                    FullMesh.Append(HullMesh);
+                    HullMeshes.Add(HullMesh);
                 }
             }
 
@@ -245,6 +241,7 @@ namespace LatticeMesh
             DA.SetDataList(0, Plates[0].Vtc);
             DA.SetData(1, FullMesh);
             DA.SetDataList(2, L);
+            DA.SetDataList(3, HullMeshes);
         }
 
         public override GH_Exposure Exposure
