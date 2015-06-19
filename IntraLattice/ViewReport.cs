@@ -6,11 +6,11 @@ using Rhino.Geometry;
 // This component is a post-processing tool used to inspect a mesh
 // Checks that the mesh represents a solid
 
-namespace ViewReport
+namespace IntraLattice
 {
-    public class ViewReportComponent : GH_Component
+    public class ViewReport : GH_Component
     {
-        public ViewReportComponent()
+        public ViewReport()
             : base("ViewReport", "ViewReport",
                 "Verifies the validity of the mesh, and generates a preview",
                 "IntraLattice2", "Mesh")
@@ -47,7 +47,7 @@ namespace ViewReport
             else if (M.SolidOrientation() == 0) Report += "Mesh is NOT a solid. \n";
             else // inward facing normals
             {
-                M.Flip(true,true,true);
+                M.Flip(true, true, true);
                 Report += "Mesh is a solid. (normals have been flipped) \n";
             }
 

@@ -7,12 +7,11 @@ using Grasshopper.Kernel.Types;
 
 // This component generates a simple cylindrical lattice grid.
 
-namespace GridCylinder
+namespace IntraLattice
 {
-    public class GridCylinderComponent : GH_Component
+    public class GridCylinder : GH_Component
     {
-
-        public GridCylinderComponent()
+        public GridCylinder()
             : base("GridCylinder", "GridCylinder",
                 "Generates a lattice grid cylinder.",
                 "IntraLattice2", "Grid")
@@ -58,7 +57,7 @@ namespace GridCylinder
             GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
             Point3d BasePoint = Plane.WorldXY.Origin;
 
-             // Size of cells
+            // Size of cells
             double Su = H / Nu;
             double Sv = 2 * Math.PI / Nv;
             double Sw = R / Nw;
@@ -74,13 +73,13 @@ namespace GridCylinder
                     for (int k = 0; k <= Nw; k++)
                     {
                         // Compute position vector (cartesian coordinates)
-                        double Vx = ( k * Sw ) * ( Math.Cos( j * Sv ) );
-                        double Vy = ( k * Sw ) * ( Math.Sin( j * Sv ) );
+                        double Vx = (k * Sw) * (Math.Cos(j * Sv));
+                        double Vy = (k * Sw) * (Math.Sin(j * Sv));
                         double Vz = i * Su;
-                        Vector3d V = new Vector3d( Vx, Vy, Vz );
+                        Vector3d V = new Vector3d(Vx, Vy, Vz);
 
                         Point3d NewPt = BasePoint + V;
-                        
+
                         GH_Path TreePath = new GH_Path(0, i, j);           // Construct path in the tree
                         GridTree.Append(new GH_Point(NewPt), TreePath);    // Add point to GridTree
                     }

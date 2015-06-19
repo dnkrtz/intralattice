@@ -8,11 +8,11 @@ using Grasshopper.Kernel.Types;
 // This component maps a unit cell topology to the lattice grid.
 // Assumption : Hexahedral cell lattice grid (i.e. morphed cubic cell)
 
-namespace CellMapper
+namespace IntraLattice
 {
-    public class CellMapperComponent : GH_Component
+    public class CellMapper : GH_Component
     {
-        public CellMapperComponent()
+        public CellMapper()
             : base("CellMapper", "CMap",
                 "Populates grid with lattice topology",
                 "IntraLattice2", "Mapping")
@@ -47,7 +47,7 @@ namespace CellMapper
             // Initiate list of lattice lines
             List<GH_Line> Struts = new List<GH_Line>();
 
-            
+
             /* OLD VERSION, NOW WE DON'T HAVE tNum, zNum, rNum. IMPROVE THIS
             for (int i = 0; i <= tNum; i++)
             {

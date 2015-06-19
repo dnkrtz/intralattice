@@ -8,11 +8,11 @@ using Grasshopper.Kernel.Types;
 // This component generates a conformal lattice grid between two surfaces.
 // Assumption : The surfaces are oriented in the same direction (for UV-Map indices)
 
-namespace ConformSS
+namespace IntraLattice
 {
-    public class ConformSSComponent : GH_Component
+    public class ConformSS : GH_Component
     {
-        public ConformSSComponent()
+        public ConformSS()
             : base("ConformSS", "ConfSS",
                 "Generates a conforming point grid between two surfaces.",
                 "IntraLattice2", "Grid")
@@ -61,9 +61,9 @@ namespace ConformSS
             Vector3d[] derivatives; // not used, but needed for Evaluate method
 
             // i, j loops over UV
-            for (int i=0; i<=Nu; i++)
+            for (int i = 0; i <= Nu; i++)
             {
-                for (int j=0; j<=Nv; j++)
+                for (int j = 0; j <= Nv; j++)
                 {
                     // Find the pair of points on both surfaces
                     // On surface 1
@@ -76,12 +76,12 @@ namespace ConformSS
                     Uparam = S2.Domain(0).T0 + (i / Nu) * S2.Domain(0).Length;
                     Vparam = S2.Domain(1).T0 + (j / Nv) * S2.Domain(1).Length;
                     S2.Evaluate(Uparam, Vparam, 0, out Pt2, out derivatives);   // Evaluate point
-                    
+
                     // Create vector joining these two points
                     Vector3d wVect = Pt2 - Pt1;
 
                     // Create grid points on and between surfaces
-                    for (int k=0; k<=Nw; k++)
+                    for (int k = 0; k <= Nw; k++)
                     {
                         Point3d NewPt = Pt1 + wVect * k / Nw;
 

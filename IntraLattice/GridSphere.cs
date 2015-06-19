@@ -7,11 +7,11 @@ using Grasshopper.Kernel.Types;
 
 // This component generates a simple spherical lattice grid.
 
-namespace GridSphere
+namespace IntraLattice
 {
-    public class GridSphereComponent : GH_Component
+    public class GridSphere : GH_Component
     {
-        public GridSphereComponent()
+        public GridSphere()
             : base("GridSphere", "GridSphere",
                 "Generates a lattice grid sphere.",
                 "IntraLattice2", "Grid")
@@ -53,7 +53,7 @@ namespace GridSphere
             GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
             Point3d BasePoint = Plane.WorldXY.Origin;
 
-             // Size of cells
+            // Size of cells
             double Su = Math.PI / Nu;
             double Sv = 2 * Math.PI / Nv;
             double Sw = R / Nw;
@@ -72,11 +72,11 @@ namespace GridSphere
                         double Vx = (k * Sw) * (Math.Sin(i * Su)) * (Math.Cos(j * Sv));
                         double Vy = (k * Sw) * (Math.Sin(i * Su)) * (Math.Sin(j * Sv));
                         double Vz = (k * Sw) * (Math.Cos(i * Su));
-                        Vector3d V = new Vector3d( Vx, Vy, Vz );
+                        Vector3d V = new Vector3d(Vx, Vy, Vz);
 
                         // Create new point
                         Point3d NewPt = BasePoint + V;
-                        
+
                         GH_Path TreePath = new GH_Path(0, i, j);           // Construct path in the tree
                         GridTree.Append(new GH_Point(NewPt), TreePath);    // Add point to GridTree
                     }

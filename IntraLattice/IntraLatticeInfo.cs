@@ -2,15 +2,15 @@
 using System.Drawing;
 using Grasshopper.Kernel;
 
-namespace GridCylinder
+namespace IntraLattice
 {
-    public class GridCylinderInfo : GH_AssemblyInfo
+    public class IntraLatticeInfo : GH_AssemblyInfo
     {
         public override string Name
         {
             get
             {
-                return "GridCylinder";
+                return "IntraLattice";
             }
         }
         public override Bitmap Icon
@@ -33,7 +33,7 @@ namespace GridCylinder
         {
             get
             {
-                return new Guid("cfb5f521-d326-421f-bc15-0d19e9501cdc");
+                return new Guid("df475ca3-9a35-471e-9348-f2b7c04e9189");
             }
         }
 
