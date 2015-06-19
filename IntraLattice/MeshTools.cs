@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace LatticeMesh
+namespace IntraLattice
 {
     public class MeshTools
     {
@@ -29,7 +29,7 @@ namespace LatticeMesh
             // Point S+1 is the centerpoint of another plate, therefore it is surely on a different plane.
             HullMesh.Vertices.Add(Pts[S + 1]);
             // Stitch faces of tetrahedron
-            HullMesh.Faces.AddFace(0, 2, 1);  
+            HullMesh.Faces.AddFace(0, 2, 1);
             HullMesh.Faces.AddFace(0, 3, 2);
             HullMesh.Faces.AddFace(0, 1, 3);
             HullMesh.Faces.AddFace(1, 2, 3);
@@ -42,12 +42,12 @@ namespace LatticeMesh
 
 
             // Loop through the remaining points
-            for (int i=0; i<Pts.Count; i++)
+            for (int i = 0; i < Pts.Count; i++)
             {
                 NormaliseMesh(ref HullMesh);
 
-                List<int> SeenFaces = new List<int>();
                 // Find visible faces
+                List<int> SeenFaces = new List<int>();
                 for (int FaceIndex = 0; FaceIndex < HullMesh.Faces.Count; FaceIndex++)
                 {
                     Vector3d TestVect = Pts[i] - HullMesh.Faces.GetFaceCenter(FaceIndex);
@@ -81,17 +81,17 @@ namespace LatticeMesh
             // 3. Remove plate faces
             List<int> DeleteFaces = new List<int>();
 
-                
+
         }
 
         public static void NormaliseMesh(ref Mesh Msh)
         {
-            if (Msh.SolidOrientation() == -1) Msh.Flip(true,true,true);
+            if (Msh.SolidOrientation() == -1) Msh.Flip(true, true, true);
             Msh.FaceNormals.ComputeFaceNormals();
             Msh.UnifyNormals();
             Msh.Normals.ComputeNormals();
         }
-        
+
         /// <summary>
         /// Constructs sleeve mesh faces (stitches the vertices)
         /// </summary>
@@ -136,7 +136,7 @@ namespace LatticeMesh
     {
         public Point3d Point3d;     // coordinates of node
         public List<int> PlateIndices = new List<int>();    // indices of the plates associated to this node
-        
+
         // constructor sets coordinate
         public LatticeNode(Point3d SetPoint3d)
         {
@@ -144,6 +144,6 @@ namespace LatticeMesh
         }
     }
 
-    
- 
+
+
 }

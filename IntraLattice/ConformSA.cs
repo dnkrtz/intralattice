@@ -12,11 +12,11 @@ using Rhino.Geometry.Intersect;
 // 2. Based on custom map that follows axis direction (UV = False)
 // Assumption : The surface rotates the full 360degrees around the axis (for second method).
 
-namespace ConformSA
+namespace IntraLattice
 {
-    public class ConformSAComponent : GH_Component
+    public class ConformSA : GH_Component
     {
-        public ConformSAComponent()
+        public ConformSA()
             : base("ConformSA", "ConfSA",
                 "Generates conforming lattice grid between a surface and an axis",
                 "IntraLattice2", "Grid")
@@ -135,12 +135,12 @@ namespace ConformSA
                     }
                 }
             }
-            
+
             // Output grid
             DA.SetDataTree(0, GridTree);
 
         }
-    
+
         // Conform components are in second slot of the grid category
         public override GH_Exposure Exposure
         {

@@ -12,12 +12,12 @@ using Rhino;
 // It takes as input a list of lines and two radius lists (start-end).
 // Assumption: none
 
-namespace LatticeMesh
+namespace IntraLattice
 {
-    public class LatticeMeshComponent : GH_Component
+    public class LatticeMesh : GH_Component
     {
 
-        public LatticeMeshComponent()
+        public LatticeMesh()
             : base("LatticeMesh", "LatticeMesh",
                 "Generates solid mesh of lattice wireframe.",
                 "IntraLattice2", "Mesh")
@@ -45,7 +45,7 @@ namespace LatticeMesh
             List<Line> L = new List<Line>();
             List<double> Rs = new List<double>();
             List<double> Re = new List<double>();
-            
+
             // Attempt to fetch data inputs
             if (!DA.GetDataList(0, L)) { return; }
             if (!DA.GetDataList(1, Rs)) { return; }
@@ -72,29 +72,29 @@ namespace LatticeMesh
             Point3dList NodeLookup = new Point3dList();
 
             // Cycle through all the struts, building the model as we go
-            for (int i = 0; i < L.Count; i++ )
+            for (int i = 0; i < L.Count; i++)
             {
                 // Define plates for current strut
                 Plates.Add(new LatticePlate());     // PlatePoints[2*i+0] (from)
                 Plates.Add(new LatticePlate());     // PlatePoints[2*i+1] (to)
-                Plates[2*i].Radius = Rs[i % Rs.Count]; 
-                Plates[2*i+1].Radius = Re[i % Re.Count];
-                Plates[2*i].Normal = L[i].UnitTangent;
-                Plates[2*i+1].Normal = - Plates[2*i].Normal;
-                
+                Plates[2 * i].Radius = Rs[i % Rs.Count];
+                Plates[2 * i + 1].Radius = Re[i % Re.Count];
+                Plates[2 * i].Normal = L[i].UnitTangent;
+                Plates[2 * i + 1].Normal = -Plates[2 * i].Normal;
+
                 // Setup nodes by checking endpoints of strut
                 List<Point3d> Pts = new List<Point3d>();
                 Pts.Add(L[i].From); Pts.Add(L[i].To);   // Start point first
 
                 // Loops over the 2 nodes, updating the lattice model
-                for (int j=0; j<2; j++)
+                for (int j = 0; j < 2; j++)
                 {
                     int NodeIndex;
 
                     int NI = NodeLookup.ClosestIndex(Pts[j]);
 
                     // Check if node already exists (also, catch first iteration)
-                    if ( i!= 0 && NodeLookup[NI].DistanceTo(Pts[j]) < RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)
+                    if (i != 0 && NodeLookup[NI].DistanceTo(Pts[j]) < RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)
                     {
                         NodeIndex = NI;
                     }
@@ -106,9 +106,9 @@ namespace LatticeMesh
                         NodeLookup.Add(Pts[j]);
                     }
 
-                    Plates[2*i+j].NodeIndex = NodeIndex;        // 2*i+j is the correct index, recall that we must order them start to finish
-                    Nodes[NodeIndex].PlateIndices.Add(2*i+j);
-        
+                    Plates[2 * i + j].NodeIndex = NodeIndex;        // 2*i+j is the correct index, recall that we must order them start to finish
+                    Nodes[NodeIndex].PlateIndices.Add(2 * i + j);
+
                 }
             }
 
@@ -118,13 +118,13 @@ namespace LatticeMesh
             //====================================================================================
 
             // Loop over all nodes
-            for (int i=0; i<Nodes.Count; i++)
+            for (int i = 0; i < Nodes.Count; i++)
             {
                 double TestOffset = 0;
 
                 // Loop over all possible pairs of plates on the node
                 // This automatically avoids setting offsets for nodes with a single strut
-                for (int j = 0; j < Nodes[i].PlateIndices.Count; j++) 
+                for (int j = 0; j < Nodes[i].PlateIndices.Count; j++)
                 {
                     for (int k = j + 1; k < Nodes[i].PlateIndices.Count; k++)
                     {
@@ -141,7 +141,7 @@ namespace LatticeMesh
                         // If theta is more than 90deg, offset is simply based on a sphere at the node
                         if (Theta >= Math.PI * 0.5) TestOffset = R / Math.Cos(Math.PI / S);
                         // Else, use simple trig
-                        else TestOffset = R / Math.Sin(Theta*0.5);
+                        else TestOffset = R / Math.Sin(Theta * 0.5);
 
                         // If current test offset is greater (could be faster if we just set these in the loop below)
                         // But it wouldn't support variable offsets, which are beneficial in some scenarios
@@ -168,32 +168,32 @@ namespace LatticeMesh
 
             // Initialize the output mesh
             Mesh FullMesh = new Mesh();
-            
+
             // SLEEVES - Loop over all pairs of plates (struts)
             // Create all plate vertices and sleeve vertices
-            for (int i=0; i < L.Count; i++)
+            for (int i = 0; i < L.Count; i++)
             {
                 Mesh SleeveMesh = new Mesh();
-                double AvgRadius = (Plates[2*i].Radius + Plates[2*i+1].Radius) / 2;
-                double Length = Plates[2*i].Vtc[0].DistanceTo(Plates[2*i+1].Vtc[0]);
-                double D = Math.Max((Math.Round(Length * 0.5 / AvgRadius) * 2),2); // Number of sleeve divisions (must be even)
+                double AvgRadius = (Plates[2 * i].Radius + Plates[2 * i + 1].Radius) / 2;
+                double Length = Plates[2 * i].Vtc[0].DistanceTo(Plates[2 * i + 1].Vtc[0]);
+                double D = Math.Max((Math.Round(Length * 0.5 / AvgRadius) * 2), 2); // Number of sleeve divisions (must be even)
 
                 // Create sleeve vertices
                 // Loops: j along strut, k around strut
                 for (int j = 0; j <= D; j++)
                 {
-                    Point3d Knuckle = Plates[2*i].Vtc[0] + (Plates[2*i].Normal * ( Length * j / D));
-                    Plane plane = new Plane(Knuckle, Plates[2*i].Normal);
-                    double R = Plates[2*i].Radius - j / (double)D * (Plates[2*i].Radius - Plates[2*i+1].Radius); //variable radius
-                    
+                    Point3d Knuckle = Plates[2 * i].Vtc[0] + (Plates[2 * i].Normal * (Length * j / D));
+                    Plane plane = new Plane(Knuckle, Plates[2 * i].Normal);
+                    double R = Plates[2 * i].Radius - j / (double)D * (Plates[2 * i].Radius - Plates[2 * i + 1].Radius); //variable radius
+
                     for (int k = 0; k < S; k++)
                     {
                         double angle = k * 2 * Math.PI / S + j * Math.PI / S;
                         SleeveMesh.Vertices.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle))); // create vertex
 
                         // if hullpoints, save them for hulling
-                        if (j == 0) Plates[2*i].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
-                        if (j == D) Plates[2*i+1].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
+                        if (j == 0) Plates[2 * i].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
+                        if (j == D) Plates[2 * i + 1].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
                     }
                 }
 
@@ -207,7 +207,7 @@ namespace LatticeMesh
             List<Mesh> HullMeshes = new List<Mesh>();
 
             // HULLS - Loop over all nodes
-            for (int i=0; i<Nodes.Count; i++)
+            for (int i = 0; i < Nodes.Count; i++)
             {
                 int PlateCount = Nodes[i].PlateIndices.Count;
                 // If node has a single plate, create an endmesh

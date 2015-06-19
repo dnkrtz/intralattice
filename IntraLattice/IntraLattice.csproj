@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{06BB6E9D-9439-4A45-8D83-96EA1B035504}</ProjectGuid>
+    <ProjectGuid>{4E3A1B92-133D-4281-B447-FBE163285209}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GridSphere</RootNamespace>
-    <AssemblyName>GridSphere</AssemblyName>
+    <RootNamespace>IntraLattice</RootNamespace>
+    <AssemblyName>IntraLattice</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -62,9 +62,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GridSphereComponent.cs" />
-    <Compile Include="GridSphereInfo.cs" />
+    <Compile Include="CellMapper.cs" />
+    <Compile Include="GridBox.cs" />
+    <Compile Include="GridCylinder.cs" />
+    <Compile Include="GridSphere.cs" />
+    <Compile Include="ConformSS.cs" />
+    <Compile Include="ConformSA.cs" />
+    <Compile Include="IntraLatticeInfo.cs" />
+    <Compile Include="LatticeMesh.cs" />
+    <Compile Include="MeshTools.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ViewReport.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
