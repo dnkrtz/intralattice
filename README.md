@@ -1,10 +1,12 @@
 # I N T R A L A T T I C E 
 
-Intralattice is used to populate an arbitrary 3D design space with parametric lattice structures. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. See some [Examples](http://google.com). Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. It's a collection of generative CAD components for [Grasshopper](http://www.grasshopper3d.com/).
+IntraLattice is a collection of generative CAD components for [Grasshopper](http://www.grasshopper3d.com/). It is used to generate parametric lattice structures within a 3D design space. This is especially useful in engineering, where 3D printing has introduced new orders of complexity into designs. It is written in C# with the RhinoCommon SDK.
+
+The goal of this research was to
 
 ## Core Components
 
-The algorithm is divided into the following modules.
+The complete algorithm is divided into the following modules.
 
 1. **GRID** - Generates point grid within the design space.
   * [GridBox](../master/GridBox/GridBox/GridBoxComponent.cs) - Simple Cartesian Grid (3D)
@@ -23,7 +25,7 @@ The algorithm is divided into the following modules.
 
 ## Feature Components
 
-**FEA Interface** (NASTRAN, HYPERWORKS)
+  * **FEA Interface** (NASTRAN, HYPERWORKS)
 **
 
 
