@@ -4,6 +4,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
+using Rhino;
 
 namespace IntraLattice
 {
@@ -82,12 +83,56 @@ namespace IntraLattice
 
             // Prepare input for grid generation
             GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
-            List<double> CS = new List<double> { Sx, Sy, Sz };
-            List<int> N = new List<int> { Nx, Ny, Nz };
             Plane BasePlane = new Plane(BBoxCorner[0], BBoxCorner[1], BBoxCorner[3]);
 
-            // Generate grid in bounding box
-            GridTools.MakeGridBox(ref GridTree, BasePlane, CS, N, BDS);            
+            // Define iteration vectors in each direction (accounting for Cell Size)
+            Vector3d Vx = Sx * BasePlane.XAxis;
+            Vector3d Vy = Sy * BasePlane.YAxis;
+            Vector3d Vz = Sz * BasePlane.ZAxis;
+
+            Point3d CurrentPt = new Point3d();
+
+            // Create grid of points (as data tree)
+            for (int i = 0; i <= Nx; i++)
+            {
+                for (int j = 0; j <= Ny; j++)
+                {
+                    for (int k = 0; k <= Nz; k++)
+                    {
+                        // Compute position vector
+                        Vector3d V = i * Vx + j * Vy + k * Vz;
+                        CurrentPt = BasePlane.Origin + V;
+
+                        // Check if point is inside the Brep Design Space
+                        if (BDS.IsPointInside(CurrentPt, RhinoMath.SqrtEpsilon, true))
+                        {
+                            // Neighbours of an inside node must be created (since they share a strut with an inside node, which we will be trimming)
+                            // So before creating the node, we ensure that all its neighbours have been created
+                            // This might seem excessive, but it's a robust approach
+                            List<GH_Path> Neighbours = new List<GH_Path>();
+                            Neighbours.Add(new GH_Path(i-1, j, k));
+                            Neighbours.Add(new GH_Path(i, j-1, k));
+                            Neighbours.Add(new GH_Path(i, j, k-1));
+                            Neighbours.Add(new GH_Path(i+1, j, k));
+                            Neighbours.Add(new GH_Path(i, j+1, k));
+                            Neighbours.Add(new GH_Path(i, j, k+1));
+                            GH_Path CurrentPath = new GH_Path(i, j, k);
+
+                            // If the path doesn't exist, it hasn't been created, so create it
+                            if (!GridTree.PathExists(Neighbours[0]))    GridTree.Append(new GH_Point(CurrentPt - Vx), Neighbours[0]);
+                            if (!GridTree.PathExists(Neighbours[1]))    GridTree.Append(new GH_Point(CurrentPt - Vy), Neighbours[1]);
+                            if (!GridTree.PathExists(Neighbours[2]))    GridTree.Append(new GH_Point(CurrentPt - Vz), Neighbours[2]);
+                            if (!GridTree.PathExists(Neighbours[3]))    GridTree.Append(new GH_Point(CurrentPt + Vx), Neighbours[3]);
+                            if (!GridTree.PathExists(Neighbours[4]))    GridTree.Append(new GH_Point(CurrentPt + Vy), Neighbours[4]);
+                            if (!GridTree.PathExists(Neighbours[5]))    GridTree.Append(new GH_Point(CurrentPt + Vz), Neighbours[5]);
+                            // Finally, same goes for the current node
+                            if (!GridTree.PathExists(CurrentPath))      GridTree.Append(new GH_Point(CurrentPt), CurrentPath);
+                        }
+
+                    }
+                }
+            }
+          
 
             // Output data
             DA.SetDataTree(0, GridTree);
