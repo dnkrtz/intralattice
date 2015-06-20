@@ -10,22 +10,22 @@ IntraLattice is a collection of generative CAD components for [Grasshopper](http
 The complete algorithm is divided into the following modules.
 
 1. **GRID** - Generates point grid within the design space.
-  * [GridBox](../master/src/IntraLattice/1\ -\ GRID/GridBox.cs) - Simple Cartesian Grid (3D)
-  * [GridCylinder](../master/src/IntraLattice/1\ -\ GRID/GridCylinder.cs) - Simple Cylindrical Grid
-  * [GridSphere](../master/src/IntraLattice/1\ -\ GRID/GridSphere.cs) - Simple Spherical Grid
-  * [ConformSS](../master/src/IntraLattice/1\ -\ GRID/ConformSS.cs) - Conforming Surface-to-Surface Grid
-  * [ConformSA](../master/src/IntraLattice/1\ -\ GRID/ConformSA.cs) - Conforming Surface-to-Axis Grid
-  * [UniformBDS](../master/src/IntraLattice/1\ -\ GRID/UniformBDS.cs) - Uniform Trimmed Grid (within Brep Design Space)
+  * [GridBox](../master/src/IntraLattice/1 - GRID/GridBox.cs) - Simple Cartesian Grid (3D)
+  * [GridCylinder](../master/src/IntraLattice/1 - GRID/GridCylinder.cs) - Simple Cylindrical Grid
+  * [GridSphere](../master/src/IntraLattice/1 - GRID/GridSphere.cs) - Simple Spherical Grid
+  * [ConformSS](../master/src/IntraLattice/1 - GRID/ConformSS.cs) - Conforming Surface-to-Surface Grid
+  * [ConformSA](../master/src/IntraLattice/1 - GRID/ConformSA.cs) - Conforming Surface-to-Axis Grid
+  * [UniformBDS](../master/src/IntraLattice/1 - GRID/UniformBDS.cs) - Uniform Trimmed Grid (within Brep Design Space)
 
 2. **FRAME** - Generates a lattice frame by mapping unit cell topologies to the grid.
-  * [FrameConform](../master/src/IntraLattice/2\ -\ FRAME/FrameConform.cs) - Maps lattice topology
-  * [FrameUniform](../master/src/IntraLattice/2\ -\ FRAME/FrameUniform.cs) - Maps *and trims* lattice topology
-    * [FrameTools](../master/src/IntraLattice/2\ -\ FRAME/FrameTools.cs) - Topology Generation
+  * [FrameConform](../master/src/IntraLattice/2 - FRAME/FrameConform.cs) - Maps lattice topology
+  * [FrameUniform](../master/src/IntraLattice/2 - FRAME/FrameUniform.cs) - Maps *and trims* lattice topology
+    * [FrameTools](../master/src/IntraLattice/2 - FRAME/FrameTools.cs) - Topology Generation
 
 3. **MESH** - Generates solid mesh of the lattice frame.
-  * [LatticeMesh](../master/src/IntraLattice/3\ -\ MESH/LatticeMesh.cs) - Under Development
-  * [ViewReport](../master/src/IntraLattice/3\ -\ MESH/ViewReport.cs) - Validification of Mesh
-    * [MeshTools](../master/src/IntraLattice/3\ -\ MESH/MeshTools.cs) - Mesh Stitching, 3D Convex Hull, Data Structure
+  * [LatticeMesh](../master/src/IntraLattice/3 - MESH/LatticeMesh.cs) - Under Development
+  * [ViewReport](../master/src/IntraLattice/3 - MESH/ViewReport.cs) - Validification of Mesh
+    * [MeshTools](../master/src/IntraLattice/3 - MESH/MeshTools.cs) - Mesh Stitching, 3D Convex Hull, Data Structure
 
 ## Feature Components
 
@@ -38,10 +38,8 @@ The complete algorithm is divided into the following modules.
 
 Task | Description 
 --- | --- 
-`CellMapper` | Component to map unit cell to conformal grid 
 `LatticeMesh` | Needs to be finished by friday
 `ConformSP` | Point grid conforming from Surface to point
-`Uniform` | Component that uses our published kernell approach
 `ViewReport` | Add preview functionality
 `FEA` | Add Nastran interface
 `Icons` | Find icons for the component toolbar
