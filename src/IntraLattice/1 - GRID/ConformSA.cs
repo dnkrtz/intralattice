@@ -84,8 +84,8 @@ namespace IntraLattice
                         // Find the pair of points on surface and axis
                         Point3d Pt1 = A.PointAt(Param);
                         Point3d Pt2;
-                        double uParam = S.Domain(0).T0 + (i/Nw) * S.Domain(0).Length;
-                        double vParam = S.Domain(1).T0 + (j/Nv) * S.Domain(1).Length;
+                        double uParam = (i/Nu) * S.Domain(0).Length;
+                        double vParam = (j/Nv) * S.Domain(1).Length;
                         S.Evaluate(uParam, vParam, 0, out Pt2, out derivatives);
 
                         // Create vector joining these two points
@@ -94,7 +94,7 @@ namespace IntraLattice
                         // Create grid points on and between surface and axis
                         for (int k = 0; k <= Nw; k++)
                         {
-                            Point3d NewPt = Pt1 + wVect * k / Nu;
+                            Point3d NewPt = Pt1 + wVect * k / Nw;
                             GH_Path TreePath = new GH_Path(i, j, k);
                             GridTree.Append(new GH_Point(NewPt), TreePath);
                         }

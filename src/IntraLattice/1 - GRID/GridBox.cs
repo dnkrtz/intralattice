@@ -32,12 +32,12 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddNumberParameter("Size x", "Sx", "Size of unit cell (x)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Size y", "Sy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Size z", "Sz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("Number x", "Nx", "Number of unit cells (x)", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("Number y", "Ny", "Number of unit cells (y)", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("Number z", "Nz", "Number of unit cells (z)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number of Cells ( x )", "Nx", "Number of unit cells (x)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number of Cells ( y )", "Ny", "Number of unit cells (y)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number of Cells ( z )", "Nz", "Number of unit cells (z)", GH_ParamAccess.item, 5);
         }
 
         /// <summary>
@@ -57,25 +57,25 @@ namespace IntraLattice
         {
             // 1. Declare placeholder variables and assign initial invalid data.
             //    This way, if the input parameters fail to supply valid data, we know when to abort.
-            double Sx = 0;
-            double Sy = 0;
-            double Sz = 0;
+            double CSx = 0;
+            double CSy = 0;
+            double CSz = 0;
             int Nx = 0;
             int Ny = 0;
             int Nz = 0;
 
             // 2. Retrieve input data.
-            if (!DA.GetData(0, ref Sx)) { return; }
-            if (!DA.GetData(1, ref Sy)) { return; }
-            if (!DA.GetData(2, ref Sz)) { return; }
+            if (!DA.GetData(0, ref CSx)) { return; }
+            if (!DA.GetData(1, ref CSy)) { return; }
+            if (!DA.GetData(2, ref CSz)) { return; }
             if (!DA.GetData(3, ref Nx)) { return; }
             if (!DA.GetData(4, ref Ny)) { return; }
             if (!DA.GetData(5, ref Nz)) { return; }
 
             // 3. If data is invalid, we need to abort.
-            if (Sx == 0) { return; }
-            if (Sy == 0) { return; }
-            if (Sz == 0) { return; }
+            if (CSx == 0) { return; }
+            if (CSy == 0) { return; }
+            if (CSz == 0) { return; }
             if (Nx == 0) { return; }
             if (Ny == 0) { return; }
             if (Nz == 0) { return; }
@@ -89,7 +89,7 @@ namespace IntraLattice
             Plane BasePlane = Plane.WorldXY;
 
             // Package inputs
-            List<double> CS = new List<double> { Sx, Sy, Sz };
+            List<double> CS = new List<double> { CSx, CSy, CSz };
             List<int> N = new List<int> { Nx, Ny, Nz };
 
             // Define iteration vectors in each direction (accounting size of cell)

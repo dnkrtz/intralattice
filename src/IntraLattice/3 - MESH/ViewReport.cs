@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using Grasshopper.Kernel.Types;
+using Rhino.DocObjects;
 
 // This component is a post-processing tool used to inspect a mesh
 // Checks that the mesh represents a solid
@@ -50,6 +52,14 @@ namespace IntraLattice
                 M.Flip(true, true, true);
                 Report += "Mesh is a solid. (normals have been flipped) \n";
             }
+            
+            // Attempting automatic bake
+            /*GH_Mesh BakableMesh = new GH_Mesh(M);
+            Rhino.RhinoDoc doc = Rhino.RhinoDoc.ActiveDoc;
+            ObjectAttributes attr = 
+            BakableMesh.BakeGeometry(doc, attr, ComponentGuid);
+            */
+            
 
             // Output report
             DA.SetData(0, Report);

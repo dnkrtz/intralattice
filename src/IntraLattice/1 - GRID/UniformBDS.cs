@@ -27,9 +27,9 @@ namespace IntraLattice
         {
             pManager.AddBrepParameter("Design Space", "Brep", "Design space boundary representation", GH_ParamAccess.item);
             pManager.AddPlaneParameter("Orientation Plane", "Plane", "Lattice orientation plane", GH_ParamAccess.item, Plane.WorldXY); // default is XY-plane
-            pManager.AddNumberParameter("Size x", "Sx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // default is 5
-            pManager.AddNumberParameter("Size y", "Sy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Size z", "Sz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // default is 5
+            pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
         }
 
         /// <summary>
@@ -49,21 +49,21 @@ namespace IntraLattice
             // Retrieve and validate data
             Brep BDS = null;
             Plane OrientationPlane = Plane.Unset;
-            double Sx = 0;
-            double Sy = 0;
-            double Sz = 0;
+            double CSx = 0;
+            double CSy = 0;
+            double CSz = 0;
 
             if (!DA.GetData(0, ref BDS)) { return; }
             if (!DA.GetData(1, ref OrientationPlane)) { return; }
-            if (!DA.GetData(2, ref Sx)) { return; }
-            if (!DA.GetData(3, ref Sy)) { return; }
-            if (!DA.GetData(4, ref Sz)) { return; }
+            if (!DA.GetData(2, ref CSx)) { return; }
+            if (!DA.GetData(3, ref CSy)) { return; }
+            if (!DA.GetData(4, ref CSz)) { return; }
 
             if (!BDS.IsValid || !BDS.IsSolid) { return; }
             if (!OrientationPlane.IsValid) { return; }
-            if (Sx == 0) { return; } 
-            if (Sy == 0) { return; }
-            if (Sz == 0) { return; }
+            if (CSx == 0) { return; } 
+            if (CSy == 0) { return; }
+            if (CSz == 0) { return; }
 
             // Create bounding box
             Box BBox = new Box();
@@ -77,18 +77,18 @@ namespace IntraLattice
             double Lz = BBoxCorner[0].DistanceTo(BBoxCorner[4]);
 
             // Determine number of iterations required to fill the box
-            int Nx = (int)Math.Ceiling(Lx / Sx); // Roundup to next integer if non-integer
-            int Ny = (int)Math.Ceiling(Ly / Sy);
-            int Nz = (int)Math.Ceiling(Lz / Sz);
+            int Nx = (int)Math.Ceiling(Lx / CSx); // Roundup to next integer if non-integer
+            int Ny = (int)Math.Ceiling(Ly / CSy);
+            int Nz = (int)Math.Ceiling(Lz / CSz);
 
             // Prepare input for grid generation
             GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
             Plane BasePlane = new Plane(BBoxCorner[0], BBoxCorner[1], BBoxCorner[3]);
 
             // Define iteration vectors in each direction (accounting for Cell Size)
-            Vector3d Vx = Sx * BasePlane.XAxis;
-            Vector3d Vy = Sy * BasePlane.YAxis;
-            Vector3d Vz = Sz * BasePlane.ZAxis;
+            Vector3d Vx = CSx * BasePlane.XAxis;
+            Vector3d Vy = CSy * BasePlane.YAxis;
+            Vector3d Vz = CSz * BasePlane.ZAxis;
 
             Point3d CurrentPt = new Point3d();
 
