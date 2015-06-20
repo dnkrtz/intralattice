@@ -22,9 +22,9 @@ namespace IntraLattice
         {
             pManager.AddNumberParameter("Radius", "R", "Radius of cylinder", GH_ParamAccess.item, 15);
             pManager.AddNumberParameter("Height", "H", "Height of cylinder", GH_ParamAccess.item, 25);
-            pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 15);
-            pManager.AddNumberParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 4);
+            pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 15);
+            pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 4);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -37,9 +37,9 @@ namespace IntraLattice
             // Retrieve and validate data
             double R = 0;
             double H = 0;
-            double Nu = 0;
-            double Nv = 0;
-            double Nw = 0;
+            int Nu = 0;
+            int Nv = 0;
+            int Nw = 0;
 
             if (!DA.GetData(0, ref R)) { return; }
             if (!DA.GetData(1, ref H)) { return; }
@@ -73,14 +73,14 @@ namespace IntraLattice
                     for (int k = 0; k <= Nw; k++)
                     {
                         // Compute position vector (cartesian coordinates)
-                        double Vx = (k * Sw) * (Math.Cos(j * Sv));
-                        double Vy = (k * Sw) * (Math.Sin(j * Sv));
-                        double Vz = i * Su;
-                        Vector3d V = new Vector3d(Vx, Vy, Vz);
+                        double Vu = (k * Sw) * (Math.Cos(j * Sv));
+                        double Vv = (k * Sw) * (Math.Sin(j * Sv));
+                        double Vw = i * Su;
+                        Vector3d V = new Vector3d(Vu, Vv, Vw);
 
                         Point3d NewPt = BasePoint + V;
 
-                        GH_Path TreePath = new GH_Path(0, i, j);           // Construct path in the tree
+                        GH_Path TreePath = new GH_Path(i, j, k);           // Construct path in the tree
                         GridTree.Append(new GH_Point(NewPt), TreePath);    // Add point to GridTree
                     }
                 }

@@ -85,7 +85,7 @@ namespace IntraLattice
                     {
                         Point3d NewPt = Pt1 + wVect * k / Nw;
 
-                        GH_Path TreePath = new GH_Path(0, i, j);
+                        GH_Path TreePath = new GH_Path(i, j, k);
                         GridTree.Append(new GH_Point(NewPt), TreePath);
                     }
                 }

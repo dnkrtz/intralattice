@@ -35,9 +35,9 @@ namespace IntraLattice
             pManager.AddNumberParameter("Size x", "Sx", "Size of unit cell (x)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Size y", "Sy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Size z", "Sz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Number x", "Nx", "Number of unit cells (x)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Number y", "Ny", "Number of unit cells (y)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Number z", "Nz", "Number of unit cells (z)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number x", "Nx", "Number of unit cells (x)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number y", "Ny", "Number of unit cells (y)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number z", "Nz", "Number of unit cells (z)", GH_ParamAccess.item, 5);
         }
 
         /// <summary>
@@ -60,9 +60,9 @@ namespace IntraLattice
             double Sx = 0;
             double Sy = 0;
             double Sz = 0;
-            double Nx = 0;
-            double Ny = 0;
-            double Nz = 0;
+            int Nx = 0;
+            int Ny = 0;
+            int Nz = 0;
 
             // 2. Retrieve input data.
             if (!DA.GetData(0, ref Sx)) { return; }
@@ -80,26 +80,35 @@ namespace IntraLattice
             if (Ny == 0) { return; }
             if (Nz == 0) { return; }
 
-            //// 4. Let's cook some pasta
+            // 4. Let's cook some pasta
+
             // Declare gh_structure data tree
             GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
-
-            // Assign BasePlane
+            
+            // Define BasePlane
             Plane BasePlane = Plane.WorldXY;
 
+            // Package inputs
+            List<double> CS = new List<double> { Sx, Sy, Sz };
+            List<int> N = new List<int> { Nx, Ny, Nz };
+
+            // Define iteration vectors in each direction (accounting size of cell)
+            Vector3d Vx = CS[0] * BasePlane.XAxis;
+            Vector3d Vy = CS[1] * BasePlane.YAxis;
+            Vector3d Vz = CS[2] * BasePlane.ZAxis;
+
             // Create grid of points (as data tree)
-            for (int i = 0; i <= Nz; i++)
+            for (int i = 0; i <= N[0]; i++)
             {
-                for (int j = 0; j <= Ny; j++)
+                for (int j = 0; j <= N[1]; j++)
                 {
-                    for (int k = 0; k <= Nx; k++)
+                    for (int k = 0; k <= N[2]; k++)
                     {
                         // Compute position vector
-                        Vector3d V = new Vector3d(i * Sx, j * Sy, k * Sz);
-                        
+                        Vector3d V = i * Vx + j * Vy + k * Vz;
                         Point3d NewPt = BasePlane.Origin + V;
 
-                        GH_Path TreePath = new GH_Path(0, i, j);            // Construct path in tree
+                        GH_Path TreePath = new GH_Path(i, j, k);            // Construct path in tree
                         GridTree.Append(new GH_Point(NewPt), TreePath);     // Add point to tree
                     }
                 }

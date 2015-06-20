@@ -21,9 +21,9 @@ namespace IntraLattice
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("Radius", "R", "Radius of cylinder", GH_ParamAccess.item, 15);
-            pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (theta)", GH_ParamAccess.item, 10);
-            pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (phi)", GH_ParamAccess.item, 10);
-            pManager.AddNumberParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 3);
+            pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (theta)", GH_ParamAccess.item, 10);
+            pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (phi)", GH_ParamAccess.item, 10);
+            pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 3);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -35,9 +35,9 @@ namespace IntraLattice
         {
             // Retrieve and validate data
             double R = 0;
-            double Nu = 0;
-            double Nv = 0;
-            double Nw = 0;
+            int Nu = 0;
+            int Nv = 0;
+            int Nw = 0;
 
             if (!DA.GetData(0, ref R)) { return; }
             if (!DA.GetData(1, ref Nu)) { return; }
@@ -77,7 +77,7 @@ namespace IntraLattice
                         // Create new point
                         Point3d NewPt = BasePoint + V;
 
-                        GH_Path TreePath = new GH_Path(0, i, j);           // Construct path in the tree
+                        GH_Path TreePath = new GH_Path(i, j, k);           // Construct path in the tree
                         GridTree.Append(new GH_Point(NewPt), TreePath);    // Add point to GridTree
                     }
                 }
