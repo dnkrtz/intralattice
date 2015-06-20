@@ -203,7 +203,6 @@ namespace IntraLattice
 
             }
 
-
             List<Mesh> HullMeshes = new List<Mesh>();
 
             // HULLS - Loop over all nodes

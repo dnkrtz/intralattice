@@ -1,4 +1,6 @@
-﻿using Rhino;
+﻿using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
+using Rhino;
 using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
@@ -84,6 +86,9 @@ namespace IntraLattice
 
         }
 
+        /// <summary>
+        /// Fix orientation of face normals
+        /// </summary>
         public static void NormaliseMesh(ref Mesh Msh)
         {
             if (Msh.SolidOrientation() == -1) Msh.Flip(true, true, true);
@@ -113,7 +118,9 @@ namespace IntraLattice
             }
         }
 
+        /// <summary>
         /// Construts endface mesh (single strut nodes)
+        /// </summary>
         public static void EndFaceStitch(ref Mesh EndMesh, int S)
         {
             // Stitch faces

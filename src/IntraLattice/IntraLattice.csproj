@@ -62,18 +62,22 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CellMapper.cs" />
-    <Compile Include="GridBox.cs" />
-    <Compile Include="GridCylinder.cs" />
-    <Compile Include="GridSphere.cs" />
-    <Compile Include="ConformSS.cs" />
-    <Compile Include="ConformSA.cs" />
+    <Compile Include="Frame\CellMapper.cs" />
+    <Compile Include="Frame\FrameTools.cs" />
+    <Compile Include="Grid\GridBox.cs" />
+    <Compile Include="Grid\GridCylinder.cs" />
+    <Compile Include="Grid\GridSphere.cs" />
+    <Compile Include="Grid\ConformSS.cs" />
+    <Compile Include="Grid\ConformSA.cs" />
+    <Compile Include="Grid\GridTools.cs" />
     <Compile Include="IntraLatticeInfo.cs" />
-    <Compile Include="LatticeMesh.cs" />
-    <Compile Include="MeshTools.cs" />
+    <Compile Include="Mesh\LatticeMesh.cs" />
+    <Compile Include="Mesh\MeshTools.cs" />
+    <Compile Include="Grid\UniformBDS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ViewReport.cs" />
+    <Compile Include="Mesh\ViewReport.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
