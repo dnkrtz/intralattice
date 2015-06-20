@@ -5,15 +5,16 @@ using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
 using Rhino;
+using Rhino.DocObjects;
 
 namespace IntraLattice
 {
-    public class UniformBDS : GH_Component
+    public class Uniform : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
-        public UniformBDS()
+        public Uniform()
             : base("UniformBDS", "UniformBDS",
                 "Generates a uniform lattice grid in a Brep Design Space",
                 "IntraLattice2", "Grid")
@@ -25,7 +26,7 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBrepParameter("Design Space", "Brep", "Design space boundary representation", GH_ParamAccess.item);
+            pManager.AddGeometryParameter("Design Space", "DS", "Design Space (Brep or Mesh)", GH_ParamAccess.item);
             pManager.AddPlaneParameter("Orientation Plane", "Plane", "Lattice orientation plane", GH_ParamAccess.item, Plane.WorldXY); // default is XY-plane
             pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // default is 5
             pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
@@ -47,19 +48,20 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Retrieve and validate data
-            Brep BDS = null;
+            GeometryBase DS = null;
             Plane OrientationPlane = Plane.Unset;
             double CSx = 0;
             double CSy = 0;
             double CSz = 0;
 
-            if (!DA.GetData(0, ref BDS)) { return; }
+            if (!DA.GetData(0, ref DS)) { return; }
             if (!DA.GetData(1, ref OrientationPlane)) { return; }
             if (!DA.GetData(2, ref CSx)) { return; }
             if (!DA.GetData(3, ref CSy)) { return; }
             if (!DA.GetData(4, ref CSz)) { return; }
 
-            if (!BDS.IsValid || !BDS.IsSolid) { return; }
+            if (!DS.IsValid) { return; }
+            if (DS.ObjectType != ObjectType.Brep && DS.ObjectType != ObjectType.Mesh) { return; }   // design space must be a Brep or a Mesh
             if (!OrientationPlane.IsValid) { return; }
             if (CSx == 0) { return; } 
             if (CSy == 0) { return; }
@@ -67,7 +69,7 @@ namespace IntraLattice
 
             // Create bounding box
             Box BBox = new Box();
-            BDS.GetBoundingBox(OrientationPlane, out BBox);
+            DS.GetBoundingBox(OrientationPlane, out BBox);
 
             // Get corner points
             Point3d[] BBoxCorner = BBox.GetCorners();
@@ -103,8 +105,13 @@ namespace IntraLattice
                         Vector3d V = i * Vx + j * Vy + k * Vz;
                         CurrentPt = BasePlane.Origin + V;
 
+                        // Cast according to type (design space could be mesh or brep)
+                        Boolean IsInside = false;
+                        if (DS.ObjectType == ObjectType.Brep)       IsInside = ((Brep)DS).IsPointInside(CurrentPt, RhinoMath.SqrtEpsilon, false);                           
+                        else if (DS.ObjectType == ObjectType.Mesh)  IsInside = ((Mesh)DS).IsPointInside(CurrentPt, RhinoMath.SqrtEpsilon, false);
+
                         // Check if point is inside the Brep Design Space
-                        if (BDS.IsPointInside(CurrentPt, RhinoMath.SqrtEpsilon, false))
+                        if (IsInside)
                         {
                             // Neighbours of an inside node must be created (since they share a strut with an inside node, which we will be trimming)
                             // So before creating the node, we ensure that all its neighbours have been created
