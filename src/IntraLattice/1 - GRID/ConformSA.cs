@@ -67,11 +67,11 @@ namespace IntraLattice
             GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
 
 
-            // Use UV-Map Method (note, should add check to make sure axis is aligned with u)
+            // Use UV-Map Method (note, should add check to make sure axis is aligned with u, as opposed to v)
             if (UV)
             {
                 Vector3d[] derivatives; // not used, but needed for Evaluate method
-                List<double> Params = new List<double>(A.DivideByCount((int)Nu, true));
+                List<double> Params = new List<double>(A.DivideByCount((int)Nu, true)); // divide curve into equal segments, get curve parameters
 
                 if (A.IsClosed) Params.Add(Params[0]);  // if axis is closed curve, add last parameter to close the loop
 
@@ -84,12 +84,14 @@ namespace IntraLattice
                         // Find the pair of points on surface and axis
                         Point3d Pt1 = A.PointAt(Param);
                         Point3d Pt2;
-                        S.Evaluate((i / Nw) * S.Domain(0).Length, (j / Nv) * S.Domain(1).Length, 0, out Pt2, out derivatives);
+                        double uParam = S.Domain(0).T0 + (i/Nw) * S.Domain(0).Length;
+                        double vParam = S.Domain(1).T0 + (j/Nv) * S.Domain(1).Length;
+                        S.Evaluate(uParam, vParam, 0, out Pt2, out derivatives);
 
                         // Create vector joining these two points
                         Vector3d wVect = Pt2 - Pt1;
 
-                        // Create grid points on and between surfaces
+                        // Create grid points on and between surface and axis
                         for (int k = 0; k <= Nw; k++)
                         {
                             Point3d NewPt = Pt1 + wVect * k / Nu;

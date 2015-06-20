@@ -42,7 +42,7 @@ namespace IntraLattice
             get
             {
                 //Return a string identifying you or your company.
-                return "";
+                return "Aidan Kurtz";
             }
         }
         public override string AuthorContact
@@ -50,7 +50,7 @@ namespace IntraLattice
             get
             {
                 //Return a string representing your preferred contact details.
-                return "";
+                return "aidan.kurtz@mail.mcgill.ca";
             }
         }
     }

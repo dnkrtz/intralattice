@@ -104,7 +104,7 @@ namespace IntraLattice
                         CurrentPt = BasePlane.Origin + V;
 
                         // Check if point is inside the Brep Design Space
-                        if (BDS.IsPointInside(CurrentPt, RhinoMath.SqrtEpsilon, true))
+                        if (BDS.IsPointInside(CurrentPt, RhinoMath.SqrtEpsilon, false))
                         {
                             // Neighbours of an inside node must be created (since they share a strut with an inside node, which we will be trimming)
                             // So before creating the node, we ensure that all its neighbours have been created

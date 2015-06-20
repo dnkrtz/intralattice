@@ -62,20 +62,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Frame\CellMapper.cs" />
-    <Compile Include="Frame\FrameTools.cs" />
-    <Compile Include="Grid\GridBox.cs" />
-    <Compile Include="Grid\GridCylinder.cs" />
-    <Compile Include="Grid\GridSphere.cs" />
-    <Compile Include="Grid\ConformSS.cs" />
-    <Compile Include="Grid\ConformSA.cs" />
-    <Compile Include="Grid\GridTools.cs" />
+    <Compile Include="2 - FRAME\FrameUniform.cs" />
+    <Compile Include="2 - FRAME\FrameTools.cs" />
+    <Compile Include="2 - FRAME\FrameConform.cs" />
+    <Compile Include="1 - GRID\GridBox.cs" />
+    <Compile Include="1 - GRID\GridCylinder.cs" />
+    <Compile Include="1 - GRID\GridSphere.cs" />
+    <Compile Include="1 - GRID\ConformSS.cs" />
+    <Compile Include="1 - GRID\ConformSA.cs" />
+    <Compile Include="1 - GRID\GridTools.cs" />
     <Compile Include="IntraLatticeInfo.cs" />
-    <Compile Include="Mesh\LatticeMesh.cs" />
-    <Compile Include="Mesh\MeshTools.cs" />
-    <Compile Include="Grid\UniformBDS.cs" />
+    <Compile Include="3 - MESH\LatticeMesh.cs" />
+    <Compile Include="3 - MESH\MeshTools.cs" />
+    <Compile Include="1 - GRID\UniformBDS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Mesh\ViewReport.cs" />
+    <Compile Include="3 - MESH\ViewReport.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
