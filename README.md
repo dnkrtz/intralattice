@@ -13,9 +13,9 @@ The complete algorithm is divided into the following modules.
   * [GridBox](../master/src/IntraLattice/1 - GRID/GridBox.cs) - Simple Cartesian Grid (3D)
   * [GridCylinder](../master/src/IntraLattice/1 - GRID/GridCylinder.cs) - Simple Cylindrical Grid
   * [GridSphere](../master/src/IntraLattice/1 - GRID/GridSphere.cs) - Simple Spherical Grid
-  * [ConformSS](../master/src/IntraLattice/1 - GRID/ConformSS.cs) - Conforming Surface-to-Surface Grid
-  * [ConformSA](../master/src/IntraLattice/1 - GRID/ConformSA.cs) - Conforming Surface-to-Axis Grid
-  * [UniformBDS](../master/src/IntraLattice/1 - GRID/UniformBDS.cs) - Uniform Trimmed Grid (within Brep Design Space)
+  * [GridConformSS](../master/src/IntraLattice/1 - GRID/GridConformSS.cs) - Conforming Surface-to-Surface Grid
+  * [GridConformSA](../master/src/IntraLattice/1 - GRID/GridConformSA.cs) - Conforming Surface-to-Axis Grid
+  * [GridUniform](../master/src/IntraLattice/1 - GRID/GridUniform.cs) - Uniform Trimmed Grid (within Brep or Mesh)
 
 2. **FRAME** - Generates a lattice frame by mapping unit cell topologies to the grid.
   * [FrameConform](../master/src/IntraLattice/2 - FRAME/FrameConform.cs) - Maps lattice topology
