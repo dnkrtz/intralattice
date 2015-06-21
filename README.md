@@ -5,7 +5,7 @@ IntraLattice is a collection of generative CAD components for [Grasshopper](http
 ![alt text][logo]
 [logo]: ./preview.png "Logo Title Text 2"
 
-The basic workflow is illustrated above. We begin with a design space, a cube in this case. The first module (GRID) generates a structured grid of points within the design space, which define the corners of the unit cells. The second module (FRAME) maps the unit cell topologies to this grid. Finally, the third module (MESH) converts the lattice wireframe into a solid part, ready for 3D printing.
+The basic workflow is illustrated above. We begin with a design space, a cube in this case. The first module (GRID) generates a structured grid of points within the design space, which define the corners of the unit cells. The second module (FRAME) maps the unit cell topology to this grid. Finally, the third module (MESH) converts the lattice wireframe into a solid part, ready for 3D printing.
 
 ## Core Components
 
