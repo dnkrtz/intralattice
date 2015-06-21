@@ -42,22 +42,22 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Declare placeholder variables
-            List<Line> L = new List<Line>();
-            List<double> Rs = new List<double>();
-            List<double> Re = new List<double>();
+            List<Line> lineList = new List<Line>();
+            List<double> startRadiusList = new List<double>();
+            List<double> endRadiusList = new List<double>();
 
             // Attempt to fetch data inputs
-            if (!DA.GetDataList(0, L)) { return; }
-            if (!DA.GetDataList(1, Rs)) { return; }
-            if (!DA.GetDataList(2, Re)) { return; }
+            if (!DA.GetDataList(0, lineList)) { return; }
+            if (!DA.GetDataList(1, startRadiusList)) { return; }
+            if (!DA.GetDataList(2, endRadiusList)) { return; }
 
             // Validate data
-            if (L == null || L.Count == 0) { return; }
-            if (Rs == null || Rs.Count == 0 || Rs.Contains(0)) { return; }
-            if (Re == null || Re.Count == 0 || Rs.Contains(0)) { return; }
+            if (lineList == null || lineList.Count == 0) { return; }
+            if (startRadiusList == null || startRadiusList.Count == 0 || startRadiusList.Contains(0)) { return; }
+            if (endRadiusList == null || endRadiusList.Count == 0 || startRadiusList.Contains(0)) { return; }
 
             // Number of sides on each strut
-            int S = 6;
+            int sides = 6;
 
             //====================================================================================
             // STEP 1 - Data structure
@@ -66,48 +66,48 @@ namespace IntraLattice
             //====================================================================================
 
             // Initialize lists of objects
-            List<LatticePlate> Plates = new List<LatticePlate>();
-            List<LatticeNode> Nodes = new List<LatticeNode>();
+            List<LatticePlate> plates = new List<LatticePlate>();
+            List<LatticeNode> nodes = new List<LatticeNode>();
             // To avoid creating duplicates nodes, this list stores which nodes have been created
-            Point3dList NodeLookup = new Point3dList();
+            Point3dList nodeLookup = new Point3dList();
 
             // Cycle through all the struts, building the model as we go
-            for (int i = 0; i < L.Count; i++)
+            for (int i = 0; i < lineList.Count; i++)
             {
                 // Define plates for current strut
-                Plates.Add(new LatticePlate());     // PlatePoints[2*i+0] (from)
-                Plates.Add(new LatticePlate());     // PlatePoints[2*i+1] (to)
-                Plates[2 * i].Radius = Rs[i % Rs.Count];
-                Plates[2 * i + 1].Radius = Re[i % Re.Count];
-                Plates[2 * i].Normal = L[i].UnitTangent;
-                Plates[2 * i + 1].Normal = -Plates[2 * i].Normal;
+                plates.Add(new LatticePlate());     // PlatePoints[2*i+0] (from)
+                plates.Add(new LatticePlate());     // PlatePoints[2*i+1] (to)
+                plates[2 * i].Radius = startRadiusList[i % startRadiusList.Count];
+                plates[2 * i + 1].Radius = endRadiusList[i % endRadiusList.Count];
+                plates[2 * i].Normal = lineList[i].UnitTangent;
+                plates[2 * i + 1].Normal = -plates[2 * i].Normal;
 
                 // Setup nodes by checking endpoints of strut
-                List<Point3d> Pts = new List<Point3d>();
-                Pts.Add(L[i].From); Pts.Add(L[i].To);   // Start point first
+                List<Point3d> pts = new List<Point3d>();
+                pts.Add(lineList[i].From); pts.Add(lineList[i].To);   // Start point first
 
                 // Loops over the 2 nodes, updating the lattice model
                 for (int j = 0; j < 2; j++)
                 {
-                    int NodeIndex;
+                    int nodeIndex;
 
-                    int NI = NodeLookup.ClosestIndex(Pts[j]);
+                    int NI = nodeLookup.ClosestIndex(pts[j]);
 
                     // Check if node already exists (also, catch first iteration)
-                    if (i != 0 && NodeLookup[NI].DistanceTo(Pts[j]) < RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)
+                    if (i != 0 && nodeLookup[NI].DistanceTo(pts[j]) < RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)
                     {
-                        NodeIndex = NI;
+                        nodeIndex = NI;
                     }
                     // If node doesn't exist, create it and update the nodelookup list
                     else
                     {
-                        Nodes.Add(new LatticeNode(Pts[j]));
-                        NodeIndex = Nodes.Count - 1;
-                        NodeLookup.Add(Pts[j]);
+                        nodes.Add(new LatticeNode(pts[j]));
+                        nodeIndex = nodes.Count - 1;
+                        nodeLookup.Add(pts[j]);
                     }
 
-                    Plates[2 * i + j].NodeIndex = NodeIndex;        // 2*i+j is the correct index, recall that we must order them start to finish
-                    Nodes[NodeIndex].PlateIndices.Add(2 * i + j);
+                    plates[2 * i + j].NodeIndex = nodeIndex;        // 2*i+j is the correct index, recall that we must order them start to finish
+                    nodes[nodeIndex].PlateIndices.Add(2 * i + j);
 
                 }
             }
@@ -118,44 +118,44 @@ namespace IntraLattice
             //====================================================================================
 
             // Loop over all nodes
-            for (int i = 0; i < Nodes.Count; i++)
+            for (int i = 0; i < nodes.Count; i++)
             {
-                double TestOffset = 0;
+                double testOffset = 0;
 
                 // Loop over all possible pairs of plates on the node
                 // This automatically avoids setting offsets for nodes with a single strut
-                for (int j = 0; j < Nodes[i].PlateIndices.Count; j++)
+                for (int j = 0; j < nodes[i].PlateIndices.Count; j++)
                 {
-                    for (int k = j + 1; k < Nodes[i].PlateIndices.Count; k++)
+                    for (int k = j + 1; k < nodes[i].PlateIndices.Count; k++)
                     {
-                        int I1 = Nodes[i].PlateIndices[j];
-                        int I2 = Nodes[i].PlateIndices[k];
+                        int I1 = nodes[i].PlateIndices[j];
+                        int I2 = nodes[i].PlateIndices[k];
 
                         // Evaluate based on largest radius
-                        double R1 = Plates[I1].Radius;
-                        double R2 = Plates[I2].Radius;
+                        double R1 = plates[I1].Radius;
+                        double R2 = plates[I2].Radius;
                         double R = Math.Max(R1, R2);
                         // Compute angle between normals
-                        double Theta = Vector3d.VectorAngle(Plates[I1].Normal, Plates[I2].Normal);
+                        double theta = Vector3d.VectorAngle(plates[I1].Normal, plates[I2].Normal);
 
                         // If theta is more than 90deg, offset is simply based on a sphere at the node
-                        if (Theta >= Math.PI * 0.5) TestOffset = R / Math.Cos(Math.PI / S);
+                        if (theta >= Math.PI * 0.5) testOffset = R / Math.Cos(Math.PI / sides);
                         // Else, use simple trig
-                        else TestOffset = R / Math.Sin(Theta * 0.5);
+                        else testOffset = R / Math.Sin(theta * 0.5);
 
                         // If current test offset is greater (could be faster if we just set these in the loop below)
                         // But it wouldn't support variable offsets, which are beneficial in some scenarios
-                        if (TestOffset > Plates[I1].Offset) Plates[I1].Offset = TestOffset;
-                        if (TestOffset > Plates[I2].Offset) Plates[I2].Offset = TestOffset;
+                        if (testOffset > plates[I1].Offset) plates[I1].Offset = testOffset;
+                        if (testOffset > plates[I2].Offset) plates[I2].Offset = testOffset;
 
                     }
                 }
 
                 // Set the plate locations
-                foreach (int P in Nodes[i].PlateIndices)
+                foreach (int P in nodes[i].PlateIndices)
                 {
-                    LatticePlate Plate = Plates[P];
-                    Plates[P].Vtc.Add(Nodes[Plate.NodeIndex].Point3d + Plate.Normal * Plate.Offset);    // add plate centerpoint
+                    LatticePlate plate = plates[P];
+                    plates[P].Vtc.Add(nodes[plate.NodeIndex].Point3d + plate.Normal * plate.Offset);    // add plate centerpoint
                 }
 
             }
@@ -167,80 +167,80 @@ namespace IntraLattice
             //====================================================================================
 
             // Initialize the output mesh
-            Mesh FullMesh = new Mesh();
+            Mesh fullMesh = new Mesh();
 
             // SLEEVES - Loop over all pairs of plates (struts)
             // Create all plate vertices and sleeve vertices
-            for (int i = 0; i < L.Count; i++)
+            for (int i = 0; i < lineList.Count; i++)
             {
-                Mesh SleeveMesh = new Mesh();
-                double AvgRadius = (Plates[2 * i].Radius + Plates[2 * i + 1].Radius) / 2;
-                double Length = Plates[2 * i].Vtc[0].DistanceTo(Plates[2 * i + 1].Vtc[0]);
-                double D = Math.Max((Math.Round(Length * 0.5 / AvgRadius) * 2), 2); // Number of sleeve divisions (must be even)
+                Mesh sleeveMesh = new Mesh();
+                double avgRadius = (plates[2 * i].Radius + plates[2 * i + 1].Radius) / 2;
+                double length = plates[2 * i].Vtc[0].DistanceTo(plates[2 * i + 1].Vtc[0]);
+                double divisions = Math.Max((Math.Round(length * 0.5 / avgRadius) * 2), 2); // Number of sleeve divisions (must be even)
 
                 // Create sleeve vertices
                 // Loops: j along strut, k around strut
-                for (int j = 0; j <= D; j++)
+                for (int j = 0; j <= divisions; j++)
                 {
-                    Point3d Knuckle = Plates[2 * i].Vtc[0] + (Plates[2 * i].Normal * (Length * j / D));
-                    Plane plane = new Plane(Knuckle, Plates[2 * i].Normal);
-                    double R = Plates[2 * i].Radius - j / (double)D * (Plates[2 * i].Radius - Plates[2 * i + 1].Radius); //variable radius
+                    Point3d knucklePt = plates[2 * i].Vtc[0] + (plates[2 * i].Normal * (length * j / divisions));
+                    Plane plane = new Plane(knucklePt, plates[2 * i].Normal);
+                    double R = plates[2 * i].Radius - j / (double)divisions * (plates[2 * i].Radius - plates[2 * i + 1].Radius); //variable radius
 
-                    for (int k = 0; k < S; k++)
+                    for (int k = 0; k < sides; k++)
                     {
-                        double angle = k * 2 * Math.PI / S + j * Math.PI / S;
-                        SleeveMesh.Vertices.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle))); // create vertex
+                        double angle = k * 2 * Math.PI / sides + j * Math.PI / sides;
+                        sleeveMesh.Vertices.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle))); // create vertex
 
                         // if hullpoints, save them for hulling
-                        if (j == 0) Plates[2 * i].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
-                        if (j == D) Plates[2 * i + 1].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
+                        if (j == 0) plates[2 * i].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
+                        if (j == divisions) plates[2 * i + 1].Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
                     }
                 }
 
                 // Create sleeve faces
-                MeshTools.SleeveStitch(ref SleeveMesh, D, S);
-                FullMesh.Append(SleeveMesh);
+                MeshTools.SleeveStitch(ref sleeveMesh, divisions, sides);
+                fullMesh.Append(sleeveMesh);
 
             }
 
-            List<Mesh> HullMeshes = new List<Mesh>();
+            List<Mesh> hullMeshes = new List<Mesh>();
 
             // HULLS - Loop over all nodes
-            for (int i = 0; i < Nodes.Count; i++)
+            for (int i = 0; i < nodes.Count; i++)
             {
-                int PlateCount = Nodes[i].PlateIndices.Count;
+                int plateCount = nodes[i].PlateIndices.Count;
                 // If node has a single plate, create an endmesh
-                if (PlateCount < 2)
+                if (plateCount < 2)
                 {
-                    Mesh EndMesh = new Mesh();
+                    Mesh endMesh = new Mesh();
                     // Add all plate points to mesh vertices
-                    foreach (Point3d PlatePoint in Plates[Nodes[i].PlateIndices[0]].Vtc) EndMesh.Vertices.Add(PlatePoint);
-                    MeshTools.EndFaceStitch(ref EndMesh, S);
-                    FullMesh.Append(EndMesh);
+                    foreach (Point3d platePoint in plates[nodes[i].PlateIndices[0]].Vtc) endMesh.Vertices.Add(platePoint);
+                    MeshTools.EndFaceStitch(ref endMesh, sides);
+                    fullMesh.Append(endMesh);
                 }
                 // If node has more than 1 plate, create a hullmesh
                 else
                 {
-                    Mesh HullMesh = new Mesh();
+                    Mesh hullMesh = new Mesh();
 
                     // Gather all hull points (i.e. all plate points of the node)
-                    List<Point3d> HullPoints = new List<Point3d>();
-                    foreach (int P in Nodes[i].PlateIndices) HullPoints.AddRange(Plates[P].Vtc);
-                    MeshTools.ConvexHull(ref HullMesh, HullPoints, S);
-                    HullMeshes.Add(HullMesh);
+                    List<Point3d> hullPoints = new List<Point3d>();
+                    foreach (int pIndex in nodes[i].PlateIndices) hullPoints.AddRange(plates[pIndex].Vtc);
+                    MeshTools.ConvexHull(ref hullMesh, hullPoints, sides);
+                    hullMeshes.Add(hullMesh);
                 }
             }
 
             // POST-PROCESS FINAL MESH
-            FullMesh.Vertices.CombineIdentical(true, true);
-            FullMesh.FaceNormals.ComputeFaceNormals();
-            FullMesh.UnifyNormals();
-            FullMesh.Normals.ComputeNormals();
+            fullMesh.Vertices.CombineIdentical(true, true);
+            fullMesh.FaceNormals.ComputeFaceNormals();
+            fullMesh.UnifyNormals();
+            fullMesh.Normals.ComputeNormals();
 
-            DA.SetDataList(0, Plates[0].Vtc);
-            DA.SetData(1, FullMesh);
-            DA.SetDataList(2, L);
-            DA.SetDataList(3, HullMeshes);
+            DA.SetDataList(0, plates[0].Vtc);
+            DA.SetData(1, fullMesh);
+            DA.SetDataList(2, lineList);
+            DA.SetDataList(3, hullMeshes);
         }
 
         public override GH_Exposure Exposure

@@ -17,14 +17,14 @@ namespace IntraLattice
         /// N - is the number of unit cells in each direction.
         /// BDS - Optional design space parameter
         /// </summary>
-        public static void MakeGridBox(ref GH_Structure<GH_Point> GridTree, Plane BasePlane, List<double> CS, List<int> N, Brep BrepDS = null)
+        public static void MakeGridBox(ref GH_Structure<GH_Point> gridTree, Plane basePlane, List<double> CS, List<int> N, Brep brepDS = null)
         {
             // Define iteration vectors in each direction (accounting for Cell Size)
-            Vector3d Vx = CS[0] * BasePlane.XAxis;
-            Vector3d Vy = CS[1] * BasePlane.YAxis;
-            Vector3d Vz = CS[2] * BasePlane.ZAxis;
+            Vector3d vectorX = CS[0] * basePlane.XAxis;
+            Vector3d vectorY = CS[1] * basePlane.YAxis;
+            Vector3d vectorZ = CS[2] * basePlane.ZAxis;
 
-            Point3d CurrentPt = new Point3d();
+            Point3d currentPt = new Point3d();
 
             // Create grid of points (as data tree)
             for (int i = 0; i <= N[0]; i++)
@@ -34,11 +34,11 @@ namespace IntraLattice
                     for (int k = 0; k <= N[2]; k++)
                     {
                         // Compute position vector
-                        Vector3d V = i * Vx + j * Vy + k * Vz;
-                        CurrentPt = BasePlane.Origin + V;
+                        Vector3d V = i * vectorX + j * vectorY + k * vectorZ;
+                        currentPt = basePlane.Origin + V;
                         
                         GH_Path TreePath = new GH_Path(i, j, k);            // Construct path in tree
-                        GridTree.Append(new GH_Point(CurrentPt), TreePath);     // Add point to tree
+                        gridTree.Append(new GH_Point(currentPt), TreePath);     // Add point to tree
 
                     }
                 }

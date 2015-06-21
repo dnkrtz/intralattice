@@ -48,92 +48,92 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Retrieve and validate data
-            GeometryBase DS = null;
-            Plane OrientationPlane = Plane.Unset;
-            double CSx = 0;
-            double CSy = 0;
-            double CSz = 0;
+            GeometryBase designSpace = null;
+            Plane orientationPlane = Plane.Unset;
+            double xCellSize = 0;
+            double yCellSize = 0;
+            double zCellSize = 0;
 
-            if (!DA.GetData(0, ref DS)) { return; }
-            if (!DA.GetData(1, ref OrientationPlane)) { return; }
-            if (!DA.GetData(2, ref CSx)) { return; }
-            if (!DA.GetData(3, ref CSy)) { return; }
-            if (!DA.GetData(4, ref CSz)) { return; }
+            if (!DA.GetData(0, ref designSpace)) { return; }
+            if (!DA.GetData(1, ref orientationPlane)) { return; }
+            if (!DA.GetData(2, ref xCellSize)) { return; }
+            if (!DA.GetData(3, ref yCellSize)) { return; }
+            if (!DA.GetData(4, ref zCellSize)) { return; }
 
-            if (!DS.IsValid) { return; }
-            if (DS.ObjectType != ObjectType.Brep && DS.ObjectType != ObjectType.Mesh) { return; }   // design space must be a Brep or a Mesh
-            if (!OrientationPlane.IsValid) { return; }
-            if (CSx == 0) { return; } 
-            if (CSy == 0) { return; }
-            if (CSz == 0) { return; }
+            if (!designSpace.IsValid) { return; }
+            if (designSpace.ObjectType != ObjectType.Brep && designSpace.ObjectType != ObjectType.Mesh) { return; }   // design space must be a Brep or a Mesh
+            if (!orientationPlane.IsValid) { return; }
+            if (xCellSize == 0) { return; } 
+            if (yCellSize == 0) { return; }
+            if (zCellSize == 0) { return; }
 
             // Create bounding box
-            Box BBox = new Box();
-            DS.GetBoundingBox(OrientationPlane, out BBox);
+            Box bBox = new Box();
+            designSpace.GetBoundingBox(orientationPlane, out bBox);
 
             // Get corner points
-            Point3d[] BBoxCorner = BBox.GetCorners();
+            Point3d[] bBoxCorners = bBox.GetCorners();
 
-            double Lx = BBoxCorner[0].DistanceTo(BBoxCorner[1]);
-            double Ly = BBoxCorner[0].DistanceTo(BBoxCorner[3]);
-            double Lz = BBoxCorner[0].DistanceTo(BBoxCorner[4]);
+            double xLength = bBoxCorners[0].DistanceTo(bBoxCorners[1]);
+            double yLength = bBoxCorners[0].DistanceTo(bBoxCorners[3]);
+            double zLength = bBoxCorners[0].DistanceTo(bBoxCorners[4]);
 
             // Determine number of iterations required to fill the box
-            int Nx = (int)Math.Ceiling(Lx / CSx); // Roundup to next integer if non-integer
-            int Ny = (int)Math.Ceiling(Ly / CSy);
-            int Nz = (int)Math.Ceiling(Lz / CSz);
+            int nX = (int)Math.Ceiling(xLength / xCellSize); // Roundup to next integer if non-integer
+            int nY = (int)Math.Ceiling(yLength / yCellSize);
+            int nZ = (int)Math.Ceiling(zLength / zCellSize);
 
             // Prepare input for grid generation
-            GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
-            Plane BasePlane = new Plane(BBoxCorner[0], BBoxCorner[1], BBoxCorner[3]);
+            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
+            Plane basePlane = new Plane(bBoxCorners[0], bBoxCorners[1], bBoxCorners[3]);
 
             // Define iteration vectors in each direction (accounting for Cell Size)
-            Vector3d Vx = CSx * BasePlane.XAxis;
-            Vector3d Vy = CSy * BasePlane.YAxis;
-            Vector3d Vz = CSz * BasePlane.ZAxis;
+            Vector3d vectorX = xCellSize * basePlane.XAxis;
+            Vector3d vectorY = yCellSize * basePlane.YAxis;
+            Vector3d vectorZ = zCellSize * basePlane.ZAxis;
 
-            Point3d CurrentPt = new Point3d();
+            Point3d currentPt = new Point3d();
 
             // Create grid of points (as data tree)
-            for (int i = 0; i <= Nx; i++)
+            for (int i = 0; i <= nX; i++)
             {
-                for (int j = 0; j <= Ny; j++)
+                for (int j = 0; j <= nY; j++)
                 {
-                    for (int k = 0; k <= Nz; k++)
+                    for (int k = 0; k <= nZ; k++)
                     {
                         // Compute position vector
-                        Vector3d V = i * Vx + j * Vy + k * Vz;
-                        CurrentPt = BasePlane.Origin + V;
+                        Vector3d V = i * vectorX + j * vectorY + k * vectorZ;
+                        currentPt = basePlane.Origin + V;
 
                         // Cast according to type (design space could be mesh or brep)
-                        Boolean IsInside = false;
-                        if (DS.ObjectType == ObjectType.Brep)       IsInside = ((Brep)DS).IsPointInside(CurrentPt, RhinoMath.SqrtEpsilon, false);                           
-                        else if (DS.ObjectType == ObjectType.Mesh)  IsInside = ((Mesh)DS).IsPointInside(CurrentPt, RhinoMath.SqrtEpsilon, false);
+                        Boolean isInside = false;
+                        if (designSpace.ObjectType == ObjectType.Brep)       isInside = ((Brep)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);                           
+                        else if (designSpace.ObjectType == ObjectType.Mesh)  isInside = ((Mesh)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
 
                         // Check if point is inside the Brep Design Space
-                        if (IsInside)
+                        if (isInside)
                         {
                             // Neighbours of an inside node must be created (since they share a strut with an inside node, which we will be trimming)
                             // So before creating the node, we ensure that all its neighbours have been created
                             // This might seem excessive, but it's a robust approach
-                            List<GH_Path> Neighbours = new List<GH_Path>();
-                            Neighbours.Add(new GH_Path(i-1, j, k));
-                            Neighbours.Add(new GH_Path(i, j-1, k));
-                            Neighbours.Add(new GH_Path(i, j, k-1));
-                            Neighbours.Add(new GH_Path(i+1, j, k));
-                            Neighbours.Add(new GH_Path(i, j+1, k));
-                            Neighbours.Add(new GH_Path(i, j, k+1));
-                            GH_Path CurrentPath = new GH_Path(i, j, k);
+                            List<GH_Path> neighbours = new List<GH_Path>();
+                            neighbours.Add(new GH_Path(i-1, j, k));
+                            neighbours.Add(new GH_Path(i, j-1, k));
+                            neighbours.Add(new GH_Path(i, j, k-1));
+                            neighbours.Add(new GH_Path(i+1, j, k));
+                            neighbours.Add(new GH_Path(i, j+1, k));
+                            neighbours.Add(new GH_Path(i, j, k+1));
+                            GH_Path currentPath = new GH_Path(i, j, k);
 
                             // If the path doesn't exist, it hasn't been created, so create it
-                            if (!GridTree.PathExists(Neighbours[0]))    GridTree.Append(new GH_Point(CurrentPt - Vx), Neighbours[0]);
-                            if (!GridTree.PathExists(Neighbours[1]))    GridTree.Append(new GH_Point(CurrentPt - Vy), Neighbours[1]);
-                            if (!GridTree.PathExists(Neighbours[2]))    GridTree.Append(new GH_Point(CurrentPt - Vz), Neighbours[2]);
-                            if (!GridTree.PathExists(Neighbours[3]))    GridTree.Append(new GH_Point(CurrentPt + Vx), Neighbours[3]);
-                            if (!GridTree.PathExists(Neighbours[4]))    GridTree.Append(new GH_Point(CurrentPt + Vy), Neighbours[4]);
-                            if (!GridTree.PathExists(Neighbours[5]))    GridTree.Append(new GH_Point(CurrentPt + Vz), Neighbours[5]);
+                            if (!gridTree.PathExists(neighbours[0]))    gridTree.Append(new GH_Point(currentPt - vectorX), neighbours[0]);
+                            if (!gridTree.PathExists(neighbours[1]))    gridTree.Append(new GH_Point(currentPt - vectorY), neighbours[1]);
+                            if (!gridTree.PathExists(neighbours[2]))    gridTree.Append(new GH_Point(currentPt - vectorZ), neighbours[2]);
+                            if (!gridTree.PathExists(neighbours[3]))    gridTree.Append(new GH_Point(currentPt + vectorX), neighbours[3]);
+                            if (!gridTree.PathExists(neighbours[4]))    gridTree.Append(new GH_Point(currentPt + vectorY), neighbours[4]);
+                            if (!gridTree.PathExists(neighbours[5]))    gridTree.Append(new GH_Point(currentPt + vectorZ), neighbours[5]);
                             // Finally, same goes for the current node
-                            if (!GridTree.PathExists(CurrentPath))      GridTree.Append(new GH_Point(CurrentPt), CurrentPath);
+                            if (!gridTree.PathExists(currentPath))      gridTree.Append(new GH_Point(currentPt), currentPath);
                         }
 
                     }
@@ -142,7 +142,7 @@ namespace IntraLattice
           
 
             // Output data
-            DA.SetDataTree(0, GridTree);
+            DA.SetDataTree(0, gridTree);
 
         }
 

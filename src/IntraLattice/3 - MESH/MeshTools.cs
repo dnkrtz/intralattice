@@ -17,71 +17,71 @@ namespace IntraLattice
         /// This approach is modified to take advantage of certain assumptions about the input
         /// - All points lie on the hull
         /// </summary>
-        public static void ConvexHull(ref Mesh HullMesh, List<Point3d> Pts, int S)
+        public static void ConvexHull(ref Mesh hullMesh, List<Point3d> pts, int sides)
         {
-            int TotalPts = Pts.Count;
+            int totalPts = pts.Count;
 
             // 1. Create initial tetrahedron.
             // Form triangle from 3 first points (lie on same plate, thus, same plane)
-            HullMesh.Vertices.Add(Pts[0]);
-            HullMesh.Vertices.Add(Pts[1]);
-            HullMesh.Vertices.Add(Pts[2]);
-            Plane PlaneStart = new Plane(Pts[0], Pts[1], Pts[2]);
+            hullMesh.Vertices.Add(pts[0]);
+            hullMesh.Vertices.Add(pts[1]);
+            hullMesh.Vertices.Add(pts[2]);
+            Plane PlaneStart = new Plane(pts[0], pts[1], pts[2]);
             // Form tetrahedron with a 4th point which does not lie on the same plane
             // Point S+1 is the centerpoint of another plate, therefore it is surely on a different plane.
-            HullMesh.Vertices.Add(Pts[S + 1]);
+            hullMesh.Vertices.Add(pts[sides + 1]);
             // Stitch faces of tetrahedron
-            HullMesh.Faces.AddFace(0, 2, 1);
-            HullMesh.Faces.AddFace(0, 3, 2);
-            HullMesh.Faces.AddFace(0, 1, 3);
-            HullMesh.Faces.AddFace(1, 2, 3);
+            hullMesh.Faces.AddFace(0, 2, 1);
+            hullMesh.Faces.AddFace(0, 3, 2);
+            hullMesh.Faces.AddFace(0, 1, 3);
+            hullMesh.Faces.AddFace(1, 2, 3);
 
             // 2. Begin the incremental hulling process
             // Remove points already checked
-            Pts.RemoveAt(S + 1);
-            Pts.RemoveRange(0, 3);
-            double Tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 0.1;
+            pts.RemoveAt(sides + 1);
+            pts.RemoveRange(0, 3);
+            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 0.1;
 
 
             // Loop through the remaining points
-            for (int i = 0; i < Pts.Count; i++)
+            for (int i = 0; i < pts.Count; i++)
             {
-                NormaliseMesh(ref HullMesh);
+                NormaliseMesh(ref hullMesh);
 
                 // Find visible faces
-                List<int> SeenFaces = new List<int>();
-                for (int FaceIndex = 0; FaceIndex < HullMesh.Faces.Count; FaceIndex++)
+                List<int> seenFaces = new List<int>();
+                for (int faceIndex = 0; faceIndex < hullMesh.Faces.Count; faceIndex++)
                 {
-                    Vector3d TestVect = Pts[i] - HullMesh.Faces.GetFaceCenter(FaceIndex);
-                    double Angle = Vector3d.VectorAngle(HullMesh.FaceNormals[FaceIndex], TestVect);
-                    Plane PlaneTest = new Plane(HullMesh.Faces.GetFaceCenter(FaceIndex), HullMesh.FaceNormals[FaceIndex]);
-                    if (Angle < Math.PI * 0.5 || Math.Abs(PlaneTest.DistanceTo(Pts[i])) < Tol) { SeenFaces.Add(FaceIndex); }
+                    Vector3d testVect = pts[i] - hullMesh.Faces.GetFaceCenter(faceIndex);
+                    double angle = Vector3d.VectorAngle(hullMesh.FaceNormals[faceIndex], testVect);
+                    Plane planeTest = new Plane(hullMesh.Faces.GetFaceCenter(faceIndex), hullMesh.FaceNormals[faceIndex]);
+                    if (angle < Math.PI * 0.5 || Math.Abs(planeTest.DistanceTo(pts[i])) < tol) { seenFaces.Add(faceIndex); }
                 }
 
                 // Remove visible faces
-                HullMesh.Faces.DeleteFaces(SeenFaces);
+                hullMesh.Faces.DeleteFaces(seenFaces);
                 // Add current point
-                HullMesh.Vertices.Add(Pts[i]);
+                hullMesh.Vertices.Add(pts[i]);
 
-                List<MeshFace> AddFaces = new List<MeshFace>();
+                List<MeshFace> addFaces = new List<MeshFace>();
                 // Close open hull with new vertex
-                for (int EdgeIndex = 0; EdgeIndex < HullMesh.TopologyEdges.Count; EdgeIndex++)
+                for (int edgeIndex = 0; edgeIndex < hullMesh.TopologyEdges.Count; edgeIndex++)
                 {
-                    if (!HullMesh.TopologyEdges.IsSwappableEdge(EdgeIndex))
+                    if (!hullMesh.TopologyEdges.IsSwappableEdge(edgeIndex))
                     {
-                        IndexPair V = HullMesh.TopologyEdges.GetTopologyVertices(EdgeIndex);
-                        int I1 = HullMesh.TopologyVertices.MeshVertexIndices(V.I)[0];
-                        int I2 = HullMesh.TopologyVertices.MeshVertexIndices(V.J)[0];
-                        AddFaces.Add(new MeshFace(I1, I2, HullMesh.Vertices.Count - 1));
+                        IndexPair V = hullMesh.TopologyEdges.GetTopologyVertices(edgeIndex);
+                        int I1 = hullMesh.TopologyVertices.MeshVertexIndices(V.I)[0];
+                        int I2 = hullMesh.TopologyVertices.MeshVertexIndices(V.J)[0];
+                        addFaces.Add(new MeshFace(I1, I2, hullMesh.Vertices.Count - 1));
                     }
                 }
-                HullMesh.Faces.AddFaces(AddFaces);
+                hullMesh.Faces.AddFaces(addFaces);
             }
 
-            NormaliseMesh(ref HullMesh);
+            NormaliseMesh(ref hullMesh);
 
             // 3. Remove plate faces
-            List<int> DeleteFaces = new List<int>();
+            List<int> deleteFaces = new List<int>();
 
 
         }
@@ -89,31 +89,31 @@ namespace IntraLattice
         /// <summary>
         /// Fix orientation of face normals
         /// </summary>
-        public static void NormaliseMesh(ref Mesh Msh)
+        public static void NormaliseMesh(ref Mesh mesh)
         {
-            if (Msh.SolidOrientation() == -1) Msh.Flip(true, true, true);
-            Msh.FaceNormals.ComputeFaceNormals();
-            Msh.UnifyNormals();
-            Msh.Normals.ComputeNormals();
+            if (mesh.SolidOrientation() == -1) mesh.Flip(true, true, true);
+            mesh.FaceNormals.ComputeFaceNormals();
+            mesh.UnifyNormals();
+            mesh.Normals.ComputeNormals();
         }
 
         /// <summary>
         /// Constructs sleeve mesh faces (stitches the vertices)
         /// </summary>
-        public static void SleeveStitch(ref Mesh StrutMesh, double D, int S)
+        public static void SleeveStitch(ref Mesh strutMesh, double divisions, int sides)
         {
             int V1, V2, V3, V4;
-            for (int j = 0; j < D; j++)
+            for (int j = 0; j < divisions; j++)
             {
-                for (int i = 0; i < S; i++)
+                for (int i = 0; i < sides; i++)
                 {
-                    V1 = (j * S) + i;
-                    V2 = (j * S) + i + S;
-                    V3 = (j * S) + S + (i + 1) % (S);
-                    V4 = (j * S) + (i + 1) % (S);
+                    V1 = (j * sides) + i;
+                    V2 = (j * sides) + i + sides;
+                    V3 = (j * sides) + sides + (i + 1) % (sides);
+                    V4 = (j * sides) + (i + 1) % (sides);
 
-                    StrutMesh.Faces.AddFace(V1, V2, V4);
-                    StrutMesh.Faces.AddFace(V2, V3, V4);
+                    strutMesh.Faces.AddFace(V1, V2, V4);
+                    strutMesh.Faces.AddFace(V2, V3, V4);
                 }
             }
         }
@@ -121,11 +121,11 @@ namespace IntraLattice
         /// <summary>
         /// Construts endface mesh (single strut nodes)
         /// </summary>
-        public static void EndFaceStitch(ref Mesh EndMesh, int S)
+        public static void EndFaceStitch(ref Mesh endMesh, int sides)
         {
             // Stitch faces
-            for (int i = 1; i < S; i++) EndMesh.Faces.AddFace(0, i, i + 1);
-            EndMesh.Faces.AddFace(0, S, 1); // last face wraps*/
+            for (int i = 1; i < sides; i++) endMesh.Faces.AddFace(0, i, i + 1);
+            endMesh.Faces.AddFace(0, sides, 1); // last face wraps*/
         }
     }
 

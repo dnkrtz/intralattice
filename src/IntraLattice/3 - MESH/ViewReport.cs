@@ -32,25 +32,25 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Set the mesh
-            Mesh M = new Mesh();
-            if (!DA.GetData(0, ref M)) { return; }
-            if (M == null) { return; }
+            Mesh mesh = new Mesh();
+            if (!DA.GetData(0, ref mesh)) { return; }
+            if (mesh == null) { return; }
 
-            String Report = "";
+            String report = "";
 
             // ADD PREVIEW HERE
 
             // Count naked edges
-            int nakeds = M.GetNakedEdges().Length;
-            Report += String.Format("Mesh has {0} naked edges. \n", nakeds);
+            int nakeds = mesh.GetNakedEdges().Length;
+            report += String.Format("Mesh has {0} naked edges. \n", nakeds);
 
             // Inspect mesh as solid
-            if (M.SolidOrientation() == 1) Report += "Mesh is a solid. \n";
-            else if (M.SolidOrientation() == 0) Report += "Mesh is NOT a solid. \n";
+            if (mesh.SolidOrientation() == 1) report += "Mesh is a solid. \n";
+            else if (mesh.SolidOrientation() == 0) report += "Mesh is NOT a solid. \n";
             else // inward facing normals
             {
-                M.Flip(true, true, true);
-                Report += "Mesh is a solid. (normals have been flipped) \n";
+                mesh.Flip(true, true, true);
+                report += "Mesh is a solid. (normals have been flipped) \n";
             }
             
             // Attempting automatic bake
@@ -62,7 +62,7 @@ namespace IntraLattice
             
 
             // Output report
-            DA.SetData(0, Report);
+            DA.SetData(0, report);
 
         }
 
