@@ -10,9 +10,9 @@ using Grasshopper.Kernel.Types;
 
 namespace IntraLattice
 {
-    public class ConformSS : GH_Component
+    public class GridConformSS : GH_Component
     {
-        public ConformSS()
+        public GridConformSS()
             : base("ConformSS", "ConfSS",
                 "Generates a conforming point grid between two surfaces.",
                 "IntraLattice2", "Grid")

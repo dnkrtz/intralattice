@@ -14,9 +14,9 @@ using Rhino.Geometry.Intersect;
 
 namespace IntraLattice
 {
-    public class ConformSA : GH_Component
+    public class GridConformSA : GH_Component
     {
-        public ConformSA()
+        public GridConformSA()
             : base("ConformSA", "ConfSA",
                 "Generates conforming lattice grid between a surface and an axis",
                 "IntraLattice2", "Grid")

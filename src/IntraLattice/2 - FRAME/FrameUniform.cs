@@ -16,7 +16,7 @@ namespace IntraLattice
     public class FrameUniform : GH_Component
     {
         public FrameUniform()
-            : base("FrameUniform", "CMap",
+            : base("FrameUniform", "FrameUnif",
                 "Populates grid with lattice topology (and trims to design space)",
                 "IntraLattice2", "Frame")
         {
@@ -25,7 +25,7 @@ namespace IntraLattice
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddPointParameter("Point Grid", "G", "Conformal lattice grid", GH_ParamAccess.tree);
-            pManager.AddGenericParameter("Design Space", "DS", "Design space to trim with (Brep or Mesh)", GH_ParamAccess.item)
+            pManager.AddGenericParameter("Design Space", "DS", "Design space to trim with (Brep or Mesh)", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Topology", "Topo", "Unit cell topology\n0 - grid\n1 - x\n2 - star\n3 - star2\n4 - octa)", GH_ParamAccess.item, 0);
             
         }
@@ -41,9 +41,12 @@ namespace IntraLattice
             int topo = 0;
             GeometryBase designSpace = null;
             GH_Structure<GH_Point> gridTree = null;
+
             // Attempt to fetch data
-            if (!DA.GetData(0, ref topo)) { return; }
-            if (!DA.GetDataTree(1, out gridTree)) { return; }
+            if (!DA.GetDataTree(0, out gridTree)) { return; }
+            if (!DA.GetData(1, ref designSpace)) { return; }
+            if (!DA.GetData(2, ref topo)) { return; }
+
             // Validate data
             if (gridTree == null) { return; }
             if (!designSpace.IsValid) { return; }
@@ -78,7 +81,7 @@ namespace IntraLattice
                         FrameTools.TopologyNeighbours(ref neighbourPaths, topo, indx, i, j, k);
 
                         // Nere we create the actual struts
-                        // Firt, make sure currentpath exists in the tree
+                        // First, make sure currentpath exists in the tree
                         if (gridTree.PathExists(currentPath))
                         {
                             // Connect current node to all its neighbours
@@ -91,22 +94,46 @@ namespace IntraLattice
                                     Point3d node2 = gridTree[neighbourPath][0].Value;
                                     LineCurve strut = new LineCurve(new Line(node1, node2), 0, 1);  // set line, with curve parameter domain [0,1]
 
+                                    // For BREP design space
+                                    if (designSpace.ObjectType == ObjectType.Brep)
+                                    {
+                                        Point3d[] intersectionPoint = null; // the intersection point
+                                        Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
+                                        bool[] nodeInside = new bool[2] { false, false };
 
+                                        // Could do this in the grid section (set bool values)
+                                        if (((Brep)designSpace).IsPointInside(node1, Rhino.RhinoMath.SqrtEpsilon, false))
+                                            nodeInside[0] = true;
+                                        if (((Brep)designSpace).IsPointInside(node2, Rhino.RhinoMath.SqrtEpsilon, false))
+                                            nodeInside[1] = true;
 
-                                    Intersection.CurveBrep(strut, (Brep)designSpace, Rhino.RhinoMath.EpsilonEquals, out overlapCurves, out intersectionPoints);
+                                        // Now perform checks
+                                        if (!nodeInside[0] && !nodeInside[1])
+                                            continue; // if neither node is inside, don't create a strut, skip to next loop
+                                        else if (nodeInside[0] && nodeInside[1])
+                                            struts.Add(new GH_Line(strut.Line)); // if both nodes are inside, add full strut
+                                        else
+                                        {
+                                            // if nodes are on opposite sides of the space boundary, TRIM
+                                            // Begin by intersecting the brep
+                                            Intersection.CurveBrep(strut, ((Brep)designSpace), Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPoint);
 
-                                    Intersection.MeshLine(Mesh(AppDomainSetup)
-
-
-                                    struts.Add(new GH_Line(strut));
-
+                                            // If no intersection was found, something went wrong, don't create a strut, skip to next loop
+                                            if (intersectionPoint == null) continue;
+                                            else
+                                            {
+                                                if (nodeInside[0]) struts.Add(new GH_Line(new Line(node1, intersectionPoint[0])));
+                                                else struts.Add(new GH_Line(new Line(node2, intersectionPoint[0])));
+                                            }
+                                        }
+                                    }
+                                    // For MESH design space
+                                    else if (designSpace.ObjectType == ObjectType.Mesh) ;
+                                        //Intersection.MeshLine((Mesh)designSpace, strut.Line, );
 
                                 }
                             }
                         }
-                        
-
-                        //
                     }
                 }
             }
