@@ -46,21 +46,21 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Declare placeholder variables and assign initial invalid data.
-            int Topo = 0;
-            GH_Structure<GH_Point> GridTree = null;
+            int topo = 0;
+            GH_Structure<GH_Point> gridTree = null;
             // Attempt to fetch data
-            if (!DA.GetData(0, ref Topo)) { return; }
-            if (!DA.GetDataTree(1, out GridTree)) { return; }
+            if (!DA.GetData(0, ref topo)) { return; }
+            if (!DA.GetDataTree(1, out gridTree)) { return; }
             // Validate data
-            if (GridTree == null) { return; }
+            if (gridTree == null) { return; }
 
             // Get size of the tree
             
-            int[] index = GridTree.get_Path(GridTree.LongestPathIndex()).Indices;
+            int[] index = gridTree.get_Path(gridTree.LongestPathIndex()).Indices;
             List<int> indx = new List<int>(index); // Cast to list
 
             // Initiate list of lattice lines
-            List<GH_Line> Struts = new List<GH_Line>();
+            List<GH_Line> struts = new List<GH_Line>();
 
             for (int i = 0; i <= indx[0]; i++)
             {
@@ -70,25 +70,25 @@ namespace IntraLattice
                     {
 
                         // We'll be needing the data tree path of the current node, and those of its neighbours
-                        GH_Path CurrentPath = new GH_Path(i, j, k);
-                        List<GH_Path> NeighbourPaths = new List<GH_Path>();
+                        GH_Path currentPath = new GH_Path(i, j, k);
+                        List<GH_Path> neighbourPaths = new List<GH_Path>();
 
                         // Get neighbours!!
-                        FrameTools.TopologyNeighbours(ref NeighbourPaths, Topo, indx, i, j, k);
+                        FrameTools.TopologyNeighbours(ref neighbourPaths, topo, indx, i, j, k);
 
                         // Nere we create the actual struts
                         // Firt, make sure currentpath exists in the tree
-                        if (GridTree.PathExists(CurrentPath))
+                        if (gridTree.PathExists(currentPath))
                         {
                             // Connect current node to all its neighbours
-                            Point3d Node1 = GridTree[CurrentPath][0].Value;
-                            foreach (GH_Path NeighbourPath in NeighbourPaths)
+                            Point3d pt1 = gridTree[currentPath][0].Value;
+                            foreach (GH_Path NeighbourPath in neighbourPaths)
                             {
                                 // Again, make sure the neighbourpath exists in the tree
-                                if (GridTree.PathExists(NeighbourPath))
+                                if (gridTree.PathExists(NeighbourPath))
                                 {
-                                    Point3d Node2 = GridTree[NeighbourPath][0].Value;
-                                    Struts.Add(new GH_Line(new Line(Node1, Node2)));
+                                    Point3d pt2 = gridTree[NeighbourPath][0].Value;
+                                    struts.Add(new GH_Line(new Line(pt1, pt2)));
                                 }
                             }
                         }
@@ -98,7 +98,7 @@ namespace IntraLattice
             }
 
             // Output data
-            DA.SetDataList(0, Struts);
+            DA.SetDataList(0, struts);
 
         }
 

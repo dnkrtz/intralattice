@@ -57,65 +57,61 @@ namespace IntraLattice
         {
             // 1. Declare placeholder variables and assign initial invalid data.
             //    This way, if the input parameters fail to supply valid data, we know when to abort.
-            double CSx = 0;
-            double CSy = 0;
-            double CSz = 0;
-            int Nx = 0;
-            int Ny = 0;
-            int Nz = 0;
+            double xCellSize = 0;
+            double yCellSize = 0;
+            double zCellSize = 0;
+            int nX = 0;
+            int nY = 0;
+            int nZ = 0;
 
             // 2. Retrieve input data.
-            if (!DA.GetData(0, ref CSx)) { return; }
-            if (!DA.GetData(1, ref CSy)) { return; }
-            if (!DA.GetData(2, ref CSz)) { return; }
-            if (!DA.GetData(3, ref Nx)) { return; }
-            if (!DA.GetData(4, ref Ny)) { return; }
-            if (!DA.GetData(5, ref Nz)) { return; }
+            if (!DA.GetData(0, ref xCellSize)) { return; }
+            if (!DA.GetData(1, ref yCellSize)) { return; }
+            if (!DA.GetData(2, ref zCellSize)) { return; }
+            if (!DA.GetData(3, ref nX)) { return; }
+            if (!DA.GetData(4, ref nY)) { return; }
+            if (!DA.GetData(5, ref nZ)) { return; }
 
             // 3. If data is invalid, we need to abort.
-            if (CSx == 0) { return; }
-            if (CSy == 0) { return; }
-            if (CSz == 0) { return; }
-            if (Nx == 0) { return; }
-            if (Ny == 0) { return; }
-            if (Nz == 0) { return; }
+            if (xCellSize == 0) { return; }
+            if (yCellSize == 0) { return; }
+            if (zCellSize == 0) { return; }
+            if (nX == 0) { return; }
+            if (nY == 0) { return; }
+            if (nZ == 0) { return; }
 
             // 4. Let's cook some pasta
 
             // Declare gh_structure data tree
-            GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
+            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
             
             // Define BasePlane
-            Plane BasePlane = Plane.WorldXY;
-
-            // Package inputs
-            List<double> CS = new List<double> { CSx, CSy, CSz };
-            List<int> N = new List<int> { Nx, Ny, Nz };
+            Plane basePlane = Plane.WorldXY;
 
             // Define iteration vectors in each direction (accounting size of cell)
-            Vector3d Vx = CS[0] * BasePlane.XAxis;
-            Vector3d Vy = CS[1] * BasePlane.YAxis;
-            Vector3d Vz = CS[2] * BasePlane.ZAxis;
+            Vector3d vectorX = xCellSize * basePlane.XAxis;
+            Vector3d vectorY = yCellSize * basePlane.YAxis;
+            Vector3d vectorZ = zCellSize * basePlane.ZAxis;
 
             // Create grid of points (as data tree)
-            for (int i = 0; i <= N[0]; i++)
+            for (int i = 0; i <= nX; i++)
             {
-                for (int j = 0; j <= N[1]; j++)
+                for (int j = 0; j <= nY; j++)
                 {
-                    for (int k = 0; k <= N[2]; k++)
+                    for (int k = 0; k <= nZ; k++)
                     {
                         // Compute position vector
-                        Vector3d V = i * Vx + j * Vy + k * Vz;
-                        Point3d NewPt = BasePlane.Origin + V;
+                        Vector3d V = i * vectorX + j * vectorY + k * vectorZ;
+                        Point3d newPt = basePlane.Origin + V;
 
-                        GH_Path TreePath = new GH_Path(i, j, k);            // Construct path in tree
-                        GridTree.Append(new GH_Point(NewPt), TreePath);     // Add point to tree
+                        GH_Path treePath = new GH_Path(i, j, k);            // Construct path in tree
+                        gridTree.Append(new GH_Point(newPt), treePath);     // Add point to tree
                     }
                 }
             }
 
             // 5. Output data
-            DA.SetDataTree(0, GridTree);
+            DA.SetDataTree(0, gridTree);
         }
         
         /// <summary>

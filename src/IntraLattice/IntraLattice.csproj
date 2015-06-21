@@ -74,7 +74,7 @@
     <Compile Include="IntraLatticeInfo.cs" />
     <Compile Include="3 - MESH\LatticeMesh.cs" />
     <Compile Include="3 - MESH\MeshTools.cs" />
-    <Compile Include="1 - GRID\UniformBDS.cs" />
+    <Compile Include="1 - GRID\Uniform.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="3 - MESH\ViewReport.cs" />
   </ItemGroup>

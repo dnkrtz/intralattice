@@ -34,57 +34,57 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Retrieve and validate data
-            double R = 0;
-            int Nu = 0;
-            int Nv = 0;
-            int Nw = 0;
+            double radius= 0;
+            int nU = 0;
+            int nV = 0;
+            int nW = 0;
 
-            if (!DA.GetData(0, ref R)) { return; }
-            if (!DA.GetData(1, ref Nu)) { return; }
-            if (!DA.GetData(2, ref Nv)) { return; }
-            if (!DA.GetData(3, ref Nw)) { return; }
+            if (!DA.GetData(0, ref radius)) { return; }
+            if (!DA.GetData(1, ref nU)) { return; }
+            if (!DA.GetData(2, ref nV)) { return; }
+            if (!DA.GetData(3, ref nW)) { return; }
 
-            if (R == 0) { return; }
-            if (Nu == 0) { return; }
-            if (Nv == 0) { return; }
-            if (Nw == 0) { return; }
+            if (radius == 0) { return; }
+            if (nU == 0) { return; }
+            if (nV == 0) { return; }
+            if (nW == 0) { return; }
 
             // Declare gh_structure data tree
-            GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
-            Point3d BasePoint = Plane.WorldXY.Origin;
+            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
+            Point3d basePoint = Plane.WorldXY.Origin;
 
             // Size of cells
-            double Su = Math.PI / Nu;
-            double Sv = 2 * Math.PI / Nv;
-            double Sw = R / Nw;
+            double uCellSize = Math.PI / nU;
+            double vCellSize = 2 * Math.PI / nV;
+            double wCellSize = radius / nW;
 
             // Create grid of points (as data tree)
             // Theta loop (polar)
-            for (int i = 0; i <= Nu; i++)
+            for (int i = 0; i <= nU; i++)
             {
                 // Phi loop (azimuthal)
-                for (int j = 0; j <= Nv; j++)
+                for (int j = 0; j <= nV; j++)
                 {
                     // Radial loop (away from center)
-                    for (int k = 0; k <= Nw; k++)
+                    for (int k = 0; k <= nW; k++)
                     {
                         // Compute position vector (cartesian coordinates)
-                        double Vx = (k * Sw) * (Math.Sin(i * Su)) * (Math.Cos(j * Sv));
-                        double Vy = (k * Sw) * (Math.Sin(i * Su)) * (Math.Sin(j * Sv));
-                        double Vz = (k * Sw) * (Math.Cos(i * Su));
-                        Vector3d V = new Vector3d(Vx, Vy, Vz);
+                        double vectorX = (k * wCellSize) * (Math.Sin(i * uCellSize)) * (Math.Cos(j * vCellSize));
+                        double vectorY = (k * wCellSize) * (Math.Sin(i * uCellSize)) * (Math.Sin(j * vCellSize));
+                        double vectorZ = (k * wCellSize) * (Math.Cos(i * uCellSize));
+                        Vector3d V = new Vector3d(vectorX, vectorY, vectorZ);
 
                         // Create new point
-                        Point3d NewPt = BasePoint + V;
+                        Point3d newPt = basePoint + V;
 
-                        GH_Path TreePath = new GH_Path(i, j, k);           // Construct path in the tree
-                        GridTree.Append(new GH_Point(NewPt), TreePath);    // Add point to GridTree
+                        GH_Path treePath = new GH_Path(i, j, k);           // Construct path in the tree
+                        gridTree.Append(new GH_Point(newPt), treePath);    // Add point to GridTree
                     }
                 }
             }
 
             // Set output
-            DA.SetDataTree(0, GridTree);
+            DA.SetDataTree(0, gridTree);
         }
 
         // Primitive grid component -> first panel of the toolbar

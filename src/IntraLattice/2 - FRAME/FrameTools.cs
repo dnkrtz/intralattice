@@ -14,46 +14,46 @@ namespace IntraLattice
         /// <summary>
         /// Defines the unit cell topology as a nodes' relationship with neighbours
         /// </summary>
-        public static void TopologyNeighbours(ref List<GH_Path> NeighbourPaths, int Topo, List<int> indx, int i, int j, int k)
+        public static void TopologyNeighbours(ref List<GH_Path> neighbourPaths, int topo, List<int> indx, int i, int j, int k)
         {
             // GRID
-            if ( Topo == 0 )
+            if ( topo == 0 )
             {
-                if (i<indx[0])                                          NeighbourPaths.Add(new GH_Path(i+1, j, k));
-                if (j<indx[1])                                          NeighbourPaths.Add(new GH_Path(i, j+1, k));
-                if (k<indx[2])                                          NeighbourPaths.Add(new GH_Path(i, j, k+1));
+                if (i<indx[0])                                          neighbourPaths.Add(new GH_Path(i+1, j, k));
+                if (j<indx[1])                                          neighbourPaths.Add(new GH_Path(i, j+1, k));
+                if (k<indx[2])                                          neighbourPaths.Add(new GH_Path(i, j, k+1));
             }
             // X
-            else if ( Topo == 1 )
+            else if ( topo == 1 )
             {
-                if ((i<indx[0]) && (j<indx[1]) && (k<indx[2]))          NeighbourPaths.Add(new GH_Path(i+1, j+1, k+1));
-                if ((i<indx[0]) && (j>0) && (k<indx[2]))                NeighbourPaths.Add(new GH_Path(i+1, j-1, k+1));
-                if ((i > 0) && (j > 0) && (k < indx[2]))                NeighbourPaths.Add(new GH_Path(i-1, j-1, k+1));
-                if ((i > 0) && (j < indx[1]) && (k < indx[2]))          NeighbourPaths.Add(new GH_Path(i-1, j+1, k+1));
+                if ((i<indx[0]) && (j<indx[1]) && (k<indx[2]))          neighbourPaths.Add(new GH_Path(i+1, j+1, k+1));
+                if ((i<indx[0]) && (j>0) && (k<indx[2]))                neighbourPaths.Add(new GH_Path(i+1, j-1, k+1));
+                if ((i > 0) && (j > 0) && (k < indx[2]))                neighbourPaths.Add(new GH_Path(i-1, j-1, k+1));
+                if ((i > 0) && (j < indx[1]) && (k < indx[2]))          neighbourPaths.Add(new GH_Path(i-1, j+1, k+1));
             }
             // STAR
-            else if ( Topo == 2 )
+            else if ( topo == 2 )
             {
-                if ((i < indx[0]) && (j < indx[1]) && (k < indx[2]))    NeighbourPaths.Add(new GH_Path(i+1, j+1, k+1));
-                if ((i < indx[0]) && (j > 0) && (k < indx[2]))          NeighbourPaths.Add(new GH_Path(i+1, j-1, k+1));
-                if ((i > 0) && (j > 0) && (k < indx[2]))                NeighbourPaths.Add(new GH_Path(i-1, j-1, k+1));
-                if ((i > 0) && (j < indx[1]) && (k < indx[2]))          NeighbourPaths.Add(new GH_Path(i-1, j+1, k+1));
-                if (i < indx[0])                                        NeighbourPaths.Add(new GH_Path(i+1, j, k));
-                if (j < indx[1])                                        NeighbourPaths.Add(new GH_Path(i, j+1, k));
+                if ((i < indx[0]) && (j < indx[1]) && (k < indx[2]))    neighbourPaths.Add(new GH_Path(i+1, j+1, k+1));
+                if ((i < indx[0]) && (j > 0) && (k < indx[2]))          neighbourPaths.Add(new GH_Path(i+1, j-1, k+1));
+                if ((i > 0) && (j > 0) && (k < indx[2]))                neighbourPaths.Add(new GH_Path(i-1, j-1, k+1));
+                if ((i > 0) && (j < indx[1]) && (k < indx[2]))          neighbourPaths.Add(new GH_Path(i-1, j+1, k+1));
+                if (i < indx[0])                                        neighbourPaths.Add(new GH_Path(i+1, j, k));
+                if (j < indx[1])                                        neighbourPaths.Add(new GH_Path(i, j+1, k));
             }
             // STAR2
-            else if ( Topo == 3 )
+            else if ( topo == 3 )
             {
-                if ((i < indx[0]) && (j < indx[1]) && (k < indx[2]))    NeighbourPaths.Add(new GH_Path(i+1, j+1, k+1));
-                if ((i < indx[0]) && (j > 0) && (k < indx[2]))          NeighbourPaths.Add(new GH_Path(i+1, j-1, k+1));
-                if ((i > 0) && (j > 0) && (k < indx[2]))                NeighbourPaths.Add(new GH_Path(i-1, j-1, k+1));
-                if ((i > 0) && (j < indx[1]) && (k < indx[2]))          NeighbourPaths.Add(new GH_Path(i-1, j+1, k+1));
-                if (i < indx[0])                                        NeighbourPaths.Add(new GH_Path(i+1, j, k));
-                if (j < indx[1])                                        NeighbourPaths.Add(new GH_Path(i, j+1, k));
-                if (k < indx[2])                                        NeighbourPaths.Add(new GH_Path(i, j, k+1));
+                if ((i < indx[0]) && (j < indx[1]) && (k < indx[2]))    neighbourPaths.Add(new GH_Path(i+1, j+1, k+1));
+                if ((i < indx[0]) && (j > 0) && (k < indx[2]))          neighbourPaths.Add(new GH_Path(i+1, j-1, k+1));
+                if ((i > 0) && (j > 0) && (k < indx[2]))                neighbourPaths.Add(new GH_Path(i-1, j-1, k+1));
+                if ((i > 0) && (j < indx[1]) && (k < indx[2]))          neighbourPaths.Add(new GH_Path(i-1, j+1, k+1));
+                if (i < indx[0])                                        neighbourPaths.Add(new GH_Path(i+1, j, k));
+                if (j < indx[1])                                        neighbourPaths.Add(new GH_Path(i, j+1, k));
+                if (k < indx[2])                                        neighbourPaths.Add(new GH_Path(i, j, k+1));
             }
             // OCTAHEDRAL
-            else if ( Topo == 4 )
+            else if ( topo == 4 )
             {
                             
             }

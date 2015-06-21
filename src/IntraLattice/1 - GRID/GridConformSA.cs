@@ -14,9 +14,9 @@ using Rhino.Geometry.Intersect;
 
 namespace IntraLattice
 {
-    public class ConformSA : GH_Component
+    public class GridConformSA : GH_Component
     {
-        public ConformSA()
+        public GridConformSA()
             : base("ConformSA", "ConfSA",
                 "Generates conforming lattice grid between a surface and an axis",
                 "IntraLattice2", "Grid")
@@ -41,62 +41,62 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Declare placeholder variables and assign initial invalid data.
-            Surface S = null;
-            Curve A = null;
-            Boolean UV = new Boolean();
-            double Nu = 0;
-            double Nv = 0;
-            double Nw = 0;
+            Surface surface = null;
+            Curve axis = null;
+            Boolean withUV = new Boolean();
+            double nU = 0;
+            double nV = 0;
+            double nW = 0;
 
             // Attempt to fetch data
-            if (!DA.GetData(0, ref S)) { return; }
-            if (!DA.GetData(1, ref A)) { return; }
-            if (!DA.GetData(2, ref UV)) { return; }
-            if (!DA.GetData(3, ref Nu)) { return; }
-            if (!DA.GetData(4, ref Nv)) { return; }
-            if (!DA.GetData(5, ref Nw)) { return; }
+            if (!DA.GetData(0, ref surface)) { return; }
+            if (!DA.GetData(1, ref axis)) { return; }
+            if (!DA.GetData(2, ref withUV)) { return; }
+            if (!DA.GetData(3, ref nU)) { return; }
+            if (!DA.GetData(4, ref nV)) { return; }
+            if (!DA.GetData(5, ref nW)) { return; }
 
             // Validate data
-            if (!S.IsValid) { return; }
-            if (!A.IsValid) { return; }
-            if (Nu == 0) { return; }
-            if (Nv == 0) { return; }
-            if (Nw == 0) { return; }
+            if (!surface.IsValid) { return; }
+            if (!axis.IsValid) { return; }
+            if (nU == 0) { return; }
+            if (nV == 0) { return; }
+            if (nW == 0) { return; }
 
             // Initialize the grid of points
-            GH_Structure<GH_Point> GridTree = new GH_Structure<GH_Point>();
+            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
 
 
             // Use UV-Map Method (note, should add check to make sure axis is aligned with u, as opposed to v)
-            if (UV)
+            if (withUV)
             {
                 Vector3d[] derivatives; // not used, but needed for Evaluate method
-                List<double> Params = new List<double>(A.DivideByCount((int)Nu, true)); // divide curve into equal segments, get curve parameters
+                List<double> curveParams = new List<double>(axis.DivideByCount((int)nU, true)); // divide curve into equal segments, get curve parameters
 
-                if (A.IsClosed) Params.Add(Params[0]);  // if axis is closed curve, add last parameter to close the loop
+                if (axis.IsClosed) curveParams.Add(curveParams[0]);  // if axis is closed curve, add last parameter to close the loop
 
                 // i, j loops over UV
-                for (int i = 0; i <= Nu; i++)
+                for (int i = 0; i <= nU; i++)
                 {
-                    double Param = Params[i];
-                    for (int j = 0; j <= Nv; j++)
+                    double curveParam = curveParams[i];
+                    for (int j = 0; j <= nV; j++)
                     {
                         // Find the pair of points on surface and axis
-                        Point3d Pt1 = A.PointAt(Param);
-                        Point3d Pt2;
-                        double uParam = (i/Nu) * S.Domain(0).Length;
-                        double vParam = (j/Nv) * S.Domain(1).Length;
-                        S.Evaluate(uParam, vParam, 0, out Pt2, out derivatives);
+                        Point3d pt1 = axis.PointAt(curveParam);
+                        Point3d pt2;
+                        double uParam = (i/nU) * surface.Domain(0).Length;
+                        double vParam = (j/nV) * surface.Domain(1).Length;
+                        surface.Evaluate(uParam, vParam, 0, out pt2, out derivatives);
 
                         // Create vector joining these two points
-                        Vector3d wVect = Pt2 - Pt1;
+                        Vector3d wVect = pt2 - pt1;
 
                         // Create grid points on and between surface and axis
-                        for (int k = 0; k <= Nw; k++)
+                        for (int k = 0; k <= nW; k++)
                         {
-                            Point3d NewPt = Pt1 + wVect * k / Nw;
-                            GH_Path TreePath = new GH_Path(i, j, k);
-                            GridTree.Append(new GH_Point(NewPt), TreePath);
+                            Point3d newPt = pt1 + wVect * k / nW;
+                            GH_Path treePath = new GH_Path(i, j, k);
+                            gridTree.Append(new GH_Point(newPt), treePath);
                         }
                     }
                 }
@@ -106,40 +106,40 @@ namespace IntraLattice
             else
             {
                 // Prepare divisions along axis ('uNum' divisions)
-                List<double> Params = new List<double>(A.DivideByCount((int)Nu, true)); // divide curve into zNum divisions
-                Plane[] BasePlanes = A.GetPerpendicularFrames(Params);  // get perpendicular planes at each division point
+                List<double> curveParams = new List<double>(axis.DivideByCount((int)nU, true)); // divide curve into zNum divisions
+                Plane[] basePlanes = axis.GetPerpendicularFrames(curveParams);  // get perpendicular planes at each division point
 
                 // For now, assuming surface covers full 360degree rotation
-                List<double> Angles = new List<double>();
-                for (int i = 0; i < Nv; i++) Angles.Add(2 * Math.PI * i / Nv);
+                List<double> angles = new List<double>();
+                for (int i = 0; i < nV; i++) angles.Add(2 * Math.PI * i / nV);
 
                 // Loop along axis
-                for (int i = 0; i < BasePlanes.Length; i++)
+                for (int i = 0; i < basePlanes.Length; i++)
                 {
-                    Plane BasePlane = BasePlanes[i];
+                    Plane basePlane = basePlanes[i];
                     // Loop about axis
-                    for (int j = 0; j < Angles.Count; j++)
+                    for (int j = 0; j < angles.Count; j++)
                     {
-                        double Angle = Angles[j];
-                        Vector3d RVect = BasePlane.PointAt(Math.Cos(Angle), Math.Sin(Angle)) - BasePlane.Origin; // Radial unit vector
-                        Ray3d RRay = new Ray3d(BasePlane.Origin, RVect);
-                        Point3d SurfPt = Intersection.RayShoot(RRay, new List<Surface> { S }, 1)[0];   // Shoot ray to intersect surface
-                        RVect = SurfPt - BasePlane.Origin;  // Update radial vector (changes amplitude, direction unchanged)
+                        double angle = angles[j];
+                        Vector3d rVect = basePlane.PointAt(Math.Cos(angle), Math.Sin(angle)) - basePlane.Origin; // Radial unit vector
+                        Ray3d rRay = new Ray3d(basePlane.Origin, rVect);
+                        Point3d surfPt = Intersection.RayShoot(rRay, new List<Surface> { surface }, 1)[0];   // Shoot ray to intersect surface
+                        rVect = surfPt - basePlane.Origin;  // Update radial vector (changes amplitude, direction unchanged)
 
                         // Loop away from axis
-                        for (int k = 0; k <= Nw; k++)
+                        for (int k = 0; k <= nW; k++)
                         {
-                            Point3d NewPt = BasePlane.Origin + RVect * k / Nw;
+                            Point3d newPt = basePlane.Origin + rVect * k / nW;
 
-                            GH_Path TreePath = new GH_Path(0, i, j);           // Construct path in the tree
-                            GridTree.Append(new GH_Point(NewPt), TreePath);    // Add point to GridTree
+                            GH_Path treePath = new GH_Path(0, i, j);           // Construct path in the tree
+                            gridTree.Append(new GH_Point(newPt), treePath);    // Add point to GridTree
                         }
                     }
                 }
             }
 
             // Output grid
-            DA.SetDataTree(0, GridTree);
+            DA.SetDataTree(0, gridTree);
 
         }
 
