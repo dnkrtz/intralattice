@@ -15,7 +15,7 @@ namespace IntraLattice
     public class GridConformSS : GH_Component
     {
         public GridConformSS()
-            : base("ConformSS", "ConfSS",
+            : base("Conform Surface-Surface", "ConformSS",
                 "Generates a conforming point grid between two surfaces.",
                 "IntraLattice2", "Grid")
         {
@@ -101,12 +101,12 @@ namespace IntraLattice
                         Point3d newPt = pt1 + wVect * k / nW;
                         gridTree.Append(new GH_Point(newPt), treePath);
                         
-                        // save the 2 directional directives
+                        // for each of the 2 directional directives
                         for (int derivIndex = 0; derivIndex < 2; derivIndex++ )
                         {
-                            // compute the interpolated derivatives
+                            // compute the interpolated derivative (need interpolation for in-between surfaces)
                             double interpolationFactor = k/nW;
-                            Vector3d deriv = derivatives1[derivIndex] + k*(derivatives2[derivIndex]-derivatives1[derivIndex])/nW;
+                            Vector3d deriv = derivatives1[derivIndex] + interpolationFactor*(derivatives2[derivIndex]-derivatives1[derivIndex]);
                             derivTree.Append(new GH_Vector(deriv), treePath);
                         }
                     }

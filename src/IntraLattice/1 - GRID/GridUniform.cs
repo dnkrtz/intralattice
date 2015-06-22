@@ -133,7 +133,7 @@ namespace IntraLattice
                         if (brepDesignSpace != null)
                             isInside = brepDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
                         // If design space is a MESH
-                        else if (meshDesignSpace != null)
+                        if (meshDesignSpace != null)
                             isInside = meshDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
 
                         // Check if point is inside the Brep Design Space
