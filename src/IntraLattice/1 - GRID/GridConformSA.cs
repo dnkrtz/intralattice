@@ -17,7 +17,7 @@ namespace IntraLattice
     public class GridConformSA : GH_Component
     {
         public GridConformSA()
-            : base("ConformSA", "ConfSA",
+            : base("Conform Surface-Axis", "ConformSA",
                 "Generates conforming lattice grid between a surface and an axis",
                 "IntraLattice2", "Grid")
         {

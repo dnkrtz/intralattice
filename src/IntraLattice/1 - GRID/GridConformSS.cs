@@ -8,12 +8,14 @@ using Grasshopper.Kernel.Types;
 // This component generates a conformal lattice grid between two surfaces.
 // Assumption : The surfaces are oriented in the same direction (for UV-Map indices)
 
+// Written by Aidan Kurtz
+
 namespace IntraLattice
 {
     public class GridConformSS : GH_Component
     {
         public GridConformSS()
-            : base("ConformSS", "ConfSS",
+            : base("Conform Surface-Surface", "ConformSS",
                 "Generates a conforming point grid between two surfaces.",
                 "IntraLattice2", "Grid")
         {
@@ -23,14 +25,15 @@ namespace IntraLattice
         {
             pManager.AddSurfaceParameter("Surface 1", "S1", "First bounding surface", GH_ParamAccess.item);
             pManager.AddSurfaceParameter("Surface 2", "S2", "Second bounding surface", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddPointParameter("Grid", "G", "Point grid", GH_ParamAccess.tree);
+            pManager.AddVectorParameter("Derivatives", "Derivs", "Directional derivatives", GH_ParamAccess.tree);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -38,9 +41,9 @@ namespace IntraLattice
             // Declare placeholder variables and assign initial invalid data.
             Surface s1 = null;
             Surface s2 = null;
-            double nU = 0;
-            double nV = 0;
-            double nW = 0;
+            int nU = 0;
+            int nV = 0;
+            int nW = 0;
 
             // Attempt to fetch data
             if (!DA.GetData(0, ref s1)) { return; }
@@ -57,42 +60,62 @@ namespace IntraLattice
             if (nW == 0) { return; }
 
             // Initialize the grid of points
-            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
-            Vector3d[] derivatives; // not used, but needed for Evaluate method
+            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();     // will contain point grid
+            GH_Structure<GH_Vector> derivTree = new GH_Structure<GH_Vector>();   // will contain derivatives (du,dv) in a parallel tree
 
+            List<int> N = new List<int> { nU, nV, nW };
+
+            // Normalize the UV-domain
+            Interval normalizedDomain = new Interval(0,1);
+            s1.SetDomain(0, normalizedDomain); // s1 u-direction
+            s1.SetDomain(1, normalizedDomain); // s1 v-direction
+            s2.SetDomain(0, normalizedDomain); // s2 u-direction
+            s2.SetDomain(1, normalizedDomain); // s2 v-direction
+
+            // Let's create the actual point grid now
             // i, j loops over UV
-            for (int i = 0; i <= nU; i++)
+            for (int i = 0; i <= N[0]; i++)
             {
-                for (int j = 0; j <= nV; j++)
+                for (int j = 0; j <= N[1]; j++)
                 {
-                    // Find the pair of points on both surfaces
-                    // On surface 1
-                    Point3d pt1;
-                    double uParam = s1.Domain(0).T0 + (i / nU) * s1.Domain(0).Length;
-                    double vParam = s1.Domain(1).T0 + (j / nV) * s1.Domain(1).Length;
-                    s1.Evaluate(uParam, vParam, 0, out pt1, out derivatives);  // Evaluate point
-                    // On surface 2
-                    Point3d pt2;
-                    uParam = s2.Domain(0).T0 + (i / nU) * s2.Domain(0).Length;
-                    vParam = s2.Domain(1).T0 + (j / nV) * s2.Domain(1).Length;
-                    s2.Evaluate(uParam, vParam, 0, out pt2, out derivatives);   // Evaluate point
+                    Point3d pt1; // On surface 1
+                    Point3d pt2; // On surface 2
+                    Vector3d[] derivatives1;
+                    Vector3d[] derivatives2;
+                    // Compute uv parameters
+                    double uParam = (i / (double)nU);
+                    double vParam = (j / (double)nV);
+                    // Evaluate point locations and derivatives
+                    s1.Evaluate(uParam, vParam, 2, out pt1, out derivatives1);
+                    s2.Evaluate(uParam, vParam, 2, out pt2, out derivatives2);
 
-                    // Create vector joining these two points
+                    // Create vector joining the two points, this is our w-direction
                     Vector3d wVect = pt2 - pt1;
 
                     // Create grid points on and between surfaces
-                    for (int k = 0; k <= nW; k++)
+                    for (int k = 0; k <= N[2]; k++)
                     {
-                        Point3d newPt = pt1 + wVect * k / nW;
+                        GH_Path treePath = new GH_Path(i, j, k);    // path in the trees
 
-                        GH_Path treePath = new GH_Path(i, j, k);
+                        // save point to gridTree
+                        Point3d newPt = pt1 + wVect * k / nW;
                         gridTree.Append(new GH_Point(newPt), treePath);
+                        
+                        // for each of the 2 directional directives
+                        for (int derivIndex = 0; derivIndex < 2; derivIndex++ )
+                        {
+                            // compute the interpolated derivative (need interpolation for in-between surfaces)
+                            double interpolationFactor = k/nW;
+                            Vector3d deriv = derivatives1[derivIndex] + interpolationFactor*(derivatives2[derivIndex]-derivatives1[derivIndex]);
+                            derivTree.Append(new GH_Vector(deriv), treePath);
+                        }
                     }
                 }
             }
 
             // Output grid
             DA.SetDataTree(0, gridTree);
+            DA.SetDataTree(1, derivTree);
 
         }
 

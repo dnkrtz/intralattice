@@ -60,12 +60,33 @@ namespace IntraLattice
             if (!DA.GetData(3, ref yCellSize)) { return; }
             if (!DA.GetData(4, ref zCellSize)) { return; }
 
-            if (designSpace.ObjectType != ObjectType.Brep && designSpace.ObjectType != ObjectType.Mesh) { return; }
             if (!designSpace.IsValid) { return; }
             if (!orientationPlane.IsValid) { return; }
             if (xCellSize == 0) { return; } 
             if (yCellSize == 0) { return; }
             if (zCellSize == 0) { return; }
+
+            // Validate the design space
+            Brep brepDesignSpace = null;
+            Mesh meshDesignSpace = null;
+            // If brep design space, cast as such
+            if (designSpace.ObjectType == ObjectType.Brep)
+                brepDesignSpace = (Brep)designSpace;
+            // If mesh design space, cast as such
+            else if (designSpace.ObjectType == ObjectType.Mesh)
+                meshDesignSpace = (Mesh)designSpace;
+            // If solid surface, convert to brep
+            else if (designSpace.ObjectType == ObjectType.Surface)
+            {
+                Surface testSpace = (Surface)designSpace;
+                if(testSpace.IsSolid) brepDesignSpace = testSpace.ToBrep();
+            }
+            // Else the design space is not acceptable
+            else
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Design space must be a Brep, Mesh or Closed Surface");
+                return;
+            }
 
             // Create bounding box
             Box bBox = new Box();
@@ -107,13 +128,13 @@ namespace IntraLattice
 
                         // Check if point is inside
                         bool isInside = false;
-                        
+
                         // If design space is a BREP
-                        if (designSpace.ObjectType == ObjectType.Brep)
-                            isInside = (Brep.TryConvertBrep(designSpace)).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                        if (brepDesignSpace != null)
+                            isInside = brepDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
                         // If design space is a MESH
-                        else if (designSpace.ObjectType == ObjectType.Mesh)
-                            isInside = ((Mesh)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                        if (meshDesignSpace != null)
+                            isInside = meshDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
 
                         // Check if point is inside the Brep Design Space
                         if (isInside)
