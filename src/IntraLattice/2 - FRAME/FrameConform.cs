@@ -77,7 +77,13 @@ namespace IntraLattice
             }
 
             // 2. Get size of the tree
-            int[] N = gridTree.get_Path(gridTree.LongestPathIndex()).Indices;
+            int[] N = new int[] { 0, 0, 0 };
+            foreach (GH_Path path in gridTree.Paths)
+            {
+                if (path.Indices[0] > N[0]) N[0] = path.Indices[0];
+                if (path.Indices[1] > N[1]) N[1] = path.Indices[1];
+                if (path.Indices[2] > N[2]) N[2] = path.Indices[2];
+            }
 
             // 3. Now we create lattice struts
             var struts = new List<GH_Curve>();
