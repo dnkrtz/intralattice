@@ -151,33 +151,34 @@ namespace IntraLattice
                         {
                             // this might seem excessive, but it's a robust approach
                             List<GH_Path> neighbours = new List<GH_Path>();
-                            neighbours.Add(new GH_Path(u-1, v, w));
-                            neighbours.Add(new GH_Path(u, v-1, w));
-                            neighbours.Add(new GH_Path(u, v, w-1));
-                            neighbours.Add(new GH_Path(u+1, v, w));
-                            neighbours.Add(new GH_Path(u, v+1, w));
-                            neighbours.Add(new GH_Path(u, v, w+1));
+                            neighbours.Add(new GH_Path(u - 1, v, w));
+                            neighbours.Add(new GH_Path(u, v - 1, w));
+                            neighbours.Add(new GH_Path(u, v, w - 1));
+                            neighbours.Add(new GH_Path(u + 1, v, w));
+                            neighbours.Add(new GH_Path(u, v + 1, w));
+                            neighbours.Add(new GH_Path(u, v, w + 1));
                             GH_Path currentPath = new GH_Path(u, v, w);
 
                             // if the path doesn't exist, it hasn't been added, so add it
-                            if (!gridTree.PathExists(neighbours[0]))    gridTree.Append(new GH_Point(currentPt - vectorX), neighbours[0]);
-                            if (!gridTree.PathExists(neighbours[1]))    gridTree.Append(new GH_Point(currentPt - vectorY), neighbours[1]);
-                            if (!gridTree.PathExists(neighbours[2]))    gridTree.Append(new GH_Point(currentPt - vectorZ), neighbours[2]);
-                            if (!gridTree.PathExists(neighbours[3]))    gridTree.Append(new GH_Point(currentPt + vectorX), neighbours[3]);
-                            if (!gridTree.PathExists(neighbours[4]))    gridTree.Append(new GH_Point(currentPt + vectorY), neighbours[4]);
-                            if (!gridTree.PathExists(neighbours[5]))    gridTree.Append(new GH_Point(currentPt + vectorZ), neighbours[5]);
+                            if (!gridTree.PathExists(neighbours[0])) gridTree.Append(new GH_Point(currentPt - vectorX), neighbours[0]);
+                            if (!gridTree.PathExists(neighbours[1])) gridTree.Append(new GH_Point(currentPt - vectorY), neighbours[1]);
+                            if (!gridTree.PathExists(neighbours[2])) gridTree.Append(new GH_Point(currentPt - vectorZ), neighbours[2]);
+                            if (!gridTree.PathExists(neighbours[3])) gridTree.Append(new GH_Point(currentPt + vectorX), neighbours[3]);
+                            if (!gridTree.PathExists(neighbours[4])) gridTree.Append(new GH_Point(currentPt + vectorY), neighbours[4]);
+                            if (!gridTree.PathExists(neighbours[5])) gridTree.Append(new GH_Point(currentPt + vectorZ), neighbours[5]);
                             // same goes for the current node
-                            if (!gridTree.PathExists(currentPath))      gridTree.Append(new GH_Point(currentPt), currentPath);
-                        }
+                            if (!gridTree.PathExists(currentPath))
+                            {
+                                gridTree.Append(new GH_Point(currentPt), currentPath);
+                            }
 
+                        }
                     }
                 }
-            }
-          
 
+            }
             // 8. Set output
             DA.SetDataTree(0, gridTree);
-
         }
 
         /// <summary>
