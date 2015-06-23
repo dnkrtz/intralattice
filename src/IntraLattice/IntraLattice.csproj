@@ -41,6 +41,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="GH_IO">
+      <HintPath>lib\GH_IO.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Grasshopper">
+      <HintPath>lib\Grasshopper.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -48,16 +56,6 @@
     <Reference Include="RhinoCommon">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Program Files (x86)\Rhinoceros 5\System\rhinocommon.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Grasshopper">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Common Files\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.75.0\Grasshopper.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="GH_IO">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\Common Files\McNeel\Rhinoceros\5.0\Plug-ins\Grasshopper (b45a29b1-4343-4035-989e-044e8580d9cf)\0.9.75.0\GH_IO.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
