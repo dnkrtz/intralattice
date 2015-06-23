@@ -26,8 +26,8 @@ namespace IntraLattice
         {
             pManager.AddNumberParameter("Radius", "R", "Radius of cylinder", GH_ParamAccess.item, 15);
             pManager.AddNumberParameter("Height", "H", "Height of cylinder", GH_ParamAccess.item, 25);
-            pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 15);
-            pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 15);
             pManager.AddNumberParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 4);
         }
 
@@ -65,7 +65,7 @@ namespace IntraLattice
 
             // 3. Define cylinder
             Surface cylinder = ( new Cylinder(new Circle(basePlane, radius), height) ).ToNurbsSurface();
-            cylinder = cylinder.Transpose();    // transpose, the cylinder's uv isn't aligned with our convention
+            cylinder = cylinder.Transpose();
 
             // 4. Normalize the UV-domain
             cylinder.SetDomain(0, new Interval(0, 1)); // surface u-direction
@@ -81,7 +81,7 @@ namespace IntraLattice
                     Point3d pt1, pt2;
                     Vector3d[] derivatives;
                     // construct z-position vector
-                    Vector3d vectorZ = height * basePlane.ZAxis * v / nV;
+                    Vector3d vectorZ = height * basePlane.ZAxis * u / nU;
                     pt1 = basePlane.Origin + vectorZ;                                                   // compute pt1 (is on axis)
                     cylinder.Evaluate(u / nU, v / nV, 2, out pt2, out derivatives);     // compute pt2, and derivates (on surface)
 

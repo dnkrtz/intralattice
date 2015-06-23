@@ -55,25 +55,23 @@ namespace IntraLattice
             if (!designSpace.IsValid) { return; }
             if (designSpace.ObjectType != ObjectType.Brep && designSpace.ObjectType != ObjectType.Mesh) { return; }
 
-            // Get size of the tree
-            // This works well for full grids ->       int[] indx = GridTree.get_Path(GridTree.LongestPathIndex()).Indices;
-            // For trimmed grids, we need a more robust approach
-            int[] indx = new int[] {0,0,0};
+            // Get domain size of the tree
+            int[] N = new int[] {0,0,0};
             foreach (GH_Path path in gridTree.Paths)
             {
-                if ( path.Indices[0] > indx[0] ) indx[0] = path.Indices[0];
-                if ( path.Indices[1] > indx[1] ) indx[1] = path.Indices[1];
-                if ( path.Indices[2] > indx[2] ) indx[2] = path.Indices[2];
+                if ( path.Indices[0] > N[0] ) N[0] = path.Indices[0];
+                if ( path.Indices[1] > N[1] ) N[1] = path.Indices[1];
+                if ( path.Indices[2] > N[2] ) N[2] = path.Indices[2];
             }
 
             // Initiate list of lattice lines
             List<GH_Line> struts = new List<GH_Line>();
 
-            for (int i = 0; i <= indx[0]; i++)
+            for (int i = 0; i <= N[0]; i++)
             {
-                for (int j = 0; j <= indx[1]; j++)
+                for (int j = 0; j <= N[1]; j++)
                 {
-                    for (int k = 0; k <= indx[2]; k++)
+                    for (int k = 0; k <= N[2]; k++)
                     {
                         
                         // We'll be needing the data tree path of the current node, and those of its neighbours
@@ -81,7 +79,7 @@ namespace IntraLattice
                         List<GH_Path> neighbourPaths = new List<GH_Path>();
                      
                         // Get neighbours!!
-                        FrameTools.TopologyNeighbours(ref neighbourPaths, topo, indx, i, j, k);
+                        FrameTools.TopologyNeighbours(ref neighbourPaths, topo, N, i, j, k);
 
                         // Nere we create the actual struts
                         // First, make sure currentpath exists in the tree
