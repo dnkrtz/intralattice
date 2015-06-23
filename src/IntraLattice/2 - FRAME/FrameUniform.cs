@@ -8,8 +8,11 @@ using System;
 using System.Collections.Generic;
 
 // This component maps a unit cell topology to the lattice grid
+// ============================================================
 // Also TRIMS the resulting lattice to the shape of the design space
-// Assumption : Hexahedral cell lattice grid (i.e. morphed cubic cell)
+// 
+
+// Written by Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
@@ -55,7 +58,7 @@ namespace IntraLattice
             // Get size of the tree
             // This works well for full grids ->       int[] indx = GridTree.get_Path(GridTree.LongestPathIndex()).Indices;
             // For trimmed grids, we need a more robust approach
-            List<int> indx = new List<int>{0,0,0};
+            int[] indx = new int[] {0,0,0};
             foreach (GH_Path path in gridTree.Paths)
             {
                 if ( path.Indices[0] > indx[0] ) indx[0] = path.Indices[0];

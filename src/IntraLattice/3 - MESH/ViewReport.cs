@@ -6,6 +6,7 @@ using Grasshopper.Kernel.Types;
 using Rhino.DocObjects;
 
 // This component is a post-processing tool used to inspect a mesh
+// ===============================================================
 // Checks that the mesh represents a solid
 
 namespace IntraLattice
