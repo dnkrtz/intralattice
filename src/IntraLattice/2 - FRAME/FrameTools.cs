@@ -2,6 +2,7 @@
 using Grasshopper.Kernel.Types;
 using Rhino;
 using Rhino.Geometry;
+using Rhino.Geometry.Intersect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -65,6 +66,42 @@ namespace IntraLattice
             {
                             
             }
+        }
+
+        public static GH_Line TrimStrut(Point3d node0, Point3d node1, ref Brep space, bool[] isInside)
+        {
+            LineCurve testStrut = new LineCurve(new Line(node0, node1), 0, 1);  // set line, with curve parameter domain [0,1]
+            Point3d[] intersectionPoint = null; // the intersection point
+            Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
+            // If nodes are on opposite sides of the space boundary, TRIM
+            // Begin by intersecting the brep
+            bool intersectFound = Intersection.CurveBrep(testStrut, space, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPoint);
+
+            // If an intersection was found, check the size of the trim
+            if (intersectFound)
+            {
+                // We'll need the length of the strut
+                double strutLength = node0.DistanceTo(node1);
+
+                if (intersectionPoint.Count() == 0) return null;
+
+                if (isInside[0])
+                {
+                    double testLength = intersectionPoint[0].DistanceTo(node0);
+                    if (testLength < strutLength * 0.1)         return null;
+                    else if (testLength > strutLength * 0.9)    return new GH_Line(new Line(node0, node1));
+                    else                                        return new GH_Line(new Line(node0, intersectionPoint[0]));
+                }
+                if (isInside[1])    
+                {
+                    double testLength = intersectionPoint[0].DistanceTo(node1);
+                    if (testLength < strutLength * 0.1)         return null;
+                    else if (testLength > strutLength * 0.9)    return new GH_Line(new Line(node0, node1));
+                    else                                        return new GH_Line(new Line(node1, intersectionPoint[0]));
+                }
+            }
+            // If no intersection was found, something went wrong, don't create a strut, skip to next loop
+            return null;
         }
     }
 }
