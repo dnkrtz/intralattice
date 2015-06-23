@@ -7,6 +7,8 @@ using Grasshopper.Kernel.Types;
 
 // This component generates a simple spherical lattice grid.
 
+// Needs to be updated. Doesn't compute derivatives.
+
 namespace IntraLattice
 {
     public class GridSphere : GH_Component
@@ -50,7 +52,7 @@ namespace IntraLattice
             if (nW == 0) { return; }
 
             // Declare gh_structure data tree
-            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
+            var gridTree = new GH_Structure<GH_Point>();
             Point3d basePoint = Plane.WorldXY.Origin;
 
             // Size of cells

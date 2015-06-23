@@ -7,12 +7,23 @@ using Grasshopper.Kernel.Data;
 using Rhino;
 using Rhino.DocObjects;
 
+// This component generates a trimmed uniform lattice grid
+// =======================================================================
+// Uniform lattice grids have unmorphed unit cells, and are trimmed by the design space.
+// Points inside the design space, as well as their immediate neighbours, are generated.
+// This is necessary since the struts between inner-outer points are trimmed later.
+// ** Design space may be a Mesh, Brep or Solid Surface.
+// ** Orientation plane does not need to be centered at any particular location
+
+// Written by Aidan Kurtz (http://aidankurtz.com)
+
+
 namespace IntraLattice
 {
     public class GridUniform : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the MyComponent1 class.
+        /// Initializes a new instance of the GridUniform class.
         /// </summary>
         public GridUniform()
             : base("UniformTrimmed", "UniformTrim",
@@ -47,7 +58,7 @@ namespace IntraLattice
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // Retrieve and validate data
+            // 1. Retrieve and validate data
             GeometryBase designSpace = null;
             Plane orientationPlane = Plane.Unset;
             double xCellSize = 0;
@@ -66,99 +77,96 @@ namespace IntraLattice
             if (yCellSize == 0) { return; }
             if (zCellSize == 0) { return; }
 
-            // Validate the design space
+            // 2. Validate the design space
             Brep brepDesignSpace = null;
             Mesh meshDesignSpace = null;
-            // If brep design space, cast as such
+            //    If brep design space, cast as such
             if (designSpace.ObjectType == ObjectType.Brep)
                 brepDesignSpace = (Brep)designSpace;
-            // If mesh design space, cast as such
+            //    If mesh design space, cast as such
             else if (designSpace.ObjectType == ObjectType.Mesh)
                 meshDesignSpace = (Mesh)designSpace;
-            // If solid surface, convert to brep
+            //    If solid surface, convert to brep
             else if (designSpace.ObjectType == ObjectType.Surface)
             {
                 Surface testSpace = (Surface)designSpace;
                 if(testSpace.IsSolid) brepDesignSpace = testSpace.ToBrep();
             }
-            // Else the design space is not acceptable
+            //    Else the design space is unacceptable
             else
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Design space must be a Brep, Mesh or Closed Surface");
                 return;
             }
 
-            // Create bounding box
+            // 3. Compute oriented bounding box and its corner points
             Box bBox = new Box();
             designSpace.GetBoundingBox(orientationPlane, out bBox);
-
-            // Get corner points
             Point3d[] bBoxCorners = bBox.GetCorners();
 
+            // 4. Determine number of iterations required to fill the box
             double xLength = bBoxCorners[0].DistanceTo(bBoxCorners[1]);
             double yLength = bBoxCorners[0].DistanceTo(bBoxCorners[3]);
             double zLength = bBoxCorners[0].DistanceTo(bBoxCorners[4]);
-
-            // Determine number of iterations required to fill the box
             int nX = (int)Math.Ceiling(xLength / xCellSize); // Roundup to next integer if non-integer
             int nY = (int)Math.Ceiling(yLength / yCellSize);
             int nZ = (int)Math.Ceiling(zLength / zCellSize);
 
-            // Prepare input for grid generation
-            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
+            // 5. Prepare grid
+            var gridTree = new GH_Structure<GH_Point>();
             Plane basePlane = new Plane(bBoxCorners[0], bBoxCorners[1], bBoxCorners[3]);
 
-            // Define iteration vectors in each direction (accounting for Cell Size)
+            // 6. Define iteration vectors in each direction (accounting for Cell Size)
             Vector3d vectorX = xCellSize * basePlane.XAxis;
             Vector3d vectorY = yCellSize * basePlane.YAxis;
             Vector3d vectorZ = zCellSize * basePlane.ZAxis;
 
             Point3d currentPt = new Point3d();
 
-            // Create grid of points (as data tree)
-            for (int i = 0; i <= nX; i++)
+            // 7. Create grid of points (as data tree)
+            for (int u = 0; u <= nX; u++)
             {
-                for (int j = 0; j <= nY; j++)
+                for (int v = 0; v <= nY; v++)
                 {
-                    for (int k = 0; k <= nZ; k++)
+                    for (int w = 0; w <= nZ; w++)
                     {
-                        // Compute position vector
-                        Vector3d V = i * vectorX + j * vectorY + k * vectorZ;
+                        // compute position vector
+                        Vector3d V = u * vectorX + v * vectorY + w * vectorZ;
                         currentPt = basePlane.Origin + V;
 
-                        // Check if point is inside
+                        // check if point is inside
                         bool isInside = false;
 
-                        // If design space is a BREP
+                        // if design space is a BREP
                         if (brepDesignSpace != null)
+                            // check if it is inside the space (within tolerance, meaning it can be outside the surface by the specified tolerance)
                             isInside = brepDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
-                        // If design space is a MESH
+                        // if design space is a MESH
                         if (meshDesignSpace != null)
                             isInside = meshDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
 
-                        // Check if point is inside the Brep Design Space
+                        // if point is inside the design space, we add it to the datatree,
+                        // for the reason stated above, we must also ensure that all neighbours of inside nodes are included
                         if (isInside)
                         {
-                            // Neighbours of an inside node must be created (since they share a strut with an inside node, which we will be trimming)
-                            // So before creating the node, we ensure that all its neighbours have been created
-                            // This might seem excessive, but it's a robust approach
+                            // this might seem excessive, but it's a robust approach
                             List<GH_Path> neighbours = new List<GH_Path>();
-                            neighbours.Add(new GH_Path(i-1, j, k));
-                            neighbours.Add(new GH_Path(i, j-1, k));
-                            neighbours.Add(new GH_Path(i, j, k-1));
-                            neighbours.Add(new GH_Path(i+1, j, k));
-                            neighbours.Add(new GH_Path(i, j+1, k));
-                            neighbours.Add(new GH_Path(i, j, k+1));
-                            GH_Path currentPath = new GH_Path(i, j, k);
+                            neighbours.Add(new GH_Path(u-1, v, w));
+                            neighbours.Add(new GH_Path(u, v-1, w));
+                            neighbours.Add(new GH_Path(u, v, w-1));
+                            neighbours.Add(new GH_Path(u+1, v, w));
+                            neighbours.Add(new GH_Path(u, v+1, w));
+                            neighbours.Add(new GH_Path(u, v, w+1));
+                            GH_Path currentPath = new GH_Path(u, v, w);
 
-                            // If the path doesn't exist, it hasn't been created, so create it
+                            // if the path doesn't exist, it hasn't been added, so add it
                             if (!gridTree.PathExists(neighbours[0]))    gridTree.Append(new GH_Point(currentPt - vectorX), neighbours[0]);
                             if (!gridTree.PathExists(neighbours[1]))    gridTree.Append(new GH_Point(currentPt - vectorY), neighbours[1]);
                             if (!gridTree.PathExists(neighbours[2]))    gridTree.Append(new GH_Point(currentPt - vectorZ), neighbours[2]);
                             if (!gridTree.PathExists(neighbours[3]))    gridTree.Append(new GH_Point(currentPt + vectorX), neighbours[3]);
                             if (!gridTree.PathExists(neighbours[4]))    gridTree.Append(new GH_Point(currentPt + vectorY), neighbours[4]);
                             if (!gridTree.PathExists(neighbours[5]))    gridTree.Append(new GH_Point(currentPt + vectorZ), neighbours[5]);
-                            // Finally, same goes for the current node
+                            // same goes for the current node
                             if (!gridTree.PathExists(currentPath))      gridTree.Append(new GH_Point(currentPt), currentPath);
                         }
 
@@ -167,7 +175,7 @@ namespace IntraLattice
             }
           
 
-            // Output data
+            // 8. Set output
             DA.SetDataTree(0, gridTree);
 
         }

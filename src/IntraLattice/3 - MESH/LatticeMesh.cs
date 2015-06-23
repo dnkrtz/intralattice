@@ -7,10 +7,12 @@ using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 using Rhino;
 
+// This component converts the wireframe lattice into a solid mesh.
+// ================================================================
 // Based on Exoskeleton by David Stasiuk.
-// This component generates a solid mesh in place of the lattice frame.
 // It takes as input a list of lines and two radius lists (start-end).
-// Assumption: none
+
+// Written by Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {

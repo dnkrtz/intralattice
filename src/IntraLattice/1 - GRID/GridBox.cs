@@ -6,7 +6,10 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 
 // This component generates a simple cartesian 3D lattice grid.
-// Includes comments for tyros, explaining the purpose of each method of a C# Grasshopper Component (GH_Component).
+// ============================================================
+// Includes comments explaining the purpose of each method of a C# Grasshopper Component (GH_Component).
+
+// Written by Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
@@ -32,7 +35,7 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // '5' is the default value
             pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number of Cells ( x )", "Nx", "Number of unit cells (x)", GH_ParamAccess.item, 5);
@@ -80,37 +83,33 @@ namespace IntraLattice
             if (nY == 0) { return; }
             if (nZ == 0) { return; }
 
-            // 4. Let's cook some pasta
-
-            // Declare gh_structure data tree
-            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
+            // 4. Declare our point grid datatree
+            var gridTree = new GH_Structure<GH_Point>();
             
-            // Define BasePlane
+            // 5. Define BasePlane and directional iteration vectors
             Plane basePlane = Plane.WorldXY;
-
-            // Define iteration vectors in each direction (accounting size of cell)
             Vector3d vectorX = xCellSize * basePlane.XAxis;
             Vector3d vectorY = yCellSize * basePlane.YAxis;
             Vector3d vectorZ = zCellSize * basePlane.ZAxis;
 
-            // Create grid of points (as data tree)
-            for (int i = 0; i <= nX; i++)
+            // 6. Create grid of points
+            for (int u = 0; u <= nX; u++)
             {
-                for (int j = 0; j <= nY; j++)
+                for (int v = 0; v <= nY; v++)
                 {
-                    for (int k = 0; k <= nZ; k++)
+                    for (int w = 0; w <= nZ; w++)
                     {
-                        // Compute position vector
-                        Vector3d V = i * vectorX + j * vectorY + k * vectorZ;
+                        // compute position vector
+                        Vector3d V = u * vectorX + v * vectorY + w * vectorZ;
                         Point3d newPt = basePlane.Origin + V;
 
-                        GH_Path treePath = new GH_Path(i, j, k);            // Construct path in tree
-                        gridTree.Append(new GH_Point(newPt), treePath);     // Add point to tree
+                        GH_Path treePath = new GH_Path(u, v, w);            // construct path in tree
+                        gridTree.Append(new GH_Point(newPt), treePath);     // add point to tree
                     }
                 }
             }
 
-            // 5. Output data
+            // 7. Set output
             DA.SetDataTree(0, gridTree);
         }
         

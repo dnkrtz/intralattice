@@ -7,10 +7,13 @@ using Grasshopper.Kernel.Types;
 using Rhino.Geometry.Intersect;
 
 // This component generates a conformal lattice grid between a surface and an axis
-// TWO METHODS
-// 1. Based on UV-Map of surface (UV = True)
-// 2. Based on custom map that follows axis direction (UV = False)
-// Assumption : The surface rotates the full 360degrees around the axis (for second method).
+// ===============================================================================
+// The axis can be an open curve or a closed curve. Of course, it may also be a straight line.
+// The surface does not need to loop a full 360 degrees around the axis.
+// Our implementation assumes that the axis is a set of U parameters, thus it should be aligned with U parameters of the surface.
+// The flipUV input allows the user to swap U and V parameters of the surface.
+
+// Written by Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
@@ -25,9 +28,9 @@ namespace IntraLattice
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddSurfaceParameter("Surface", "S", "Surface to conform to", GH_ParamAccess.item);
+            pManager.AddSurfaceParameter("Surface", "Surface", "Surface to conform to", GH_ParamAccess.item);
             pManager.AddCurveParameter("Axis", "A", "Axis (may be curved)", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("UV Mapping", "UV", "True = Use UV-Map\nFalse = Use Cylindrical-Map", GH_ParamAccess.item, true); // default value is true
+            pManager.AddBooleanParameter("Flip UV", "FlipUV", "Flip the U and V parameters on the surface", GH_ParamAccess.item, false); // default value is true
             pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
@@ -35,111 +38,88 @@ namespace IntraLattice
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Grid", "G", "Point grid", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Grid", "Grid", "Point grid", GH_ParamAccess.tree);
+            pManager.AddVectorParameter("Derivatives", "Derivs", "Directional derivatives", GH_ParamAccess.tree);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // Declare placeholder variables and assign initial invalid data.
+            // 1. Declare placeholder variables
             Surface surface = null;
             Curve axis = null;
-            Boolean withUV = new Boolean();
+            bool flipUV = false;
             double nU = 0;
             double nV = 0;
             double nW = 0;
 
-            // Attempt to fetch data
+            // 2.   Attempt to fetch data
             if (!DA.GetData(0, ref surface)) { return; }
             if (!DA.GetData(1, ref axis)) { return; }
-            if (!DA.GetData(2, ref withUV)) { return; }
+            if (!DA.GetData(2, ref flipUV)) { return; }
             if (!DA.GetData(3, ref nU)) { return; }
             if (!DA.GetData(4, ref nV)) { return; }
             if (!DA.GetData(5, ref nW)) { return; }
 
-            // Validate data
+            // 3. Validate data, if invalid, abort
             if (!surface.IsValid) { return; }
             if (!axis.IsValid) { return; }
             if (nU == 0) { return; }
             if (nV == 0) { return; }
             if (nW == 0) { return; }
 
-            // Initialize the grid of points
-            GH_Structure<GH_Point> gridTree = new GH_Structure<GH_Point>();
+            // 4. Initialize the grid tree and derivatives tree
+            var gridTree = new GH_Structure<GH_Point>();
+            var derivTree = new GH_Structure<GH_Vector>();
 
+            // 5. Flip the UV parameters if specified
+            if (flipUV) surface = surface.Transpose();
 
-            // Use UV-Map Method (note, should add check to make sure axis is aligned with u, as opposed to v)
-            if (withUV)
+            // 5. Normalize the UV-domain
+            Interval normalizedDomain = new Interval(0, 1);
+            surface.SetDomain(0, normalizedDomain); // surface u-direction
+            surface.SetDomain(1, normalizedDomain); // surface v-direction
+            axis.Domain = normalizedDomain; // axis (u-direction)
+
+            // 6. Divide axis into equal segments, get curve parameters
+            double[] curveParams = axis.DivideByCount((int)nU, true);
+            //    If axis is closed curve, add last parameter to close the loop
+            if (axis.IsClosed) curveParams[curveParams.Length] = curveParams[0]; 
+
+            // 7. Let's create the actual point grid now
+            for (int u = 0; u <= nU; u++)
             {
-                Vector3d[] derivatives; // not used, but needed for Evaluate method
-                List<double> curveParams = new List<double>(axis.DivideByCount((int)nU, true)); // divide curve into equal segments, get curve parameters
-
-                if (axis.IsClosed) curveParams.Add(curveParams[0]);  // if axis is closed curve, add last parameter to close the loop
-
-                // i, j loops over UV
-                for (int i = 0; i <= nU; i++)
+                for (int v = 0; v <= nV; v++)
                 {
-                    double curveParam = curveParams[i];
-                    for (int j = 0; j <= nV; j++)
+                    // Evaluate the point on the axis
+                    Point3d pt1 = axis.PointAt(curveParams[u]);
+
+                    // Evaluate the point and its derivatives at the current uv parameters
+                    Point3d pt2;
+                    Vector3d[] derivatives;
+                    surface.Evaluate(u/nU, v/nV, 2, out pt2, out derivatives);
+
+                    // Create vector joining these two points
+                    Vector3d wVect = pt2 - pt1;
+
+                    // Create grid points on and between surface and axis
+                    for (int w = 0; w <= nW; w++)
                     {
-                        // Find the pair of points on surface and axis
-                        Point3d pt1 = axis.PointAt(curveParam);
-                        Point3d pt2;
-                        double uParam = (i/nU) * surface.Domain(0).Length;
-                        double vParam = (j/nV) * surface.Domain(1).Length;
-                        surface.Evaluate(uParam, vParam, 0, out pt2, out derivatives);
+                        // Add point to gridTree
+                        Point3d newPt = pt1 + wVect * w / nW;
+                        GH_Path treePath = new GH_Path(u, v, w);        // construct path in the trees
+                        gridTree.Append(new GH_Point(newPt), treePath);
 
-                        // Create vector joining these two points
-                        Vector3d wVect = pt2 - pt1;
-
-                        // Create grid points on and between surface and axis
-                        for (int k = 0; k <= nW; k++)
-                        {
-                            Point3d newPt = pt1 + wVect * k / nW;
-                            GH_Path treePath = new GH_Path(i, j, k);
-                            gridTree.Append(new GH_Point(newPt), treePath);
-                        }
-                    }
-                }
-            }
-            // Here we don't use UV-Map of surface. Rather, we use planes perpendicular to the axis to intersect the surface.
-            // Kindof like drawing our own UV-Map. In some cases the two methods give the same result, but not necessarily.
-            else
-            {
-                // Prepare divisions along axis ('uNum' divisions)
-                List<double> curveParams = new List<double>(axis.DivideByCount((int)nU, true)); // divide curve into zNum divisions
-                Plane[] basePlanes = axis.GetPerpendicularFrames(curveParams);  // get perpendicular planes at each division point
-
-                // For now, assuming surface covers full 360degree rotation
-                List<double> angles = new List<double>();
-                for (int i = 0; i < nV; i++) angles.Add(2 * Math.PI * i / nV);
-
-                // Loop along axis
-                for (int i = 0; i < basePlanes.Length; i++)
-                {
-                    Plane basePlane = basePlanes[i];
-                    // Loop about axis
-                    for (int j = 0; j < angles.Count; j++)
-                    {
-                        double angle = angles[j];
-                        Vector3d rVect = basePlane.PointAt(Math.Cos(angle), Math.Sin(angle)) - basePlane.Origin; // Radial unit vector
-                        Ray3d rRay = new Ray3d(basePlane.Origin, rVect);
-                        Point3d surfPt = Intersection.RayShoot(rRay, new List<Surface> { surface }, 1)[0];   // Shoot ray to intersect surface
-                        rVect = surfPt - basePlane.Origin;  // Update radial vector (changes amplitude, direction unchanged)
-
-                        // Loop away from axis
-                        for (int k = 0; k <= nW; k++)
-                        {
-                            Point3d newPt = basePlane.Origin + rVect * k / nW;
-
-                            GH_Path treePath = new GH_Path(0, i, j);           // Construct path in the tree
-                            gridTree.Append(new GH_Point(newPt), treePath);    // Add point to GridTree
-                        }
+                        // Add uv-derivatives to derivTree
+                        // Decrease the amplitude of the derivative vector as we approach the axis
+                        derivTree.Append(new GH_Vector(derivatives[0] * w / nW), treePath);
+                        derivTree.Append(new GH_Vector(derivatives[1] * w / nW), treePath);
                     }
                 }
             }
 
-            // Output grid
+            // 8. Set output
             DA.SetDataTree(0, gridTree);
+            DA.SetDataTree(1, derivTree);
 
         }
 

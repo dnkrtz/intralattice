@@ -7,6 +7,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+// This is a set of methods & objects used by the mesh components
+// =====================================================
+// ConvexHull -> Implements a 3D convex hull algorithm that assumes all points lie on the hull (which is our case)
+// NormalizeMesh -> Adjusts orientation of face normals 
+// SleeveStitch -> Constructs the sleeve mesh faces (stitches the vertices)
+// EndFaceStitch -> Constructs the endface mesh faces (needed for single strut nodes)
+// LatticePlate -> *Object* representing the shared vertices between convex hulls and sleeves, based around a node
+// LatticeNode -> *Object* representing a lattice node
+
+// Written by Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice
 {
     public class MeshTools
@@ -14,8 +25,6 @@ namespace IntraLattice
 
         /// <summary>
         /// Incremental 3D convex hull algorithm
-        /// This approach is modified to take advantage of certain assumptions about the input
-        /// - All points lie on the hull
         /// </summary>
         public static void ConvexHull(ref Mesh hullMesh, List<Point3d> pts, int sides)
         {
@@ -139,6 +148,7 @@ namespace IntraLattice
         public List<Point3d> Vtc = new List<Point3d>();    // vertices (at index 0 is the centerpoint vertex)
     }
 
+    // The LatticeNode object
     public class LatticeNode
     {
         public Point3d Point3d;     // coordinates of node
