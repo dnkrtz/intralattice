@@ -121,9 +121,9 @@ namespace IntraLattice
                                     }
                                     // For MESH design space
                                     else if (designSpace.ObjectType == ObjectType.Mesh)
-                                        ;
-                                        //Intersection.MeshLine((Mesh)designSpace, strut.Line, );
-
+                                    {
+                                        Intersection.MeshLine((Mesh)designSpace, strut.Line, );
+                                    }
                                 }
                             }
                         }
