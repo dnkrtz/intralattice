@@ -48,9 +48,30 @@ namespace IntraLattice
             if (!DA.GetData(1, ref designSpace)) { return; }
             if (!DA.GetData(2, ref topo)) { return; }
 
-            if (gridTree == null) { return; }
             if (!designSpace.IsValid) { return; }
-            if (designSpace.ObjectType != ObjectType.Brep && designSpace.ObjectType != ObjectType.Mesh) { return; }
+            if (gridTree == null) { return; }
+
+            // 2. Validate the design space
+            Brep brepDesignSpace = null;
+            Mesh meshDesignSpace = null;
+            //    If brep design space, cast as such
+            if (designSpace.ObjectType == ObjectType.Brep)
+                brepDesignSpace = (Brep)designSpace;
+            //    If mesh design space, cast as such
+            else if (designSpace.ObjectType == ObjectType.Mesh)
+                meshDesignSpace = (Mesh)designSpace;
+            //    If solid surface, convert to brep
+            else if (designSpace.ObjectType == ObjectType.Surface)
+            {
+                Surface testSpace = (Surface)designSpace;
+                if(testSpace.IsSolid) brepDesignSpace = testSpace.ToBrep();
+            }
+            //    Else the design space is unacceptable
+            else
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Design space must be a Brep, Mesh or Closed Surface");
+                return;
+            }
 
             // 2. Get domain size of the tree
             int[] N = new int[] {0,0,0};
@@ -89,41 +110,65 @@ namespace IntraLattice
                                 {
                                     Point3d node1 = gridTree[currentPath][0].Value;
                                     Point3d node2 = gridTree[neighbourPath][0].Value;
-
-                                    // For BREP design space
-                                    if (designSpace.ObjectType == ObjectType.Brep)
+                
+                                    // Set nodeInside status
+                                    bool[] nodeInside = new bool[2]{false, false};
+                                    // Could do this in the grid section (set bool values)
+                                    if (brepDesignSpace != null)
                                     {
-                                        Brep brepDesignSpace = (Brep)designSpace;
-                                        
-                                        // Set nodeInside status
-                                        bool[] nodeInside = new bool[2]{false, false};
-                                        // Could do this in the grid section (set bool values)
                                         if (brepDesignSpace.IsPointInside(gridTree[currentPath][0].Value, Rhino.RhinoMath.SqrtEpsilon, true))
                                             nodeInside[0] = true;
                                         if (brepDesignSpace.IsPointInside(gridTree[neighbourPath][0].Value, Rhino.RhinoMath.SqrtEpsilon, true))
                                             nodeInside[1] = true;
-
-                                        // Now perform checks
-                                        // If neither node is inside, don't create a strut, skip to next loop
-                                        if (!nodeInside[0] && !nodeInside[1])
-                                            continue;
-                                        // If both nodes are inside, add full strut
-                                        else if (nodeInside[0] && nodeInside[1])
-                                            struts.Add(new GH_Line(new Line(node1, node2)));
-                                        // Else, strut requires trimming
-                                        else
-                                        {
-                                            GH_Line testLine;
-                                            testLine = FrameTools.TrimStrut(node1, node2, ref brepDesignSpace, nodeInside);
-                                            if (testLine!= null) struts.Add(testLine);
-                                        }
-                                            
                                     }
-                                    // For MESH design space
-                                    else if (designSpace.ObjectType == ObjectType.Mesh)
+                                    else if (meshDesignSpace != null)
                                     {
-                                        Intersection.MeshLine((Mesh)designSpace, strut.Line, );
+                                        if (meshDesignSpace.IsPointInside(gridTree[currentPath][0].Value, Rhino.RhinoMath.SqrtEpsilon, true))
+                                            nodeInside[0] = true;
+                                        if (meshDesignSpace.IsPointInside(gridTree[neighbourPath][0].Value, Rhino.RhinoMath.SqrtEpsilon, true))
+                                            nodeInside[1] = true;
                                     }
+                                        
+
+                                    // Now perform checks
+                                    // If neither node is inside, don't create a strut, skip to next loop
+                                    if (!nodeInside[0] && !nodeInside[1])
+                                        continue;
+                                    // If both nodes are inside, add full strut
+                                    else if (nodeInside[0] && nodeInside[1])
+                                        struts.Add(new GH_Line(new Line(node1, node2)));
+                                    // Else, strut requires trimming
+                                    else
+                                    {
+                                        // We are going to find the intersection point with the design space
+                                        Point3d[] intersectionPts = null;
+                                        GH_Line testLine = null;
+
+                                        if (brepDesignSpace != null)
+                                        {
+                                            Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
+                                            LineCurve strutToTrim = new LineCurve(new Line(node1, node2), 0, 1);
+                                            // find intersection point
+                                            Intersection.CurveBrep(strutToTrim, brepDesignSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
+                                        }
+                                        else if (meshDesignSpace != null)
+                                        {
+                                            int[] faceIds;
+                                            Line strutToTrim = new Line(node1, node2);
+                                            // find intersection point
+                                            intersectionPts = Intersection.MeshLine(meshDesignSpace, strutToTrim, out faceIds);
+                                        }
+
+                                        // Now, if an intersection point was found, trim the strut
+                                        if (intersectionPts.Length > 0)
+                                        {
+                                            testLine = FrameTools.TrimStrut(node1, node2, intersectionPts[0], nodeInside);
+                                            // if the strut was succesfully trimmed, add it to the list
+                                            if (testLine != null) struts.Add(testLine);
+                                        }
+                                        
+                                    }
+
                                 }
                             }
                         }
