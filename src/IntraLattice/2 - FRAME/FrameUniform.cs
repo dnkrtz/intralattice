@@ -10,7 +10,8 @@ using System.Collections.Generic;
 // This component maps a unit cell topology to the lattice grid
 // ============================================================
 // Also TRIMS the resulting lattice to the shape of the design space
-// Design space can be a Brep
+// Design space can be a Brep or Mesh
+// Mesh trimming is much faster than Brep trimming
 
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
@@ -144,6 +145,7 @@ namespace IntraLattice
                                         Point3d[] intersectionPts = null;
                                         GH_Line testLine = null;
 
+                                        // If brep design space
                                         if (brepDesignSpace != null)
                                         {
                                             Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
@@ -151,9 +153,10 @@ namespace IntraLattice
                                             // find intersection point
                                             Intersection.CurveBrep(strutToTrim, brepDesignSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
                                         }
+                                        // If mesh design space
                                         else if (meshDesignSpace != null)
                                         {
-                                            int[] faceIds;
+                                            int[] faceIds;  // dummy variable for MeshLine call
                                             Line strutToTrim = new Line(node1, node2);
                                             // find intersection point
                                             intersectionPts = Intersection.MeshLine(meshDesignSpace, strutToTrim, out faceIds);
