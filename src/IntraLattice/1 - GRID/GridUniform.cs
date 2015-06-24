@@ -139,7 +139,7 @@ namespace IntraLattice
 
                         // if design space is a BREP
                         if (brepDesignSpace != null)
-                            // check if it is inside the space (within tolerance, meaning it can be outside the surface by the specified tolerance)
+                            // check if it is inside the space (within unstrict tolerance, meaning it can be outside the surface by the specified tolerance)
                             isInside = brepDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
                         // if design space is a MESH
                         if (meshDesignSpace != null)

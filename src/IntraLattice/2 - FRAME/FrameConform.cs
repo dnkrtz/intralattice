@@ -12,6 +12,7 @@ using System.Windows.Forms;
 // If Morph=true, the uv struts are bezier curves which use the derivative information to morph to the design space.
 // It uses the TopologyNeighbours method to get node adjacency information.
 // Generally, no duplicate struts are created.
+// If derivtree is not input, we automatically set morph=false and generate linear struts (vs. morphed curves)
 
 // Written by Aidan Kurtz (http://aidankurtz.com)
 

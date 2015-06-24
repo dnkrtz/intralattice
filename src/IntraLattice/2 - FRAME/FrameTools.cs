@@ -68,38 +68,28 @@ namespace IntraLattice
             }
         }
 
-        public static GH_Line TrimStrut(Point3d node0, Point3d node1, ref Brep space, bool[] isInside)
+        public static GH_Line TrimStrut(Point3d node0, Point3d node1, Point3d intersectionPt, bool[] isInside)
         {
             LineCurve testStrut = new LineCurve(new Line(node0, node1), 0, 1);  // set line, with curve parameter domain [0,1]
-            Point3d[] intersectionPoint = null; // the intersection point
-            Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
-            // If nodes are on opposite sides of the space boundary, TRIM
-            // Begin by intersecting the brep
-            bool intersectFound = Intersection.CurveBrep(testStrut, space, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPoint);
 
-            // If an intersection was found, check the size of the trim
-            if (intersectFound)
+            // We only create strut if the trimmed strut is a certain length
+            double strutLength = node0.DistanceTo(node1);
+
+            if (isInside[0])
             {
-                // We'll need the length of the strut
-                double strutLength = node0.DistanceTo(node1);
-
-                if (intersectionPoint.Count() == 0) return null;
-
-                if (isInside[0])
-                {
-                    double testLength = intersectionPoint[0].DistanceTo(node0);
-                    if (testLength < strutLength * 0.1)         return null;
-                    else if (testLength > strutLength * 0.9)    return new GH_Line(new Line(node0, node1));
-                    else                                        return new GH_Line(new Line(node0, intersectionPoint[0]));
-                }
-                if (isInside[1])    
-                {
-                    double testLength = intersectionPoint[0].DistanceTo(node1);
-                    if (testLength < strutLength * 0.1)         return null;
-                    else if (testLength > strutLength * 0.9)    return new GH_Line(new Line(node0, node1));
-                    else                                        return new GH_Line(new Line(node1, intersectionPoint[0]));
-                }
+                double testLength = intersectionPt.DistanceTo(node0);
+                if (testLength < strutLength * 0.1)         return null;    // do not create strut if trimmed strut is less than 10% of the strut length
+                else if (testLength > strutLength * 0.9)    return new GH_Line(new Line(node0, node1)); // create full strut if >90% of strut length
+                else                                        return new GH_Line(new Line(node0, intersectionPt));
             }
+            if (isInside[1])    
+            {
+                double testLength = intersectionPt.DistanceTo(node1);
+                if (testLength < strutLength * 0.1)         return null;
+                else if (testLength > strutLength * 0.9)    return new GH_Line(new Line(node0, node1));
+                else                                        return new GH_Line(new Line(node1, intersectionPt));
+            }
+
             // If no intersection was found, something went wrong, don't create a strut, skip to next loop
             return null;
         }
