@@ -23,7 +23,7 @@ namespace IntraLattice
         /// Defines the unit cell topology as a nodes' relationship with neighbours
         /// The conditional statements simply ensure we are within the bounds of the grid
         /// </summary>
-        public static void TopologyNeighbours(ref List<GH_Path> neighbourPaths, int topo, int[] N, int u, int v, int w)
+        public static void TopologyNeighbours(ref List<GH_Path> neighbourPaths, int topo, double[] N, int u, int v, int w)
         {
             // BASIC
             if ( topo == 0 )
@@ -67,6 +67,13 @@ namespace IntraLattice
                             
             }
         }
+
+        public static void MapConformally()
+        {
+
+        }
+
+
 
         public static GH_Line TrimStrut(Point3d node0, Point3d node1, Point3d intersectionPt, bool[] isInside)
         {
