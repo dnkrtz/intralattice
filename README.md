@@ -5,7 +5,7 @@ Intralattice is a collection of generative CAD components for [Grasshopper](http
 
 ## Motivation
 
-The freedom of form enabled by 3D printing allows us to integrate new orders of complexity into designs. Lattice structures can be used as a means of
+The freedom of form enabled by 3D printing allows integration of new orders of complexity into designs. Lattice structures can be used as a means of
 
   + Volume reduction (i.e. minimize weight)
   + Increase of surface area (i.e. maximize heat transfer)
