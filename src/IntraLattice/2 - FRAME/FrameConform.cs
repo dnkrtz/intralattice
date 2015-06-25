@@ -78,7 +78,7 @@ namespace IntraLattice
             }
 
             // 2. Get size of the tree
-            int[] N = new int[] { 0, 0, 0 };
+            double[] N = new double[] { 0, 0, 0 };
             foreach (GH_Path path in gridTree.Paths)
             {
                 if (path.Indices[0] > N[0]) N[0] = path.Indices[0];

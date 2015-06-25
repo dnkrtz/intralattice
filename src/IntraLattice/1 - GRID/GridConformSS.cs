@@ -4,6 +4,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Special;
 
 // This component generates a conformal lattice grid between two surfaces.
 // =======================================================================
@@ -38,7 +39,7 @@ namespace IntraLattice
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddPointParameter("Grid", "Grid", "Point grid", GH_ParamAccess.tree);
-            pManager.AddLineParameter("Strut lines", "Lines", "Strut line network", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("Strut lines", "Lines", "Strut line network", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -56,14 +57,14 @@ namespace IntraLattice
 
             // 2. Attempt to fetch data
             if (!DA.GetData(0, ref topology)) { return; }
-            if (!DA.GetData(0, ref s1)) { return; }
-            if (!DA.GetData(1, ref s2)) { return; }
-            if (!DA.GetData(2, ref flipUV)) { return; }
-            if (!DA.GetData(3, ref nU)) { return; }
-            if (!DA.GetData(4, ref nV)) { return; }
-            if (!DA.GetData(5, ref nW)) { return; }
-            if (!DA.GetData(0, ref morphed)) { return; }
-            if (!DA.GetData(0, ref morphFactor)) { return; }
+            if (!DA.GetData(1, ref s1)) { return; }
+            if (!DA.GetData(2, ref s2)) { return; }
+            if (!DA.GetData(3, ref flipUV)) { return; }
+            if (!DA.GetData(4, ref nU)) { return; }
+            if (!DA.GetData(5, ref nV)) { return; }
+            if (!DA.GetData(6, ref nW)) { return; }
+            if (!DA.GetData(7, ref morphed)) { return; }
+            if (!DA.GetData(8, ref morphFactor)) { return; }
 
             // 3. Validate data
             if (!s1.IsValid) { return; }
@@ -79,7 +80,7 @@ namespace IntraLattice
             // 5. Flip the UV parameters a surface if specified
             if (flipUV) s1 = s1.Transpose();
             
-            // 6. Package the number of increments in each direction as a list
+            // 6. Package the number of increments in each direction in an array
             double[] N = new double[3] { nU, nV, nW };
 
             // 7. Normalize the UV-domain
@@ -89,7 +90,7 @@ namespace IntraLattice
             s2.SetDomain(0, normalizedDomain); // s2 u-direction
             s2.SetDomain(1, normalizedDomain); // s2 v-direction
 
-            // 8. Let's create the grid of nodes now
+            // 8. Let's create the grid of cell corners now
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
@@ -102,6 +103,7 @@ namespace IntraLattice
                     // evaluate point and its derivatives on both surface
                     s1.Evaluate(u/nU, v/nV, 2, out pt1, out derivatives1);
                     s2.Evaluate(u/nU, v/nV, 2, out pt2, out derivatives2);
+
 
                     // create vector joining the two points
                     Vector3d wVect = pt2 - pt1;
@@ -161,8 +163,8 @@ namespace IntraLattice
                                     Point3d pt2 = gridTree[neighbourPath][0].Value; // neighbour node
 
                                     // Create the strut
-                                    // If 'curved' is true, we create a bezier curve based on the uv derivatives (unless dealing with neighbours in w-direction)
-                                    if (morphed && currentPath.Indices[2] == neighbourPath.Indices[2])
+                                    // If 'curved' is true, we create a bezier curve based on the uv derivatives
+                                    if (morphed)
                                     {
                                         List<Vector3d> du = new List<Vector3d>();
                                         List<Vector3d> dv = new List<Vector3d>();
@@ -171,15 +173,15 @@ namespace IntraLattice
                                         // If neighbours in u-direction
                                         if (neighbourPath.Indices[0] != currentPath.Indices[0])
                                         {
-                                            // Notice bFact here, it scales the vector to give a better morphing
-                                            du.Add(derivTree[currentPath][0].Value / (bFact * N[0]));   // du[0] is the current node derivative
-                                            du.Add(derivTree[neighbourPath][0].Value / (bFact * N[0])); // du[1] is the neighbour node derivative
+                                            // Notice morphFactor here, it scales the vector to give a better morphing
+                                            du.Add(derivTree[currentPath][0].Value / (morphFactor * N[0]));   // du[0] is the current node derivative
+                                            du.Add(derivTree[neighbourPath][0].Value / (morphFactor * N[0])); // du[1] is the neighbour node derivative
                                         }
                                         // If neighbours in v-direction
                                         if (neighbourPath.Indices[1] != currentPath.Indices[1])
                                         {
-                                            dv.Add(derivTree[currentPath][1].Value / (bFact * N[1]));   // dv[0] is the current node derivative
-                                            dv.Add(derivTree[neighbourPath][1].Value / (bFact * N[1])); // dv[1] is the neighbour node derivative
+                                            dv.Add(derivTree[currentPath][1].Value / (morphFactor * N[1]));   // dv[0] is the current node derivative
+                                            dv.Add(derivTree[neighbourPath][1].Value / (morphFactor * N[1])); // dv[1] is the neighbour node derivative
                                         }
                                         // If neighbours in uv-direction (diagonal)
                                         if (du.Count == 2 && dv.Count == 2)
@@ -188,14 +190,32 @@ namespace IntraLattice
                                             duv.Add((du[0] + dv[0]) / (Math.Sqrt(2)));  // duv[0] is the current node derivative
                                             duv.Add((du[1] + dv[1]) / (Math.Sqrt(2)));  // duv[1] is the neighbour node derivative
                                         }
-
+                                        
                                         // Now we have everything we need to build a bezier curve
                                         List<Point3d> controlPoints = new List<Point3d>();
                                         controlPoints.Add(pt1); // first control point (vertex)
                                         if (duv.Count == 2)
                                         {
-                                            controlPoints.Add(pt1 + duv[0]);
-                                            controlPoints.Add(pt2 - duv[1]);
+                                            if (neighbourPath.Indices[0] > currentPath.Indices[0] && neighbourPath.Indices[1] > currentPath.Indices[1])
+                                            {
+                                                controlPoints.Add(pt1 + duv[0]);
+                                                controlPoints.Add(pt2 - duv[1]);
+                                            }
+                                            else if (neighbourPath.Indices[0] < currentPath.Indices[0] && neighbourPath.Indices[1] < currentPath.Indices[1])
+                                            {
+                                                controlPoints.Add(pt1 - duv[0]);
+                                                controlPoints.Add(pt2 + duv[1]);
+                                            }
+                                            else if (neighbourPath.Indices[0] > currentPath.Indices[0] && neighbourPath.Indices[1] < currentPath.Indices[1])
+                                            {
+                                                controlPoints.Add(pt1 + ((du[0] - dv[0]) / (Math.Sqrt(2))));
+                                                controlPoints.Add(pt2 - ((du[1] - dv[1]) / (Math.Sqrt(2))));
+                                            }
+                                            else
+                                            {
+                                                controlPoints.Add(pt1 - ((du[0] - dv[0]) / (Math.Sqrt(2))));
+                                                controlPoints.Add(pt2 + ((du[1] - dv[1]) / (Math.Sqrt(2))));
+                                            }
                                         }
                                         else if (du.Count == 2)
                                         {
@@ -227,6 +247,7 @@ namespace IntraLattice
 
             // 9. Set output
             DA.SetDataTree(0, gridTree);
+            DA.SetDataList(1, struts);
 
         }
 

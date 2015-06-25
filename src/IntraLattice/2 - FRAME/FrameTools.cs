@@ -64,7 +64,7 @@ namespace IntraLattice
             // OCTAHEDRAL
             else if ( topo == 4 )
             {
-                            
+                
             }
         }
 

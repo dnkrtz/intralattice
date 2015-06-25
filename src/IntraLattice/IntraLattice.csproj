@@ -60,6 +60,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="2 - FRAME\CustomCell.cs" />
     <Compile Include="2 - FRAME\FrameUniform.cs" />
     <Compile Include="2 - FRAME\FrameTools.cs" />
     <Compile Include="2 - FRAME\FrameConform.cs" />
