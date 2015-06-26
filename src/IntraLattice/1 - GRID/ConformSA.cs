@@ -17,9 +17,9 @@ using Rhino.Geometry.Intersect;
 
 namespace IntraLattice
 {
-    public class GridConformSA : GH_Component
+    public class ConformSA : GH_Component
     {
-        public GridConformSA()
+        public ConformSA()
             : base("Conform Surface-Axis", "ConformSA",
                 "Generates conforming lattice grid between a surface and an axis",
                 "IntraLattice2", "Grid")
@@ -28,39 +28,49 @@ namespace IntraLattice
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddCurveParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
             pManager.AddSurfaceParameter("Surface", "Surface", "Surface to conform to", GH_ParamAccess.item);
             pManager.AddCurveParameter("Axis", "A", "Axis (may be curved)", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Flip UV", "FlipUV", "Flip the U and V parameters on the surface", GH_ParamAccess.item, false); // default value is true
             pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
+            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, true);
+            pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Grid", "Grid", "Point grid", GH_ParamAccess.tree);
-            pManager.AddVectorParameter("Derivatives", "Derivs", "Directional derivatives", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Nodes", "Nodes", "Nodes", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("Lines", "Lines", "Lines", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Declare placeholder variables
+            List<Curve> topology = new List<Curve>();
             Surface surface = null;
             Curve axis = null;
             bool flipUV = false;
             double nU = 0;
             double nV = 0;
             double nW = 0;
+            bool morphed = false;
+            double morphFactor = 0;
 
             // 2.   Attempt to fetch data
-            if (!DA.GetData(0, ref surface)) { return; }
-            if (!DA.GetData(1, ref axis)) { return; }
-            if (!DA.GetData(2, ref flipUV)) { return; }
-            if (!DA.GetData(3, ref nU)) { return; }
-            if (!DA.GetData(4, ref nV)) { return; }
-            if (!DA.GetData(5, ref nW)) { return; }
+            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(1, ref surface)) { return; }
+            if (!DA.GetData(2, ref axis)) { return; }
+            if (!DA.GetData(3, ref flipUV)) { return; }
+            if (!DA.GetData(4, ref nU)) { return; }
+            if (!DA.GetData(5, ref nV)) { return; }
+            if (!DA.GetData(6, ref nW)) { return; }
+            if (!DA.GetData(7, ref morphed)) { return; }
+            if (!DA.GetData(8, ref morphFactor)) { return; }
 
             // 3. Validate data, if invalid, abort
+            if (topology.Count < 2) { return; }
             if (!surface.IsValid) { return; }
             if (!axis.IsValid) { return; }
             if (nU == 0) { return; }
