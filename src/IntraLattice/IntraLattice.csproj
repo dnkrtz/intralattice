@@ -60,17 +60,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="2 - FRAME\CustomCell.cs" />
+    <Compile Include="1 - CELL\Topo.cs" />
+    <Compile Include="1 - CELL\CustomCell.cs" />
     <Compile Include="2 - FRAME\FrameUniform.cs" />
     <Compile Include="2 - FRAME\FrameTools.cs" />
-    <Compile Include="2 - FRAME\FrameConform.cs" />
     <Compile Include="1 - GRID\GridBox.cs" />
     <Compile Include="1 - GRID\GridCylinder.cs" />
     <Compile Include="1 - GRID\GridSphere.cs" />
-    <Compile Include="1 - GRID\ConformSS.cs" />
-    <Compile Include="1 - GRID\GridConformSA.cs" />
+    <Compile Include="2 - FRAME\ConformSS.cs" />
+    <Compile Include="2 - FRAME\ConformSA.cs" />
     <Compile Include="1 - GRID\GridTools.cs" />
-    <Compile Include="2 - FRAME\PresetCell.cs" />
+    <Compile Include="1 - CELL\PresetCell.cs" />
     <Compile Include="IntraLatticeInfo.cs" />
     <Compile Include="3 - MESH\LatticeMesh.cs" />
     <Compile Include="3 - MESH\MeshTools.cs" />
