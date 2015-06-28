@@ -5,7 +5,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using System.Drawing;
 
-namespace IntraLattice._2___FRAME
+namespace IntraLattice
 {
     public class CustomCell : GH_Component
     {
@@ -15,7 +15,7 @@ namespace IntraLattice._2___FRAME
         public CustomCell()
             : base("CustomCell", "Nickname",
                 "Description",
-                "IntraLattice2", "Frame")
+                "IntraLattice2", "Cell")
         {
         }
 
@@ -36,6 +36,17 @@ namespace IntraLattice._2___FRAME
             GrasshopperDocument = this.OnPingDocument();
             InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0);
             InputTools.BooleanSelect(ref Component, ref GrasshopperDocument, 1);
+        }
+
+        /// <summary>
+        /// Here we set the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
+        public override GH_Exposure Exposure
+        {
+            get
+            {
+                return GH_Exposure.tertiary;
+            }
         }
 
         /// <summary>

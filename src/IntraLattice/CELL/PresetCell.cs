@@ -3,18 +3,20 @@ using System.Collections.Generic;
 
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Data;
 
-namespace IntraLattice._1___CELL
+namespace IntraLattice
 {
-    public class Topo : GH_Component
+    public class PresetCell : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the Topo class.
+        /// Initializes a new instance of the PresetCell class.
         /// </summary>
-        public Topo()
-            : base("Topo", "Nickname",
+        public PresetCell()
+            : base("PresetCell", "CellPreset",
                 "Description",
-                "Category", "Subcategory")
+                "IntraLattice2", "Cell")
         {
         }
 
@@ -30,6 +32,7 @@ namespace IntraLattice._1___CELL
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddCurveParameter("Lines", "L", "Line topology", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -38,6 +41,30 @@ namespace IntraLattice._1___CELL
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            List<GH_Line> lines = new List<GH_Line>();
+
+            int topology = 0;
+
+            for (int u=0; u<2; u++)
+            {
+                for (int v = 0; u < 2; u++)
+                {
+                    for (int w = 0; u < 2; u++)
+                    {
+                        // We'll be needing the data tree path of the current node, and those of its neighbours
+                        GH_Path currentPath = new GH_Path(u, v, w);
+                        List<GH_Path> neighbourPaths = new List<GH_Path>();
+
+                        // Get neighbours!!
+                        FrameTools.TopologyNeighbours(ref neighbourPaths, topology, new double[]{2,2,2}, u, v, w);
+
+                        foreach (GH_Path neighbourPath in neighbourPaths) ;
+                    }
+                }
+            }
+
+
+            
         }
 
         /// <summary>
@@ -58,7 +85,7 @@ namespace IntraLattice._1___CELL
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("{edebb77d-8243-4e41-9d20-8322720e9b7d}"); }
+            get { return new Guid("{508cc705-bc5b-42a9-8100-c1e364f3b83d}"); }
         }
     }
 }

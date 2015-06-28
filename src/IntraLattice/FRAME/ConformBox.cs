@@ -15,7 +15,7 @@ using Rhino;
 
 namespace IntraLattice
 {
-    public class GridBox : GH_Component
+    public class ConformBox : GH_Component
     {
 
         /// <summary>
@@ -25,10 +25,10 @@ namespace IntraLattice
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public GridBox()
-            : base("GridBox", "GridBox",
+        public ConformBox()
+            : base("ConformBox", "ConformBox",
                 "Generates a lattice grid box.",
-                "IntraLattice2", "Grid")
+                "IntraLattice2", "Frame")
         {
         }
 

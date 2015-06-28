@@ -11,12 +11,12 @@ using Grasshopper.Kernel.Types;
 
 namespace IntraLattice
 {
-    public class GridSphere : GH_Component
+    public class ConformSphere : GH_Component
     {
-        public GridSphere()
-            : base("GridSphere", "GridSphere",
+        public ConformSphere()
+            : base("ConformSphere", "ConformSphere",
                 "Generates a lattice grid sphere.",
-                "IntraLattice2", "Grid")
+                "IntraLattice2", "Frame")
         {
         }
 

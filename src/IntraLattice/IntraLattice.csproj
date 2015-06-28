@@ -60,24 +60,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="1 - CELL\Topo.cs" />
-    <Compile Include="1 - CELL\CustomCell.cs" />
-    <Compile Include="2 - FRAME\FrameUniform.cs" />
-    <Compile Include="2 - FRAME\FrameTools.cs" />
-    <Compile Include="1 - GRID\GridBox.cs" />
-    <Compile Include="2 - FRAME\ConformCylinder.cs" />
-    <Compile Include="1 - GRID\GridSphere.cs" />
-    <Compile Include="2 - FRAME\ConformSS.cs" />
-    <Compile Include="2 - FRAME\ConformSA.cs" />
-    <Compile Include="2 - FRAME\InputTools.cs" />
-    <Compile Include="2 - FRAME\TopologyTools.cs" />
-    <Compile Include="1 - CELL\PresetCell.cs" />
+    <Compile Include="CELL\Topo.cs" />
+    <Compile Include="CELL\CustomCell.cs" />
+    <Compile Include="FRAME\FrameUniform.cs" />
+    <Compile Include="FRAME\FrameTools.cs" />
+    <Compile Include="FRAME\ConformBox.cs" />
+    <Compile Include="FRAME\ConformCylinder.cs" />
+    <Compile Include="FRAME\ConformSphere.cs" />
+    <Compile Include="FRAME\ConformSS.cs" />
+    <Compile Include="FRAME\ConformSA.cs" />
+    <Compile Include="FRAME\InputTools.cs" />
+    <Compile Include="FRAME\TopologyTools.cs" />
+    <Compile Include="CELL\PresetCell.cs" />
     <Compile Include="IntraLatticeInfo.cs" />
-    <Compile Include="3 - MESH\LatticeMesh.cs" />
-    <Compile Include="3 - MESH\MeshTools.cs" />
-    <Compile Include="2 - FRAME\UniformDS.cs" />
+    <Compile Include="MESH\LatticeMesh.cs" />
+    <Compile Include="MESH\MeshTools.cs" />
+    <Compile Include="FRAME\UniformDS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="3 - MESH\ViewReport.cs" />
+    <Compile Include="MESH\ViewReport.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
