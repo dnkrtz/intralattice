@@ -113,16 +113,16 @@ namespace IntraLattice
             var nodeTree = new GH_Structure<GH_Point>();
 
             // 7. Prepare normalized unit cell topology
-            var cellNodes = new Point3dList();
-            var cellStruts = new List<IndexPair>();
-            TopologyTools.Topologize(ref topology, ref cellNodes, ref cellStruts);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            TopologyTools.NormaliseTopology(ref cellNodes); // normalizes the unit cell (scaled to unit size and moved to origin)
-            cellNodes.Transform(Transform.Scale(Plane.WorldXY, xCellSize, yCellSize, zCellSize));
+            var cell = new UnitCell();
+            TopologyTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
+            TopologyTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
+            TopologyTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
+            cell.Nodes.Transform(Transform.Scale(Plane.WorldXY, xCellSize, yCellSize, zCellSize));
 
             // 6. Define iteration vectors in each direction (accounting for Cell Size)
-            Vector3d vectorX = xCellSize * basePlane.XAxis;
-            Vector3d vectorY = yCellSize * basePlane.YAxis;
-            Vector3d vectorZ = zCellSize * basePlane.ZAxis;
+            Vector3d vectorU = xCellSize * basePlane.XAxis;
+            Vector3d vectorV = yCellSize * basePlane.YAxis;
+            Vector3d vectorW = zCellSize * basePlane.ZAxis;
 
             // 7. Create grid of nodes (as data tree)
             for (int u = 0; u <= N[0]; u++)
@@ -132,7 +132,7 @@ namespace IntraLattice
                     for (int w = 0; w <= N[2]; w++)
                     {
                         // compute position vector
-                        Vector3d V = u * vectorX + v * vectorY + w * vectorZ;
+                        Vector3d V = u * vectorU + v * vectorV + w * vectorW;
                         Point3d currentPt = basePlane.Origin + V;
 
                         // check if point is inside
@@ -161,12 +161,12 @@ namespace IntraLattice
                             GH_Path currentPath = new GH_Path(u, v, w);
 
                             // if the path doesn't exist, it hasn't been added, so add it
-                            if (!nodeTree.PathExists(neighbours[0])) nodeTree.Append(new GH_Point(currentPt - vectorX), neighbours[0]);
-                            if (!nodeTree.PathExists(neighbours[1])) nodeTree.Append(new GH_Point(currentPt - vectorY), neighbours[1]);
-                            if (!nodeTree.PathExists(neighbours[2])) nodeTree.Append(new GH_Point(currentPt - vectorZ), neighbours[2]);
-                            if (!nodeTree.PathExists(neighbours[3])) nodeTree.Append(new GH_Point(currentPt + vectorX), neighbours[3]);
-                            if (!nodeTree.PathExists(neighbours[4])) nodeTree.Append(new GH_Point(currentPt + vectorY), neighbours[4]);
-                            if (!nodeTree.PathExists(neighbours[5])) nodeTree.Append(new GH_Point(currentPt + vectorZ), neighbours[5]);
+                            if (!nodeTree.PathExists(neighbours[0])) nodeTree.Append(new GH_Point(currentPt - vectorU), neighbours[0]);
+                            if (!nodeTree.PathExists(neighbours[1])) nodeTree.Append(new GH_Point(currentPt - vectorV), neighbours[1]);
+                            if (!nodeTree.PathExists(neighbours[2])) nodeTree.Append(new GH_Point(currentPt - vectorW), neighbours[2]);
+                            if (!nodeTree.PathExists(neighbours[3])) nodeTree.Append(new GH_Point(currentPt + vectorU), neighbours[3]);
+                            if (!nodeTree.PathExists(neighbours[4])) nodeTree.Append(new GH_Point(currentPt + vectorV), neighbours[4]);
+                            if (!nodeTree.PathExists(neighbours[5])) nodeTree.Append(new GH_Point(currentPt + vectorW), neighbours[5]);
                             // same goes for the current node
                             if (!nodeTree.PathExists(currentPath))
                             {
@@ -176,7 +176,6 @@ namespace IntraLattice
                         }
                     }
                 }
-
             }
 
 
@@ -189,7 +188,6 @@ namespace IntraLattice
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-
                         // We'll be needing the data tree path of the current node, and those of its neighbours
                         GH_Path currentPath = new GH_Path(u, v, w);
 

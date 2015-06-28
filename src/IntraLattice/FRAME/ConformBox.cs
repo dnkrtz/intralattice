@@ -51,7 +51,8 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Grid", "G", "Point grid", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -93,10 +94,10 @@ namespace IntraLattice
             var nodeTree = new GH_Structure<GH_Point>();
 
             // 5. Prepare normalized unit cell topology
-            var cellNodes = new Point3dList();
-            var cellStruts = new List<IndexPair>();
-            TopologyTools.Topologize(ref topology, ref cellNodes, ref cellStruts);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            TopologyTools.NormaliseTopology(ref cellNodes); // normalizes the unit cell (scaled to unit size and moved to origin)
+            var cell = new UnitCell();
+            TopologyTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
+            TopologyTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
+            TopologyTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
             
             // 6. Define BasePlane and directional iteration vectors
             Plane basePlane = Plane.WorldXY;
@@ -113,12 +114,12 @@ namespace IntraLattice
                     for (int w = 0; w <= nZ; w++)
                     {
                         // this loop maps each node in the cell onto the UV-surface maps
-                        for (int nodeIndex = 0; nodeIndex < cellNodes.Count; nodeIndex++)
+                        for (int nodeIndex = 0; nodeIndex < cell.Nodes.Count; nodeIndex++)
                         {
 
-                            double usub = cellNodes[nodeIndex].X; // u-position within unit cell
-                            double vsub = cellNodes[nodeIndex].Y; // v-position within unit cell
-                            double wsub = cellNodes[nodeIndex].Z; // w-position within unit cell
+                            double usub = cell.Nodes[nodeIndex].X; // u-position within unit cell
+                            double vsub = cell.Nodes[nodeIndex].Y; // v-position within unit cell
+                            double wsub = cell.Nodes[nodeIndex].Z; // w-position within unit cell
 
                             // compute position vector
                             Vector3d V = (u+usub) * vectorX + (v+vsub) * vectorY + (w+wsub) * vectorZ;

@@ -38,8 +38,8 @@ namespace IntraLattice
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Grid", "G", "Point grid", GH_ParamAccess.tree);
-            pManager.AddVectorParameter("Derivatives", "Derivs", "Directional derivatives", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -86,11 +86,11 @@ namespace IntraLattice
             cylinder.SetDomain(0, new Interval(0, 1)); // surface u-direction
             cylinder.SetDomain(1, new Interval(0, 1)); // surface v-direction
 
-            // 6. Prepare normalized unit cell topology
-            var cellNodes = new Point3dList();
-            var cellStruts = new List<IndexPair>();
-            TopologyTools.Topologize(ref topology, ref cellNodes, ref cellStruts);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            TopologyTools.NormaliseTopology(ref cellNodes); // normalizes the unit cell (scaled to unit size and moved to origin)
+            // 6. Prepare normalized/formatted unit cell topology
+            var cell = new UnitCell();
+            TopologyTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
+            TopologyTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
+            TopologyTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
 
             // 7. Create grid of points (as data tree)
             //    u-direction is along the cylinder
@@ -100,14 +100,18 @@ namespace IntraLattice
                 for (int v = 0; v <= N[1]; v++)
                 {
                     // this loop maps each node in the cell onto the UV-surface maps
-                    for (int nodeIndex = 0; nodeIndex < cellNodes.Count; nodeIndex++)
+                    for (int nodeIndex = 0; nodeIndex < cell.Nodes.Count; nodeIndex++)
                     {
+                        // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                        if (cell.NodePaths[nodeIndex][0] + cell.NodePaths[nodeIndex][1] + cell.NodePaths[nodeIndex][2] > 0)
+                            continue;
+
                         Point3d pt1, pt2;
                         Vector3d[] derivatives;
 
-                        double usub = cellNodes[nodeIndex].X; // u-position within unit cell
-                        double vsub = cellNodes[nodeIndex].Y; // v-position within unit cell
-                        double wsub = cellNodes[nodeIndex].Z; // w-position within unit cell
+                        double usub = cell.Nodes[nodeIndex].X; // u-position within unit cell
+                        double vsub = cell.Nodes[nodeIndex].Y; // v-position within unit cell
+                        double wsub = cell.Nodes[nodeIndex].Z; // w-position within unit cell
 
                         // construct z-position vector
                         Vector3d vectorZ = height * basePlane.ZAxis * (u+usub) / N[0];
@@ -147,11 +151,11 @@ namespace IntraLattice
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<GH_Curve>();
-            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, cellStruts, cellNodes, N, morphed);
+            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
 
             // 8. Set output
             DA.SetDataTree(0, nodeTree);
-            DA.SetDataTree(1, derivTree);
+            DA.SetDataList(1, struts);
         }
 
         // Primitive grid component -> first panel of the toolbar

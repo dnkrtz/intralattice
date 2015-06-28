@@ -43,13 +43,13 @@ namespace IntraLattice
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Nodes", "Nodes", "Nodes", GH_ParamAccess.tree);
-            pManager.AddCurveParameter("Struts", "Struts", "Struts", GH_ParamAccess.list);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // 1. Declare placeholder variables
+            // 1. Retrieve and validate inputs
             var topology = new List<Curve>();
             Surface surface = null;
             Curve axis = null;
@@ -60,7 +60,6 @@ namespace IntraLattice
             bool morphed = false;
             double morphFactor = 0;
 
-            // 2.   Attempt to fetch data
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref surface)) { return; }
             if (!DA.GetData(2, ref axis)) { return; }
@@ -71,7 +70,6 @@ namespace IntraLattice
             if (!DA.GetData(7, ref morphed)) { return; }
             if (!DA.GetData(8, ref morphFactor)) { return; }
 
-            // 3. Validate data, if invalid, abort
             if (topology.Count < 2) { return; }
             if (!surface.IsValid) { return; }
             if (!axis.IsValid) { return; }
@@ -79,47 +77,51 @@ namespace IntraLattice
             if (nV == 0) { return; }
             if (nW == 0) { return; }
 
-            // 4. Initialize the grid tree and derivatives tree
+            // 2. Initialize the grid tree and derivatives tree
             var nodeTree = new GH_Structure<GH_Point>();
             var derivTree = new GH_Structure<GH_Vector>();
 
-            // 5. Flip the UV parameters if specified
+            // 3. Flip the UV parameters if specified
             if (flipUV) surface = surface.Transpose();
 
-            // 6. Package the number of cells in each direction into an array
+            // 4. Package the number of cells in each direction into an array
             double[] N = new double[3] { nU, nV, nW };
 
-            // 7. Normalize the UV-domain
+            // 5. Normalize the UV-domain
             Interval normalizedDomain = new Interval(0, 1);
             surface.SetDomain(0, normalizedDomain); // surface u-direction
             surface.SetDomain(1, normalizedDomain); // surface v-direction
             axis.Domain = normalizedDomain; // axis (u-direction)
 
-            // 8. Prepare normalized unit cell topology
-            var cellNodes = new Point3dList();
-            var cellStruts = new List<IndexPair>();
-            TopologyTools.Topologize(ref topology, ref cellNodes, ref cellStruts);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            TopologyTools.NormaliseTopology(ref cellNodes); // normalizes the unit cell (scaled to unit size and moved to origin)
+            // 6. Prepare normalized/formatted unit cell topology
+            var cell = new UnitCell();
+            TopologyTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into a node indexpair list format
+            TopologyTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
+            TopologyTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
 
-            // 9. Divide axis into equal segments, get curve parameters
-            double[] curveParams = axis.DivideByCount((int)nU, true);
+            // 7. Divide axis into equal segments, get curve parameters
+            double[] curveParams = axis.DivideByCount((int)N[0], true);
             double uStep = curveParams[1] - curveParams[0];
             //    If axis is closed curve, add last parameter to close the loop
             if (axis.IsClosed) curveParams[curveParams.Length] = curveParams[0]; 
 
-            // 10. Let's create the actual point grid now
+            // 8. Let's create the actual lattice nodes now
             //
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
                 {
                     // this loop maps each node in the cell onto the UV-surface map and axis (U)
-                    for (int nodeIndex = 0; nodeIndex < cellNodes.Count; nodeIndex++)
+                    for (int nodeIndex = 0; nodeIndex < cell.Nodes.Count; nodeIndex++)
                     {
+                        // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                        if (cell.NodePaths[nodeIndex][0] + cell.NodePaths[nodeIndex][1] + cell.NodePaths[nodeIndex][2] > 0)
+                            continue;
+
                         // local node position within cell
-                        double usub = cellNodes[nodeIndex].X; // u-position within unit cell
-                        double vsub = cellNodes[nodeIndex].Y; // v-position within unit cell
-                        double wsub = cellNodes[nodeIndex].Z; // w-position within unit cell
+                        double usub = cell.Nodes[nodeIndex].X; // u-position within unit cell
+                        double vsub = cell.Nodes[nodeIndex].Y; // v-position within unit cell
+                        double wsub = cell.Nodes[nodeIndex].Z; // w-position within unit cell
 
                         // evaluate the point on the axis
                         Point3d pt1;
@@ -160,12 +162,12 @@ namespace IntraLattice
                 }
             }
 
-            // 10. Generate the struts
-            //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
+            // 9. Generate the struts
+            //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<GH_Curve>();
-            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, cellStruts, cellNodes, N, morphed);
+            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
 
-            // 8. Set output
+            // 10. Set output
             DA.SetDataTree(0, nodeTree);
             DA.SetDataList(1, struts);
 

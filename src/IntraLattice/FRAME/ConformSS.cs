@@ -8,7 +8,7 @@ using Grasshopper.Kernel.Special;
 using Rhino.Collections;
 using Rhino;
 
-// This component generates a conformal lattice grid between two surfaces.
+// This component generates a conformal lattice between two surfaces.
 // =======================================================================
 // Assumption : The surfaces are oriented in the same direction (for UV-Map indices)
 
@@ -91,11 +91,11 @@ namespace IntraLattice
             s2.SetDomain(0, normalizedDomain); // s2 u-direction
             s2.SetDomain(1, normalizedDomain); // s2 v-direction
 
-            // 6. Prepare normalized unit cell topology
-            var cellNodes = new Point3dList();
-            var cellStruts = new List<IndexPair>();
-            TopologyTools.Topologize(ref topology, ref cellNodes, ref cellStruts);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            TopologyTools.NormaliseTopology(ref cellNodes); // normalizes the unit cell (scaled to unit size and moved to origin)
+            // 6. Prepare normalized/formatted unit cell topology
+            var cell = new UnitCell();
+            TopologyTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into a node indexpair list format
+            TopologyTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
+            TopologyTools.FormatTopology(ref cell); // removes all duplicate struts and sets up relative path references (for nodes)
 
             // 7. Map nodes to design space
             //    Loop through the uvw cell grid
@@ -104,14 +104,18 @@ namespace IntraLattice
                 for (int v = 0; v <= N[1]; v++)
                 {
                     // this loop maps each node in the cell onto the UV-surface maps
-                    for (int nodeIndex = 0; nodeIndex < cellNodes.Count; nodeIndex++)
+                    for (int nodeIndex = 0; nodeIndex < cell.Nodes.Count; nodeIndex++)
                     {
+                        // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                        if (cell.NodePaths[nodeIndex][0] + cell.NodePaths[nodeIndex][1] + cell.NodePaths[nodeIndex][2] > 0)
+                            continue;                            
+
                         Point3d pt1; Vector3d[] derivatives1; // initialize for surface 1
                         Point3d pt2; Vector3d[] derivatives2; // initialize for surface 2
 
-                        double usub = cellNodes[nodeIndex].X; // u-position within unit cell
-                        double vsub = cellNodes[nodeIndex].Y; // v-position within unit cell
-                        double wsub = cellNodes[nodeIndex].Z; // w-position within unit cell
+                        double usub = cell.Nodes[nodeIndex].X; // u-position within unit cell
+                        double vsub = cell.Nodes[nodeIndex].Y; // v-position within unit cell
+                        double wsub = cell.Nodes[nodeIndex].Z; // w-position within unit cell
 
                         // evaluate point and its derivatives on both surfaces
                         s1.Evaluate((u+usub) / N[0], (v+vsub) / N[1], 2, out pt1, out derivatives1);
@@ -152,8 +156,7 @@ namespace IntraLattice
             // 8. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<GH_Curve>();
-            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, cellStruts, cellNodes, N, morphed);
-
+            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
 
             // 9. Set output
             DA.SetDataTree(0, nodeTree);
