@@ -4,6 +4,8 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Rhino.Collections;
+using Rhino;
 
 // This component generates a simple cartesian 3D lattice grid.
 // ============================================================
@@ -35,6 +37,7 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddCurveParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
             pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // '5' is the default value
             pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
@@ -59,7 +62,8 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Declare placeholder variables and assign initial invalid data.
-            //    This way, if the input parameters fail to supply valid data, we know when to abort.
+            //    This way, if the input parameters fail to supply valid data, we know when to abort
+            var topology = new List<Curve>();
             double xCellSize = 0;
             double yCellSize = 0;
             double zCellSize = 0;
@@ -68,14 +72,16 @@ namespace IntraLattice
             int nZ = 0;
 
             // 2. Retrieve input data.
-            if (!DA.GetData(0, ref xCellSize)) { return; }
-            if (!DA.GetData(1, ref yCellSize)) { return; }
-            if (!DA.GetData(2, ref zCellSize)) { return; }
-            if (!DA.GetData(3, ref nX)) { return; }
-            if (!DA.GetData(4, ref nY)) { return; }
-            if (!DA.GetData(5, ref nZ)) { return; }
+            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(1, ref xCellSize)) { return; }
+            if (!DA.GetData(2, ref yCellSize)) { return; }
+            if (!DA.GetData(3, ref zCellSize)) { return; }
+            if (!DA.GetData(4, ref nX)) { return; }
+            if (!DA.GetData(5, ref nY)) { return; }
+            if (!DA.GetData(6, ref nZ)) { return; }
 
             // 3. If data is invalid, we need to abort.
+            if (topology.Count < 2) { return; }
             if (xCellSize == 0) { return; }
             if (yCellSize == 0) { return; }
             if (zCellSize == 0) { return; }
@@ -84,33 +90,49 @@ namespace IntraLattice
             if (nZ == 0) { return; }
 
             // 4. Declare our point grid datatree
-            var gridTree = new GH_Structure<GH_Point>();
+            var nodeTree = new GH_Structure<GH_Point>();
+
+            // 5. Prepare normalized unit cell topology
+            var cellNodes = new Point3dList();
+            var cellStruts = new List<IndexPair>();
+            TopologyTools.Topologize(ref topology, ref cellNodes, ref cellStruts);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
+            TopologyTools.NormaliseTopology(ref cellNodes); // normalizes the unit cell (scaled to unit size and moved to origin)
             
-            // 5. Define BasePlane and directional iteration vectors
+            // 6. Define BasePlane and directional iteration vectors
             Plane basePlane = Plane.WorldXY;
             Vector3d vectorX = xCellSize * basePlane.XAxis;
             Vector3d vectorY = yCellSize * basePlane.YAxis;
             Vector3d vectorZ = zCellSize * basePlane.ZAxis;
 
-            // 6. Create grid of points
+            // 7. Map nodes to design space
+            //    Loop through the uvw cell grid
             for (int u = 0; u <= nX; u++)
             {
                 for (int v = 0; v <= nY; v++)
                 {
                     for (int w = 0; w <= nZ; w++)
                     {
-                        // compute position vector
-                        Vector3d V = u * vectorX + v * vectorY + w * vectorZ;
-                        Point3d newPt = basePlane.Origin + V;
+                        // this loop maps each node in the cell onto the UV-surface maps
+                        for (int nodeIndex = 0; nodeIndex < cellNodes.Count; nodeIndex++)
+                        {
 
-                        GH_Path treePath = new GH_Path(u, v, w);            // construct path in tree
-                        gridTree.Append(new GH_Point(newPt), treePath);     // add point to tree
+                            double usub = cellNodes[nodeIndex].X; // u-position within unit cell
+                            double vsub = cellNodes[nodeIndex].Y; // v-position within unit cell
+                            double wsub = cellNodes[nodeIndex].Z; // w-position within unit cell
+
+                            // compute position vector
+                            Vector3d V = (u+usub) * vectorX + (v+vsub) * vectorY + (w+wsub) * vectorZ;
+                            Point3d newPt = basePlane.Origin + V;
+
+                            GH_Path treePath = new GH_Path(u, v, w);            // construct path in tree
+                            nodeTree.Append(new GH_Point(newPt), treePath);     // add point to tree
+                        }
                     }
                 }
             }
 
-            // 7. Set output
-            DA.SetDataTree(0, gridTree);
+            // 8. Set output
+            DA.SetDataTree(0, nodeTree);
         }
         
         /// <summary>

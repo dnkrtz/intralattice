@@ -46,8 +46,8 @@ namespace IntraLattice
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // 1. Declare placeholder variables
-            List<Curve> topology = new List<Curve>();
+            // 1. Retrieve and validate inputs
+            var topology = new List<Curve>();
             Surface s1 = null;
             Surface s2 = null;
             bool flipUV = false;
@@ -57,7 +57,6 @@ namespace IntraLattice
             bool morphed = false;
             double morphFactor = 0;
 
-            // 2. Attempt to fetch data
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref s1)) { return; }
             if (!DA.GetData(2, ref s2)) { return; }
@@ -68,7 +67,6 @@ namespace IntraLattice
             if (!DA.GetData(7, ref morphed)) { return; }
             if (!DA.GetData(8, ref morphFactor)) { return; }
 
-            // 3. Validate data
             if (topology.Count < 2) { return; }
             if (!s1.IsValid) { return; }
             if (!s2.IsValid) { return; }
@@ -76,30 +74,30 @@ namespace IntraLattice
             if (nV == 0) { return; }
             if (nW == 0) { return; }
 
-            // 4. Initialize the grid tree and derivatives tree
+            // 2. Initialize the grid tree and derivatives tree
             var nodeTree = new GH_Structure<GH_Point>();     // will contain lattice nodes
             var derivTree = new GH_Structure<GH_Vector>();   // will contain derivatives (du,dv) in a parallel tree
 
-            // 5. Flip the UV parameters a surface if specified
+            // 3. Flip the UV parameters a surface if specified
             if (flipUV) s1 = s1.Transpose();
             
-            // 6. Package the number of cells in each direction into an array
+            // 4. Package the number of cells in each direction into an array
             double[] N = new double[3] { nU, nV, nW };
 
-            // 7. Normalize the UV-domain
+            // 5. Normalize the UV-domain
             Interval normalizedDomain = new Interval(0,1);
             s1.SetDomain(0, normalizedDomain); // s1 u-direction
             s1.SetDomain(1, normalizedDomain); // s1 v-direction
             s2.SetDomain(0, normalizedDomain); // s2 u-direction
             s2.SetDomain(1, normalizedDomain); // s2 v-direction
 
-            // 8. Prepare normalized unit cell topology
+            // 6. Prepare normalized unit cell topology
             var cellNodes = new Point3dList();
             var cellStruts = new List<IndexPair>();
             TopologyTools.Topologize(ref topology, ref cellNodes, ref cellStruts);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
             TopologyTools.NormaliseTopology(ref cellNodes); // normalizes the unit cell (scaled to unit size and moved to origin)
 
-            // 9. Map nodes to design space
+            // 7. Map nodes to design space
             //    Loop through the uvw cell grid
             for (int u = 0; u <= N[0]; u++)
             {
@@ -151,68 +149,13 @@ namespace IntraLattice
                 }
             }
 
-            // 10. Generate the struts
+            // 8. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<GH_Curve>();
-            //
-            for (int u = 0; u <= N[0]; u++)
-            {
-                for (int v = 0; v <= N[1]; v++)
-                {
-                    for (int w = 0; w <= N[2]; w++)
-                    {
-                        // we're inside a unit cell
-                        // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cellStruts)
-                        {
-                            // prepare the path of the nodes (path in tree)
-                            GH_Path startPath = new GH_Path(u, v, w, cellStrut.I);
-                            GH_Path endPath = new GH_Path(u, v, w, cellStrut.J);
+            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, cellStruts, cellNodes, N, morphed);
 
-                            // make sure both nodes exist (will be false at boundaries)
-                            if (nodeTree.PathExists(startPath) && nodeTree.PathExists(endPath))
-                            {
-                                Point3d node1 = nodeTree[startPath][0].Value;
-                                Point3d node2 = nodeTree[endPath][0].Value;
 
-                                // get direction vector from the normalized 'cellNodes'
-                                Vector3d directionVector1 = new Vector3d(cellNodes[cellStrut.J] - cellNodes[cellStrut.I]);
-                                directionVector1.Unitize();
-
-                                // if user requested morphing, we need to compute bezier curve struts
-                                if (morphed)
-                                {
-                                    // compute directional derivatives
-                                    // we use the du and dv derivatives as the basis for the directional derivative
-                                    Vector3d deriv1 = derivTree[startPath][0].Value * directionVector1.X + derivTree[startPath][1].Value * directionVector1.Y;
-                                    // same process for node2, but reverse the direction vector
-                                    Vector3d directionVector2 = - directionVector1;
-                                    Vector3d deriv2 = derivTree[endPath][0].Value * directionVector2.X + derivTree[endPath][1].Value * directionVector2.Y;
-
-                                    // now we have everything we need to build a bezier curve
-                                    List<Point3d> controlPoints = new List<Point3d>();
-                                    controlPoints.Add(node1); // first control point (vertex)
-                                    controlPoints.Add(node1 + deriv1);
-                                    controlPoints.Add(node2 + deriv2);
-                                    controlPoints.Add(node2); // fourth control point (vertex)
-                                    BezierCurve curve = new BezierCurve(controlPoints);
-
-                                    // finally, save the new strut (converted to nurbs)
-                                    struts.Add(new GH_Curve(curve.ToNurbsCurve()));
-                                }
-                                // if user set morph to false, create a simple linear strut
-                                else
-                                {
-                                    LineCurve newStrut = new LineCurve(node1, node2);
-                                    struts.Add(new GH_Curve(newStrut));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 11. Set output
+            // 9. Set output
             DA.SetDataTree(0, nodeTree);
             DA.SetDataList(1, struts);
 

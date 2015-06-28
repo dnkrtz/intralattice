@@ -1,6 +1,7 @@
 ﻿using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino;
+using Rhino.DocObjects;
 using Rhino.Geometry;
 using Rhino.Geometry.Intersect;
 using System;
@@ -68,9 +69,25 @@ namespace IntraLattice
             }
         }
 
-        public static void MapConformally()
+        public static bool CastDesignSpace(ref GeometryBase designSpace, ref Brep brepDesignSpace, ref Mesh meshDesignSpace)
         {
+            //    If brep design space, cast as such
+            if (designSpace.ObjectType == ObjectType.Brep)
+                brepDesignSpace = (Brep)designSpace;
+            //    If mesh design space, cast as such
+            else if (designSpace.ObjectType == ObjectType.Mesh)
+                meshDesignSpace = (Mesh)designSpace;
+            //    If solid surface, convert to brep
+            else if (designSpace.ObjectType == ObjectType.Surface)
+            {
+                Surface testSpace = (Surface)designSpace;
+                if (testSpace.IsSolid) brepDesignSpace = testSpace.ToBrep();
+            }
+            //    Else the design space is unacceptable
+            else
+                return false;
 
+            return true;
         }
 
 

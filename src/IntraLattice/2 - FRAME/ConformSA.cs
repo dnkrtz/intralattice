@@ -50,7 +50,7 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Declare placeholder variables
-            List<Curve> topology = new List<Curve>();
+            var topology = new List<Curve>();
             Surface surface = null;
             Curve axis = null;
             bool flipUV = false;
@@ -128,7 +128,6 @@ namespace IntraLattice
                         // evaluate point and its derivatives on the axis and the surface
                         pt1 = axis.PointAt(curveParams[u] + usub / N[0]);
                         surface.Evaluate((u + usub) / N[0], (v + vsub) / N[1], 2, out pt2, out derivatives);
-                        derivatives[2] = surface.NormalAt((u + usub) / N[0], (v + vsub) / N[1]);
 
                         // create vector joining the two points (this is our w-range)
                         Vector3d wVect = pt2 - pt1;
@@ -148,13 +147,12 @@ namespace IntraLattice
                             nodeTree.Append(new GH_Point(newPt), treePath);
 
                             // for each of the 2 directional directives (du and dv)
-                            for (int derivIndex = 0; derivIndex < 3; derivIndex++)
+                            for (int derivIndex = 0; derivIndex < 2; derivIndex++)
                             {
-                                // compute the uv-derivatives
                                 // decrease the amplitude of the derivative vector as we approach the axis
                                 Vector3d deriv = derivatives[derivIndex] * (w + wsub) / N[2];
                                 // this division scales the derivatives (gives better control of the bezier curves)
-                                if (derivIndex<2) deriv = deriv / (morphFactor * N[derivIndex]);
+                                deriv = deriv / (morphFactor * N[derivIndex]);
                                 derivTree.Append(new GH_Vector(deriv), treePath);
                             }
                         }
@@ -165,62 +163,7 @@ namespace IntraLattice
             // 10. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<GH_Curve>();
-            //
-            for (int u = 0; u <= N[0]; u++)
-            {
-                for (int v = 0; v <= N[1]; v++)
-                {
-                    for (int w = 0; w <= N[2]; w++)
-                    {
-                        // we're inside a unit cell
-                        // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cellStruts)
-                        {
-                            // prepare the path of the nodes (path in tree)
-                            GH_Path startPath = new GH_Path(u, v, w, cellStrut.I);
-                            GH_Path endPath = new GH_Path(u, v, w, cellStrut.J);
-
-                            // make sure both nodes exist (will be false at boundaries)
-                            if (nodeTree.PathExists(startPath) && nodeTree.PathExists(endPath))
-                            {
-                                Point3d node1 = nodeTree[startPath][0].Value;
-                                Point3d node2 = nodeTree[endPath][0].Value;
-
-                                // if user requested morphing, we need to compute bezier curve struts
-                                if (morphed)
-                                {
-                                    // compute directional derivatives
-                                    // get direction vector from the normalized 'cellNodes'
-                                    Vector3d directionVector1 = new Vector3d(cellNodes[cellStrut.J] - cellNodes[cellStrut.I]);
-                                    directionVector1.Unitize();
-                                    // we use the du and dv derivatives as the basis for the directional derivative
-                                    Vector3d deriv1 = derivTree[startPath][0].Value * directionVector1.X + derivTree[startPath][1].Value * directionVector1.Y + derivTree[startPath][2].Value * directionVector1.Z;
-                                    // same process for node2, but reverse the direction vector
-                                    Vector3d directionVector2 = - directionVector1;
-                                    Vector3d deriv2 = derivTree[endPath][0].Value * directionVector2.X + derivTree[endPath][1].Value * directionVector2.Y + derivTree[endPath][2].Value * directionVector2.Z;
-
-                                    // now we have everything we need to build a bezier curve
-                                    List<Point3d> controlPoints = new List<Point3d>();
-                                    controlPoints.Add(node1); // first control point (vertex)
-                                    controlPoints.Add(node1 + deriv1);
-                                    controlPoints.Add(node2 + deriv2);
-                                    controlPoints.Add(node2); // fourth control point (vertex)
-                                    BezierCurve curve = new BezierCurve(controlPoints);
-
-                                    // finally, save the new strut (converted to nurbs)
-                                    struts.Add(new GH_Curve(curve.ToNurbsCurve()));
-                                }
-                                // if user set morph to false, create a simple linear strut
-                                else
-                                {
-                                    LineCurve newStrut = new LineCurve(node1, node2);
-                                    struts.Add(new GH_Curve(newStrut));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, cellStruts, cellNodes, N, morphed);
 
             // 8. Set output
             DA.SetDataTree(0, nodeTree);
