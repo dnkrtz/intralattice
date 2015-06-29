@@ -41,8 +41,8 @@ namespace IntraLattice
             GrasshopperDocument.AddObject(vallist, false);
 
             //Connect the new slider to this component
-            Component.Params.Input[0].AddSource(vallist);
-            Component.Params.Input[0].CollectData();
+            Component.Params.Input[index].AddSource(vallist);
+            Component.Params.Input[index].CollectData();
         }
 
         public static void BooleanSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index)
