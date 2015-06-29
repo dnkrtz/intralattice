@@ -53,8 +53,10 @@ namespace IntraLattice
             // 1. Retrieve input
             int cellType = 0;
             
+            
             if (InputTools.ExecutionNum == 0) 
-            {
+            {   
+                //Generate all default input here
                 InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 0);
                 InputTools.ExecutionNum += 1; 
             }
