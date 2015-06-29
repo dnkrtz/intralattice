@@ -10,11 +10,14 @@ namespace IntraLattice
 {
     public class PresetCell : GH_Component
     {
+        GH_Document GrasshopperDocument;
+        IGH_Component Component;
+
         /// <summary>
         /// Initializes a new instance of the PresetCell class.
         /// </summary>
         public PresetCell()
-            : base("PresetCell", "CellPreset",
+            : base("PresetCell", "PresetCell",
                 "Description",
                 "IntraLattice2", "Cell")
         {
@@ -25,6 +28,7 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddIntegerParameter("Cell Tye", "Type", "Unit cell topology type", GH_ParamAccess.item, 0);
         }
 
         /// <summary>
@@ -32,7 +36,7 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddCurveParameter("Lines", "L", "Line topology", GH_ParamAccess.list);
+            pManager.AddLineParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -41,30 +45,109 @@ namespace IntraLattice
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<GH_Line> lines = new List<GH_Line>();
+            // 0. Setup inputs
+            Component = this;
+            GrasshopperDocument = this.OnPingDocument();
+            if (Component.Params.Input[0].SourceCount == 0) InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0);
 
-            int topology = 0;
+            // 1. Retrieve input
+            int cellType = 0;
+            if (!DA.GetData(0, ref cellType)) { return; }
 
-            for (int u=0; u<2; u++)
+            // Set cell size
+            double cellSize = 5;
+                  
+            // Simple topologies
+            int[] N = new int[] { 1, 1, 1 };
+
+            // Make node grid
+            var nodeGrid = new GH_Structure<GH_Point>();
+            for (int u = 0; u <= N[0]; u++)
             {
-                for (int v = 0; u < 2; u++)
+                for (int v = 0; v <= N[1]; v++)
                 {
-                    for (int w = 0; u < 2; u++)
+                    for (int w = 0; w <= N[2]; w++)
                     {
-                        // We'll be needing the data tree path of the current node, and those of its neighbours
+                        Vector3d V = u * Plane.WorldXY.XAxis + v * Plane.WorldXY.YAxis + w * Plane.WorldXY.ZAxis;
+                        Point3d node = Plane.WorldXY.Origin + V * cellSize;
+
                         GH_Path currentPath = new GH_Path(u, v, w);
-                        List<GH_Path> neighbourPaths = new List<GH_Path>();
-
-                        // Get neighbours!!
-                        FrameTools.TopologyNeighbours(ref neighbourPaths, topology, new double[]{2,2,2}, u, v, w);
-
-                        foreach (GH_Path neighbourPath in neighbourPaths) ;
+                        nodeGrid.Append(new GH_Point(node), currentPath);
                     }
                 }
             }
 
+            // Make struts
+            var lines = new List<Curve>();
+            for (int u = 0; u <= N[0]; u++)
+            {
+                for (int v = 0; v <= N[1]; v++)
+                {
+                    for (int w = 0; w <= N[2]; w++)
+                    {
+                        // We'll be needing the data tree path of the current node, and those of its neighbours
+                        GH_Path currentPath = new GH_Path(u, v, w);
+                        if (!nodeGrid.PathExists(currentPath)) continue; // if current path doesnt exist in tree, skip loop
 
-            
+                        List<GH_Path> neighbourPaths = new List<GH_Path>();
+
+                        if (cellType == 0)
+                        {
+                            if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
+                            if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
+                            if (w < N[2]) neighbourPaths.Add(new GH_Path(u, v, w + 1));
+                        }
+                        if (cellType == 1)
+                        {
+                            if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
+                            if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
+                            if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
+                            if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
+                        }
+                        if (cellType == 2)
+                        {
+                            if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
+                            if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
+                            if (w < N[2]) neighbourPaths.Add(new GH_Path(u, v, w + 1));
+                            if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
+                            if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
+                            if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
+                            if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
+                        }
+                        if (cellType == 3)
+                        {
+                            if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
+                            if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
+                            if ((u < N[0]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v, w + 1));
+                            if ((v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u, v - 1, w + 1));
+                            if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
+                            if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
+                        }
+                        if (cellType == 4)
+                        {
+                            if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
+                            if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
+                            if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
+                            if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
+                        }
+                        
+
+                        foreach (GH_Path neighbourPath in neighbourPaths)
+                        {
+                            if (!nodeGrid.PathExists(neighbourPath)) continue;  // if neighbour path doesnt exist in node grid, skip loop
+                            Line line = new Line(nodeGrid[currentPath][0].Value, nodeGrid[neighbourPath][0].Value);
+                            lines.Add(new LineCurve(line));
+                        }
+
+                    }
+                }
+            }
+
+            CellTools.FixIntersections(ref lines);
+
+            // 8. Set output
+            DA.SetDataList(0, lines);
+
         }
 
         /// <summary>

@@ -28,16 +28,21 @@ namespace IntraLattice
             var item1 = new Grasshopper.Kernel.Special.GH_ValueListItem("Grid", "0");
             var item2 = new Grasshopper.Kernel.Special.GH_ValueListItem("X", "1");
             var item3 = new Grasshopper.Kernel.Special.GH_ValueListItem("Star", "2");
+            var item4 = new Grasshopper.Kernel.Special.GH_ValueListItem("Cross", "3");
+            var item5 = new Grasshopper.Kernel.Special.GH_ValueListItem("Cross2", "4");
             vallist.ListItems.Add(item1);
             vallist.ListItems.Add(item2);
             vallist.ListItems.Add(item3);
+            vallist.ListItems.Add(item4);
+            vallist.ListItems.Add(item5);
 
             // Until now, the slider is a hypothetical object.
             // This command makes it 'real' and adds it to the canvas.
             GrasshopperDocument.AddObject(vallist, false);
 
             //Connect the new slider to this component
-            Component.Params.Input[1].AddSource(vallist);
+            Component.Params.Input[0].AddSource(vallist);
+            Component.Params.Input[0].CollectData();
         }
 
         public static void BooleanSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index)

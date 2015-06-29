@@ -114,9 +114,9 @@ namespace IntraLattice
 
             // 7. Prepare normalized unit cell topology
             var cell = new UnitCell();
-            TopologyTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            TopologyTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
-            TopologyTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
+            CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
+            CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
+            CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
             cell.Nodes.Transform(Transform.Scale(Plane.WorldXY, xCellSize, yCellSize, zCellSize));
 
             // 6. Define iteration vectors in each direction (accounting for Cell Size)

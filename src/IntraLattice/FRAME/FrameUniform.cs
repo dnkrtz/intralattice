@@ -102,7 +102,7 @@ namespace IntraLattice
                         {
                             // Get neighbours!!
                             List<GH_Path> neighbourPaths = new List<GH_Path>();
-                            FrameTools.TopologyNeighbours(ref neighbourPaths, topo, N, u, v, w);
+                            //FrameTools.TopologyNeighbours(ref neighbourPaths, topo, N, u, v, w);
 
                             foreach (GH_Path neighbourPath in neighbourPaths)
                             {

@@ -60,17 +60,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CELL\Topo.cs" />
+    <Compile Include="CELL\CellTools.cs" />
     <Compile Include="CELL\CustomCell.cs" />
     <Compile Include="FRAME\FrameUniform.cs" />
-    <Compile Include="FRAME\FrameTools.cs" />
+    <Compile Include="FRAME\DeprecatedTools.cs" />
     <Compile Include="FRAME\ConformBox.cs" />
     <Compile Include="FRAME\ConformCylinder.cs" />
     <Compile Include="FRAME\ConformSphere.cs" />
     <Compile Include="FRAME\ConformSS.cs" />
     <Compile Include="FRAME\ConformSA.cs" />
     <Compile Include="FRAME\InputTools.cs" />
-    <Compile Include="FRAME\TopologyTools.cs" />
+    <Compile Include="FRAME\FrameTools.cs" />
     <Compile Include="CELL\PresetCell.cs" />
     <Compile Include="IntraLatticeInfo.cs" />
     <Compile Include="MESH\LatticeMesh.cs" />

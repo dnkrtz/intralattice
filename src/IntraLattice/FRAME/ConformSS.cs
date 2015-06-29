@@ -93,9 +93,9 @@ namespace IntraLattice
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
-            TopologyTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into a node indexpair list format
-            TopologyTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
-            TopologyTools.FormatTopology(ref cell); // removes all duplicate struts and sets up relative path references (for nodes)
+            CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into a node indexpair list format
+            CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
+            CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up relative path references (for nodes)
 
             // 7. Map nodes to design space
             //    Loop through the uvw cell grid
@@ -156,7 +156,7 @@ namespace IntraLattice
             // 8. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<GH_Curve>();
-            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
+            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
 
             // 9. Set output
             DA.SetDataTree(0, nodeTree);

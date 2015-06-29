@@ -88,9 +88,9 @@ namespace IntraLattice
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
-            TopologyTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            TopologyTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
-            TopologyTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
+            CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
+            CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
+            CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
 
             // 7. Create grid of points (as data tree)
             //    u-direction is along the cylinder
@@ -151,7 +151,7 @@ namespace IntraLattice
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<GH_Curve>();
-            TopologyTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
+            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
 
             // 8. Set output
             DA.SetDataTree(0, nodeTree);

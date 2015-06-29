@@ -9,11 +9,8 @@ namespace IntraLattice
 {
     public class CustomCell : GH_Component
     {
-        GH_Document GrasshopperDocument;
-        IGH_Component Component;
-
         public CustomCell()
-            : base("CustomCell", "Nickname",
+            : base("CustomCell", "CustomCell",
                 "Description",
                 "IntraLattice2", "Cell")
         {
@@ -21,21 +18,40 @@ namespace IntraLattice
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBooleanParameter("just", "a", "test", GH_ParamAccess.item, true);
-            pManager.AddBooleanParameter("just", "a", "test", GH_ParamAccess.item, true);
-            pManager.AddBooleanParameter("just", "a", "test", GH_ParamAccess.item, true);
+            pManager.AddCurveParameter("Custom ", "L", "test", GH_ParamAccess.list);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddCurveParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            Component = this;
-            GrasshopperDocument = this.OnPingDocument();
-            InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0);
-            InputTools.BooleanSelect(ref Component, ref GrasshopperDocument, 1);
+            // Retrieve input
+            var lines = new List<LineCurve>();
+            if (!DA.GetDataList(0, lines)) { return; }
+
+            // Check 1 - Check that all struts are lines, and unitize their parameter domain
+            BoundingBox bound = new BoundingBox();
+            foreach (LineCurve line in lines)
+            {
+                line.Domain = new Interval(0, 1); // unitize parameter domain
+                bound.Union(line.GetBoundingBox(true)); // combine bounding box to full cell box
+                if (!line.IsLinear()) return; // if not linear, return
+            }
+
+            // Check 2 - Opposing faces must be identical
+            Plane[] xy = new Plane[2];
+            xy[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.ZAxis);
+            xy[1] = new Plane(bound.Corner(true, true, false), Plane.WorldXY.ZAxis);
+            Plane[] yz = new Plane[2];
+            yz[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.XAxis);
+            yz[1] = new Plane(bound.Corner(false, true, true), Plane.WorldXY.XAxis);
+            Plane[] zx = new Plane[2];
+            zx[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.YAxis);
+            zx[1] = new Plane(bound.Corner(true, false, true), Plane.WorldXY.YAxis);
+            // WORK IN PROGRESS
         }
 
         /// <summary>

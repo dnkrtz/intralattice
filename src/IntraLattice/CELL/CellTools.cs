@@ -7,17 +7,68 @@ using Grasshopper.Kernel.Types;
 using Rhino;
 using Rhino.Collections;
 using Grasshopper.Kernel.Types.Transforms;
+using Rhino.Geometry.Intersect;
 
-// This is a set of methods used by the frame components
+// This is a set of methods used by the cell components
 // =====================================================
-//      Nothing yet
+//      ValidateTopology - 
+//      ExtractTopology - 
+//      NormaliseTopology -
+//      FormatTopology - 
 
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
-    public class TopologyTools
+    public class CellTools
     {
+
+        /// <summary>
+        /// This method fixes intersections (all nodes must be defined) and ensures that opposing faces are identical (for continuity)
+        /// </summary>
+        public static int FixIntersections(ref List<Curve> lines)
+        {
+            // Set tolerance
+            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
+
+            // Check 2 - Fix any intersections, all nodes must be defined
+            List<int> linesToRemove = new List<int>();
+            List<Curve> splitLines = new List<Curve>();
+            for (int a=0; a<lines.Count; a++)
+            {
+                for (int b=a+1; b<lines.Count; b++)
+                {
+                    Line lineA = new Line(lines[a].PointAtStart, lines[a].PointAtEnd);
+                    Line lineB = new Line(lines[b].PointAtStart, lines[b].PointAtEnd);
+                    double paramA, paramB;
+                    bool intersectionFound = Intersection.LineLine(lineA, lineB, out paramA, out paramB, tol, true);
+
+                    // if intersection was found
+                    if (intersectionFound)
+                    {
+                        // if intersection isn't start/end point, we split the line
+                        if ((paramA > tol) && (1 - paramA > tol) && !linesToRemove.Contains(a))
+                        {
+                            splitLines.AddRange(new List<Curve>(lines[a].Split(paramA))); // create new struts
+                            linesToRemove.Add(a); // remove old and add new
+                        }
+                        if ((paramB > tol) && (1-paramB > tol) && !linesToRemove.Contains(b))
+                        {
+                            splitLines.AddRange(new List<Curve>(lines[b].Split(paramB))); // create new struts
+                            linesToRemove.Add(b); // remove old strut
+                        }
+
+                    }
+                }
+            }
+            // remove lines that were split, and add the new lines
+            linesToRemove.Reverse();
+            foreach (int index in linesToRemove) lines.RemoveAt(index);
+            lines.AddRange(splitLines);
+
+            return 1;
+        }
+
 
         /// <summary>
         /// Converts list of lines into a unique list of nodes, and struts as an adjacency list
@@ -109,7 +160,7 @@ namespace IntraLattice
                     else
                         cell.NodePaths.Add(new int[] { 0, 0, 1, cell.Nodes.ClosestIndex(new Point3d(node.X, node.Y, 0)) });
                 }
-                // check next plane
+                // check yz boundary plane
                 else if (Math.Abs(yz.DistanceTo(node)) < tol)
                 {
                     if (Math.Abs(node.X - 1) < tol && Math.Abs(node.Y - 1) < tol)
@@ -117,7 +168,7 @@ namespace IntraLattice
                     else
                         cell.NodePaths.Add(new int[] { 1, 0, 0, cell.Nodes.ClosestIndex(new Point3d(0, node.Y, node.Z)) });
                 }
-                // check third plane
+                // check last boundary plane
                 else if (Math.Abs(zx.DistanceTo(node)) < tol)
                     cell.NodePaths.Add(new int[] { 0, 1, 0, cell.Nodes.ClosestIndex(new Point3d(node.X, 0, node.Z)) });
                 // if not on those planes, the node belongs to the current cell
@@ -146,69 +197,7 @@ namespace IntraLattice
 
         }
 
-        public static void ConformMapping(ref List<GH_Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Vector> derivTree, ref UnitCell cell, double[] N, bool morphed)
-        {
-            for (int u = 0; u <= N[0]; u++)
-            {
-                for (int v = 0; v <= N[1]; v++)
-                {
-                    for (int w = 0; w <= N[2]; w++)
-                    {
-                        // we're inside a unit cell
-                        // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.Struts)
-                        {
-                            // prepare the path of the nodes (path in tree)
-                            int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
-                            int[] JRel = cell.NodePaths[cellStrut.J];
-                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2], IRel[3]);
-                            GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2], JRel[3]);
-
-                            // make sure both nodes exist (will be false at boundaries)
-                            if (nodeTree.PathExists(IPath) && nodeTree.PathExists(JPath))
-                            {
-                                Point3d node1 = nodeTree[IPath][0].Value;
-                                Point3d node2 = nodeTree[JPath][0].Value;
-
-                                // get direction vector from the normalized 'cellNodes'
-                                Vector3d directionVector1 = new Vector3d(cell.Nodes[cellStrut.J] - cell.Nodes[cellStrut.I]);
-                                directionVector1.Unitize();
-
-                                // if user requested morphing, we need to compute bezier curve struts
-                                if (morphed)
-                                {
-                                    // compute directional derivatives
-                                    // we use the du and dv derivatives as the basis for the directional derivative
-                                    Vector3d deriv1 = derivTree[IPath][0].Value * directionVector1.X + derivTree[IPath][1].Value * directionVector1.Y;
-                                    // same process for node2, but reverse the direction vector
-                                    Vector3d directionVector2 = -directionVector1;
-                                    Vector3d deriv2 = derivTree[JPath][0].Value * directionVector2.X + derivTree[JPath][1].Value * directionVector2.Y;
-
-                                    // now we have everything we need to build a bezier curve
-                                    List<Point3d> controlPoints = new List<Point3d>();
-                                    controlPoints.Add(node1); // first control point (vertex)
-                                    controlPoints.Add(node1 + deriv1);
-                                    controlPoints.Add(node2 + deriv2);
-                                    controlPoints.Add(node2); // fourth control point (vertex)
-                                    BezierCurve curve = new BezierCurve(controlPoints);
-
-                                    // finally, save the new strut (converted to nurbs)
-                                    struts.Add(new GH_Curve(curve.ToNurbsCurve()));
-                                }
-                                // if user set morph to false, create a simple linear strut
-                                else
-                                {
-                                    LineCurve newStrut = new LineCurve(node1, node2);
-                                    struts.Add(new GH_Curve(newStrut));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
-
 
     // The UnitCell object
     public class UnitCell
