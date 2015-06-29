@@ -20,7 +20,7 @@ namespace IntraLattice
     {
         public GridConformSS()
             : base("Conform Surface-Surface", "ConformSS",
-                "Generates a conforming point grid between two surfaces.",
+                "Generates a conforming lattice between two surfaces.",
                 "IntraLattice2", "Frame")
         {
         }
@@ -34,7 +34,7 @@ namespace IntraLattice
             pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
-            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, true);
+            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, false);
             pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 

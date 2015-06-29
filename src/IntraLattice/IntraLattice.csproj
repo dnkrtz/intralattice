@@ -62,8 +62,8 @@
   <ItemGroup>
     <Compile Include="CELL\CellTools.cs" />
     <Compile Include="CELL\CustomCell.cs" />
+    <Compile Include="FRAME\ConformSP.cs" />
     <Compile Include="FRAME\FrameUniform.cs" />
-    <Compile Include="FRAME\DeprecatedTools.cs" />
     <Compile Include="FRAME\ConformBox.cs" />
     <Compile Include="FRAME\ConformCylinder.cs" />
     <Compile Include="FRAME\ConformSphere.cs" />

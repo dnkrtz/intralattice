@@ -11,7 +11,7 @@ using Rhino.Geometry.Intersect;
 
 // This is a set of methods used by the cell components
 // =====================================================
-//      ValidateTopology - 
+//      FixIntersections - 
 //      ExtractTopology - 
 //      NormaliseTopology -
 //      FormatTopology - 
