@@ -10,7 +10,7 @@ namespace IntraLattice
     {
 
         // index represents the input position (first input is index == 0)
-        public static void TopoSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index)
+        public static void TopoSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
             //instantiate  new value list
             var vallist = new Grasshopper.Kernel.Special.GH_ValueList();
@@ -19,7 +19,7 @@ namespace IntraLattice
 
             //customise value list position
             float xCoord = (float)Component.Attributes.Pivot.X - 200;
-            float yCoord = (float)Component.Attributes.Pivot.Y - index * 50;
+            float yCoord = (float)Component.Attributes.Pivot.Y + index * 40 - offset;
             PointF cornerPt = new PointF(xCoord, yCoord);
             vallist.Attributes.Pivot = cornerPt;
 
@@ -45,7 +45,7 @@ namespace IntraLattice
             Component.Params.Input[index].CollectData();
         }
 
-        public static void BooleanSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index)
+        public static void BooleanSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
             //instantiate  new value list
             var boollist = new Grasshopper.Kernel.Special.GH_BooleanToggle();
@@ -53,24 +53,41 @@ namespace IntraLattice
 
             //customise value list position
             float xCoord = (float)Component.Attributes.Pivot.X - 200;
-            float yCoord = (float)Component.Attributes.Pivot.Y - index * 50;
+            float yCoord = (float)Component.Attributes.Pivot.Y + index*40 - offset;
             PointF cornerPt = new PointF(xCoord, yCoord);
             boollist.Attributes.Pivot = cornerPt;
-
-            //set value
-            boollist.Value = true;
-
+            
             // Until now, the slider is a hypothetical object.
             // This command makes it 'real' and adds it to the canvas.
             GrasshopperDocument.AddObject(boollist, false);
-
             //Connect the new slider to this component
-            Component.Params.Input[2].AddSource(boollist);
+            Component.Params.Input[index].AddSource(boollist);
+            Component.Params.Input[index].CollectData();
+            // Little hack, required because of how booleantoggle is rendered
+            boollist.ExpireSolution(true);
         }
 
-        public static void IntegerSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index)
+        public static void IntegerSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset, int min, int max)
         {
+            //instantiate  new value list
+            var intslider = new Grasshopper.Kernel.Special.GH_NumberSlider();
+            intslider.Slider.Minimum = min;
+            intslider.Slider.Maximum = max;
+            intslider.Slider.Type = Grasshopper.GUI.Base.GH_SliderAccuracy.Integer;
+            intslider.CreateAttributes();
 
+            //customise value list position
+            float xCoord = (float)Component.Attributes.Pivot.X - 200;
+            float yCoord = (float)Component.Attributes.Pivot.Y + index * 40;
+            PointF cornerPt = new PointF(xCoord, yCoord);
+            intslider.Attributes.Pivot = cornerPt;
+
+            // Until now, the slider is a hypothetical object.
+            // This command makes it 'real' and adds it to the canvas.
+            GrasshopperDocument.AddObject(intslider, false);
+
+            //Connect the new slider to this component
+            Component.Params.Input[index].AddSource(intslider);
         }
 
         public static void FloatSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index)

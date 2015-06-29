@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
@@ -48,7 +47,7 @@ namespace IntraLattice
             // 0. Setup inputs
             Component = this;
             GrasshopperDocument = this.OnPingDocument();
-            if (Component.Params.Input[0].SourceCount == 0) InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0);
+            if (Component.Params.Input[0].SourceCount == 0) InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 11);
 
             // 1. Retrieve input
             int cellType = 0;

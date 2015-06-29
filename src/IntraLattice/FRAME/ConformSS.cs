@@ -18,6 +18,9 @@ namespace IntraLattice
 {
     public class GridConformSS : GH_Component
     {
+        GH_Document GrasshopperDocument;
+        IGH_Component Component;
+
         public GridConformSS()
             : base("Conform Surface-Surface", "ConformSS",
                 "Generates a conforming lattice between two surfaces.",
@@ -46,6 +49,12 @@ namespace IntraLattice
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            // 0. Setup inputs
+            Component = this;
+            GrasshopperDocument = this.OnPingDocument();
+            if (Component.Params.Input[4].SourceCount == 0) InputTools.BooleanSelect(ref Component, ref GrasshopperDocument, 4, 11);
+            if (Component.Params.Input[5].SourceCount == 0) InputTools.IntegerSelect(ref Component, ref GrasshopperDocument, 5, 11, 1, 30);
+
             // 1. Retrieve and validate inputs
             var topology = new List<Curve>();
             Surface s1 = null;
