@@ -10,12 +10,11 @@ namespace IntraLattice
     {
         public static int ExecutionNum { get; set; }
 
+        //Static constructor that is supposed to execute only once
         static InputTools()
         {
             ExecutionNum = 0;
         }
-
-        public InputTools() { }
 
         // index represents the input position (first input is index == 0)
         public static void TopoSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)

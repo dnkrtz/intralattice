@@ -50,10 +50,9 @@ namespace IntraLattice
             Component = this;
             GrasshopperDocument = this.OnPingDocument();
 
-            var InputComponent = new InputTools();
-
             // 1. Retrieve input
             int cellType = 0;
+            
             if (InputTools.ExecutionNum == 0) 
             {
                 InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 0);
