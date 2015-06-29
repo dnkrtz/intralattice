@@ -38,6 +38,8 @@ namespace IntraLattice
             pManager.AddLineParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
         }
 
+
+
         /// <summary>
         /// This is the method that actually does the work.
         /// </summary>
@@ -47,10 +49,17 @@ namespace IntraLattice
             // 0. Setup inputs
             Component = this;
             GrasshopperDocument = this.OnPingDocument();
-            if (Component.Params.Input[0].SourceCount == 0) InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 11);
+
+            var InputComponent = new InputTools();
 
             // 1. Retrieve input
             int cellType = 0;
+            if (InputTools.ExecutionNum == 0) 
+            {
+                InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 0);
+                InputTools.ExecutionNum += 1; 
+            }
+
             if (!DA.GetData(0, ref cellType)) { return; }
 
             // Set cell size
