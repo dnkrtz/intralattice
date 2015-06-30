@@ -75,7 +75,7 @@ namespace IntraLattice
             }
 
             // 2. Get domain size of the tree
-            int[] N = new int[] {0,0,0};
+            double[] N = new double[] {0,0,0};
             foreach (GH_Path path in gridTree.Paths)
             {
                 if ( path.Indices[0] > N[0] ) N[0] = path.Indices[0];
@@ -102,7 +102,7 @@ namespace IntraLattice
                         {
                             // Get neighbours!!
                             List<GH_Path> neighbourPaths = new List<GH_Path>();
-                            FrameTools.TopologyNeighbours(ref neighbourPaths, topo, N, u, v, w);
+                            //FrameTools.TopologyNeighbours(ref neighbourPaths, topo, N, u, v, w);
 
                             foreach (GH_Path neighbourPath in neighbourPaths)
                             {
@@ -191,7 +191,7 @@ namespace IntraLattice
         {
             get
             {
-                return GH_Exposure.secondary;
+                return GH_Exposure.tertiary;
             }
         }
 
