@@ -60,6 +60,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="2 - FRAME\FrameRandom.cs" />
     <Compile Include="2 - FRAME\FrameUniform.cs" />
     <Compile Include="2 - FRAME\FrameTools.cs" />
     <Compile Include="2 - FRAME\FrameConform.cs" />
@@ -75,8 +76,22 @@
     <Compile Include="1 - GRID\GridUniform.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="3 - MESH\ViewReport.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\Randomize.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
