@@ -9,7 +9,9 @@ using Grasshopper.Kernel.Types;
 
 // This is a set of methods used by the frame components
 // =====================================================
-//      Nothing yet
+//      - ConformMapping
+//      - CastDesignSpace
+//      - TrimStrut
 
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
@@ -17,8 +19,10 @@ namespace IntraLattice
 {
     public class FrameTools
     {
-
-        public static void ConformMapping(ref List<GH_Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Vector> derivTree, ref UnitCell cell, double[] N, bool morphed)
+        /// <summary>
+        /// Maps cell topology to the node grid created by one of the conform components
+        /// </summary>
+        public static void ConformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Vector> derivTree, ref UnitCell cell, float[] N, bool morphed)
         {
             for (int u = 0; u <= N[0]; u++)
             {
@@ -28,7 +32,7 @@ namespace IntraLattice
                     {
                         // we're inside a unit cell
                         // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.Struts)
+                        foreach (IndexPair cellStrut in cell.StrutNodes)
                         {
                             // prepare the path of the nodes (path in tree)
                             int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
@@ -65,13 +69,13 @@ namespace IntraLattice
                                     BezierCurve curve = new BezierCurve(controlPoints);
 
                                     // finally, save the new strut (converted to nurbs)
-                                    struts.Add(new GH_Curve(curve.ToNurbsCurve()));
+                                    struts.Add(curve.ToNurbsCurve());
                                 }
                                 // if user set morph to false, create a simple linear strut
                                 else
                                 {
                                     LineCurve newStrut = new LineCurve(node1, node2);
-                                    struts.Add(new GH_Curve(newStrut));
+                                    struts.Add(newStrut);
                                 }
                             }
                         }
@@ -101,29 +105,36 @@ namespace IntraLattice
             return true;
         }
 
-        public static GH_Line TrimStrut(Point3d node0, Point3d node1, Point3d intersectionPt, bool[] isInside)
+        public static LineCurve TrimStrut(ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Boolean> stateTree, ref List<GH_Path> nodesToRemove, GH_Path IPath, GH_Path JPath, Point3d intersectionPt, bool[] isInside)
         {
-            LineCurve testStrut = new LineCurve(new Line(node0, node1), 0, 1);  // set line, with curve parameter domain [0,1]
+            GH_Path[] paths = new GH_Path[] { IPath, JPath };
+            Point3d[] nodes = new Point3d[] { nodeTree[IPath][0].Value, nodeTree[JPath][0].Value };
+            LineCurve testStrut = new LineCurve(new Line(nodes[0], nodes[1]), 0, 1);  // set line, with curve parameter domain [0,1]
 
             // We only create strut if the trimmed strut is a certain length
-            double strutLength = node0.DistanceTo(node1);
+            double strutLength = nodes[0].DistanceTo(nodes[1]);
 
-            if (isInside[0])
+            for (int index=0; index<2; index++ )
             {
-                double testLength = intersectionPt.DistanceTo(node0);
-                if (testLength < strutLength * 0.1)         return null;    // do not create strut if trimmed strut is less than 10% of the strut length
-                else if (testLength > strutLength * 0.9)    return new GH_Line(new Line(node0, node1)); // create full strut if >90% of strut length
-                else                                        return new GH_Line(new Line(node0, intersectionPt));
+                if (isInside[index])
+                {
+                    double testLength = intersectionPt.DistanceTo(nodes[index]);
+                    // if trimmed length is less than 10% of full strut length
+                    if (testLength > strutLength * 0.1)
+                    {
+                        nodeTree[paths[(index + 1) % 2]].Add(new GH_Point(intersectionPt)); // the intersection point will replace the outside node in the tree
+                        stateTree[paths[(index + 1) % 2]].Add(new GH_Boolean(true));
+                        return new LineCurve(nodes[index], intersectionPt);
+                    }
+                        
+                }
+                else if (!nodesToRemove.Contains(paths[index]))
+                {
+                    nodesToRemove.Add(paths[index]);
+                }
+                    
             }
-            if (isInside[1])    
-            {
-                double testLength = intersectionPt.DistanceTo(node1);
-                if (testLength < strutLength * 0.1)         return null;
-                else if (testLength > strutLength * 0.9)    return new GH_Line(new Line(node0, node1));
-                else                                        return new GH_Line(new Line(node1, intersectionPt));
-            }
-
-            // If no intersection was found, something went wrong, don't create a strut, skip to next loop
+           
             return null;
         }
 

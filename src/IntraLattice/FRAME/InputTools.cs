@@ -8,7 +8,6 @@ namespace IntraLattice
 {
     public class InputTools
     {
-
         // index represents the input position (first input is index == 0)
         public static void TopoSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
@@ -67,37 +66,31 @@ namespace IntraLattice
             boollist.ExpireSolution(true);
         }
 
-        public static void IntegerSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset, int min, int max)
+        public static void NumberSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset, int min, int max, bool isFloat)
         {
             //instantiate  new value list
-            var intslider = new Grasshopper.Kernel.Special.GH_NumberSlider();
-            intslider.Slider.Minimum = min;
-            intslider.Slider.Maximum = max;
-            intslider.Slider.Type = Grasshopper.GUI.Base.GH_SliderAccuracy.Integer;
-            intslider.CreateAttributes();
+            var numberSlider = new Grasshopper.Kernel.Special.GH_NumberSlider();
+            numberSlider.Slider.Minimum = min;
+            numberSlider.Slider.Maximum = max;
+            if (isFloat)
+                numberSlider.Slider.Type = Grasshopper.GUI.Base.GH_SliderAccuracy.Integer;
+            else
+                numberSlider.Slider.Type = Grasshopper.GUI.Base.GH_SliderAccuracy.Float;
+            numberSlider.CreateAttributes();
 
             //customise value list position
             float xCoord = (float)Component.Attributes.Pivot.X - 200;
             float yCoord = (float)Component.Attributes.Pivot.Y + index * 40;
             PointF cornerPt = new PointF(xCoord, yCoord);
-            intslider.Attributes.Pivot = cornerPt;
+            numberSlider.Attributes.Pivot = cornerPt;
 
             // Until now, the slider is a hypothetical object.
             // This command makes it 'real' and adds it to the canvas.
-            GrasshopperDocument.AddObject(intslider, false);
+            GrasshopperDocument.AddObject(numberSlider, false);
 
             //Connect the new slider to this component
-            Component.Params.Input[index].AddSource(intslider);
-        }
-
-        public static void FloatSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index)
-        {
-
-        }
-
-        public static void SurfaceSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index)
-        {
-
+            Component.Params.Input[index].AddSource(numberSlider);
+            Component.Params.Input[index].CollectData();
         }
 
 

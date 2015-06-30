@@ -4,6 +4,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 using Rhino.DocObjects;
+using IntraLattice.Properties;
 
 // This component is a post-processing tool used to inspect a mesh
 // ===============================================================
@@ -80,7 +81,7 @@ namespace IntraLattice
             get
             {
                 // You can add image files to your project resources and access them like this:
-                //return Resources.IconForThisComponent;
+                //return Resources.elec;
                 return null;
             }
         }

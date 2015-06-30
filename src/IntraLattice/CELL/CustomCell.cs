@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using System.Drawing;
+using IntraLattice.Properties;
 
 namespace IntraLattice
 {
@@ -11,25 +12,25 @@ namespace IntraLattice
     {
         public CustomCell()
             : base("CustomCell", "CustomCell",
-                "Description",
+                "Define custom unit cell topologies.",
                 "IntraLattice2", "Cell")
         {
         }
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Custom ", "L", "test", GH_ParamAccess.list);
+            pManager.AddCurveParameter("Cell Lines", "Lines", "Custom unit cell lines.", GH_ParamAccess.list);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddCurveParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
+            pManager.AddLineParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // Retrieve input
-            var lines = new List<LineCurve>();
+            var lines = new List<Curve>();
             if (!DA.GetDataList(0, lines)) { return; }
 
             // Check 1 - Check that all struts are lines, and unitize their parameter domain
@@ -52,6 +53,9 @@ namespace IntraLattice
             zx[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.YAxis);
             zx[1] = new Plane(bound.Corner(true, false, true), Plane.WorldXY.YAxis);
             // WORK IN PROGRESS
+
+            // Set output
+            DA.SetDataList(0, lines);
         }
 
         /// <summary>
@@ -73,8 +77,7 @@ namespace IntraLattice
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
+                return Resources.cells;
             }
         }
 

@@ -6,6 +6,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 using Rhino;
+using IntraLattice.Properties;
 
 // This component generates a simple cylindrical lattice grid.
 // ===========================================================
@@ -26,31 +27,32 @@ namespace IntraLattice
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
             pManager.AddNumberParameter("Radius", "R", "Radius of cylinder", GH_ParamAccess.item, 15);
             pManager.AddNumberParameter("Height", "H", "Height of cylinder", GH_ParamAccess.item, 25);
-            pManager.AddNumberParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 15);
-            pManager.AddNumberParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 4);
-            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, true);
+            pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 15);
+            pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 4);
+            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, false);
             pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.HideParameter(1);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate data
-            var topology = new List<Curve>();
+            var topology = new List<Line>();
             double radius = 0;
             double height = 0;
-            double nU = 0;
-            double nV = 0;
-            double nW = 0;
+            int nU = 0;
+            int nV = 0;
+            int nW = 0;
             bool morphed = false;
             double morphFactor = 0;
 
@@ -80,7 +82,7 @@ namespace IntraLattice
             cylinder = cylinder.Transpose();
 
             // 4. Package the number of cells in each direction into an array
-            double[] N = new double[3] { nU, nV, nW };
+            float[] N = new float[3] { nU, nV, nW };
 
             // 5. Normalize the UV-domain
             cylinder.SetDomain(0, new Interval(0, 1)); // surface u-direction
@@ -99,19 +101,19 @@ namespace IntraLattice
                 // v-direction travels around the cylinder axis (about axis)
                 for (int v = 0; v <= N[1]; v++)
                 {
-                    // this loop maps each node in the cell onto the UV-surface maps
-                    for (int nodeIndex = 0; nodeIndex < cell.Nodes.Count; nodeIndex++)
+                    // this loop maps each node index in the cell onto the UV-surface maps
+                    for (int i = 0; i < cell.Nodes.Count; i++)
                     {
                         // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
-                        if (cell.NodePaths[nodeIndex][0] + cell.NodePaths[nodeIndex][1] + cell.NodePaths[nodeIndex][2] > 0)
+                        if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
                             continue;
 
                         Point3d pt1, pt2;
                         Vector3d[] derivatives;
 
-                        double usub = cell.Nodes[nodeIndex].X; // u-position within unit cell
-                        double vsub = cell.Nodes[nodeIndex].Y; // v-position within unit cell
-                        double wsub = cell.Nodes[nodeIndex].Z; // w-position within unit cell
+                        double usub = cell.Nodes[i].X; // u-position within unit cell
+                        double vsub = cell.Nodes[i].Y; // v-position within unit cell
+                        double wsub = cell.Nodes[i].Z; // w-position within unit cell
 
                         // construct z-position vector
                         Vector3d vectorZ = height * basePlane.ZAxis * (u+usub) / N[0];
@@ -131,7 +133,7 @@ namespace IntraLattice
 
                             // add point to gridTree
                             Point3d newPt = pt1 + wVect * (w+wsub)/N[2];
-                            GH_Path treePath = new GH_Path(u, v, w, nodeIndex);
+                            GH_Path treePath = new GH_Path(u, v, w, i);
                             nodeTree.Append(new GH_Point(newPt), treePath);
 
                             // for each of the 2 directional directives (du and dv)
@@ -150,12 +152,13 @@ namespace IntraLattice
 
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
-            var struts = new List<GH_Curve>();
+            var struts = new List<Curve>();
             FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
 
             // 8. Set output
-            DA.SetDataTree(0, nodeTree);
-            DA.SetDataList(1, struts);
+            DA.SetDataList(0, struts);
+            DA.SetDataTree(1, nodeTree);
+            
         }
 
         // Primitive grid component -> first panel of the toolbar
@@ -172,7 +175,7 @@ namespace IntraLattice
             get
             {
                 // You can add image files to your project resources and access them like this:
-                //return Resources.IconForThisComponent;
+                //return Resources.circle2;
                 return null;
             }
         }

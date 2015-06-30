@@ -63,10 +63,8 @@
     <Compile Include="CELL\CellTools.cs" />
     <Compile Include="CELL\CustomCell.cs" />
     <Compile Include="FRAME\ConformSP.cs" />
-    <Compile Include="FRAME\FrameUniform.cs" />
     <Compile Include="FRAME\ConformBox.cs" />
     <Compile Include="FRAME\ConformCylinder.cs" />
-    <Compile Include="FRAME\ConformSphere.cs" />
     <Compile Include="FRAME\ConformSS.cs" />
     <Compile Include="FRAME\ConformSA.cs" />
     <Compile Include="FRAME\InputTools.cs" />
@@ -78,8 +76,35 @@
     <Compile Include="FRAME\UniformDS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MESH\ViewReport.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Resources\viral24.png" />
+    <None Include="Resources\cellpreset.png" />
+    <None Include="Resources\biology24.png" />
+    <None Include="Resources\Icon1.ico" />
+    <None Include="Resources\Icon2.ico" />
+    <None Include="Resources\atom1124.png" />
+    <None Include="Resources\cells24.png" />
+    <None Include="Resources\checked824.png" />
+    <None Include="Resources\circle5424.png" />
+    <None Include="Resources\circular13124.png" />
+    <None Include="Resources\circular13524.png" />
+    <None Include="Resources\circular14424.png" />
+    <None Include="Resources\pie3024.png" />
+    <None Include="Resources\electronic4624.png" />
+    <Content Include="Resources\presetcell.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

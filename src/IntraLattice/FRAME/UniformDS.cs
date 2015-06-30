@@ -8,6 +8,7 @@ using Rhino;
 using Rhino.DocObjects;
 using Rhino.Collections;
 using Rhino.Geometry.Intersect;
+using IntraLattice.Properties;
 
 // This component generates a trimmed uniform lattice grid
 // =======================================================================
@@ -39,7 +40,7 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
             pManager.AddGeometryParameter("Design Space", "DS", "Design Space (Brep or Mesh)", GH_ParamAccess.item);
             pManager.AddPlaneParameter("Orientation Plane", "Plane", "Lattice orientation plane", GH_ParamAccess.item, Plane.WorldXY); // default is XY-plane
             pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // default is 5
@@ -52,8 +53,9 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.HideParameter(1);
         }
 
         /// <summary>
@@ -63,7 +65,7 @@ namespace IntraLattice
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate data
-            var topology = new List<Curve>();
+            var topology = new List<Line>();
             GeometryBase designSpace = null;
             Plane orientationPlane = Plane.Unset;
             double xCellSize = 0;
@@ -107,17 +109,17 @@ namespace IntraLattice
             int nX = (int)Math.Ceiling(xLength / xCellSize); // Roundup to next integer if non-integer
             int nY = (int)Math.Ceiling(yLength / yCellSize);
             int nZ = (int)Math.Ceiling(zLength / zCellSize);
-            double[] N = new double[3] { nX, nY, nZ };
+            float[] N = new float[3] { nX, nY, nZ };
 
             // 5. Initialize nodeTree
             var nodeTree = new GH_Structure<GH_Point>();
+            var stateTree = new GH_Structure<GH_Boolean>(); // true if point is inside design space
 
             // 7. Prepare normalized unit cell topology
             var cell = new UnitCell();
             CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
             CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
             CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
-            cell.Nodes.Transform(Transform.Scale(Plane.WorldXY, xCellSize, yCellSize, zCellSize));
 
             // 6. Define iteration vectors in each direction (accounting for Cell Size)
             Vector3d vectorU = xCellSize * basePlane.XAxis;
@@ -131,56 +133,51 @@ namespace IntraLattice
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        // compute position vector
-                        Vector3d V = u * vectorU + v * vectorV + w * vectorW;
-                        Point3d currentPt = basePlane.Origin + V;
-
-                        // check if point is inside
-                        bool isInside = false;
-
-                        // if design space is a BREP
-                        if (brepDesignSpace != null)
-                            // check if it is inside the space (within unstrict tolerance, meaning it can be outside the surface by the specified tolerance)
-                            isInside = brepDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
-                        // if design space is a MESH
-                        if (meshDesignSpace != null)
-                            isInside = meshDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
-
-                        // if point is inside the design space, we add it to the datatree,
-                        // for the reason stated above, we must also ensure that all neighbours of inside nodes are included
-                        if (isInside)
+                        // this loop maps each node in the cell onto the UV-surface maps
+                        for (int i = 0; i < cell.Nodes.Count; i++)
                         {
-                            // this might seem excessive, but it's a robust approach
-                            List<GH_Path> neighbours = new List<GH_Path>();
-                            neighbours.Add(new GH_Path(u - 1, v, w));
-                            neighbours.Add(new GH_Path(u, v - 1, w));
-                            neighbours.Add(new GH_Path(u, v, w - 1));
-                            neighbours.Add(new GH_Path(u + 1, v, w));
-                            neighbours.Add(new GH_Path(u, v + 1, w));
-                            neighbours.Add(new GH_Path(u, v, w + 1));
-                            GH_Path currentPath = new GH_Path(u, v, w);
+                            // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
+                                continue;
 
-                            // if the path doesn't exist, it hasn't been added, so add it
-                            if (!nodeTree.PathExists(neighbours[0])) nodeTree.Append(new GH_Point(currentPt - vectorU), neighbours[0]);
-                            if (!nodeTree.PathExists(neighbours[1])) nodeTree.Append(new GH_Point(currentPt - vectorV), neighbours[1]);
-                            if (!nodeTree.PathExists(neighbours[2])) nodeTree.Append(new GH_Point(currentPt - vectorW), neighbours[2]);
-                            if (!nodeTree.PathExists(neighbours[3])) nodeTree.Append(new GH_Point(currentPt + vectorU), neighbours[3]);
-                            if (!nodeTree.PathExists(neighbours[4])) nodeTree.Append(new GH_Point(currentPt + vectorV), neighbours[4]);
-                            if (!nodeTree.PathExists(neighbours[5])) nodeTree.Append(new GH_Point(currentPt + vectorW), neighbours[5]);
-                            // same goes for the current node
+                            double usub = cell.Nodes[i].X; // u-position within unit cell
+                            double vsub = cell.Nodes[i].Y; // v-position within unit cell
+                            double wsub = cell.Nodes[i].Z; // w-position within unit cell
+
+                            // compute position vector
+                            Vector3d V = (u+usub) * vectorU + (v+vsub) * vectorV + (w+wsub) * vectorW;
+                            Point3d currentPt = basePlane.Origin + V;
+
+                            // u,v,w is the cell grid. the 'i' index is for different nodes in each cell.
+                            // create current node
+                            GH_Path currentPath = new GH_Path(u, v, w, i);
                             if (!nodeTree.PathExists(currentPath))
-                            {
                                 nodeTree.Append(new GH_Point(currentPt), currentPath);
-                            }
+
+                            // check if point is inside
+                            bool isInside = false;
+                            // if design space is a BREP
+                            if (brepDesignSpace != null)
+                                // check if it is inside the space (within unstrict tolerance, meaning it can be outside the surface by the specified tolerance)
+                                isInside = brepDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                            // if design space is a MESH
+                            if (meshDesignSpace != null)
+                                isInside = meshDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+
+                            // store wether the pt is inside or outside
+                            if (isInside)
+                                stateTree.Append(new GH_Boolean(true), currentPath);
+                            else
+                                stateTree.Append(new GH_Boolean(false), currentPath);
 
                         }
                     }
                 }
             }
 
-
             // 3. Compute list of struts
-            List<GH_Line> struts = new List<GH_Line>();
+            var struts = new List<LineCurve>();
+            var nodesToRemove = new List<GH_Path>();
 
             for (int u = 0; u <= N[0]; u++)
             {
@@ -188,82 +185,67 @@ namespace IntraLattice
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        // We'll be needing the data tree path of the current node, and those of its neighbours
-                        GH_Path currentPath = new GH_Path(u, v, w);
-
-                        // Nere we create the actual struts
-                        // First, make sure currentpath exists in the tree
-                        if (nodeTree.PathExists(currentPath))
+                        // we're inside a unit cell
+                        // loop through all pairs of nodes that make up struts
+                        foreach (IndexPair cellStrut in cell.StrutNodes)
                         {
-                            // Get neighbours!!
-                            List<GH_Path> neighbourPaths = new List<GH_Path>();
+                            // prepare the path of the two nodes (path in tree)
+                            int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
+                            int[] JRel = cell.NodePaths[cellStrut.J];
+                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2], IRel[3]);
+                            GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2], JRel[3]);
 
-                            foreach (GH_Path neighbourPath in neighbourPaths)
+                            // make sure both nodes exist (will be false at boundaries)
+                            if (nodeTree.PathExists(IPath) && nodeTree.PathExists(JPath))
                             {
-                                // Again, make sure the neighbourpath exists in the tree
-                                if (nodeTree.PathExists(neighbourPath))
-                                {
-                                    Point3d node1 = nodeTree[currentPath][0].Value;
-                                    Point3d node2 = nodeTree[neighbourPath][0].Value;
+                                Point3d node1 = nodeTree[IPath][0].Value;
+                                Point3d node2 = nodeTree[JPath][0].Value;
 
-                                    // Set nodeInside status
-                                    bool[] nodeInside = new bool[2] { false, false };
-                                    // Could do this in the grid section (set bool values)
+                                // Determine inside/outside state of both nodes
+                                bool[] nodeInside = new bool[2];
+                                nodeInside[0] = stateTree[IPath][0].Value;
+                                nodeInside[1] = stateTree[JPath][0].Value;
+
+                                // If neither node is inside, remove them and skip to next loop
+                                if (!nodeInside[0] && !nodeInside[1])
+                                {
+                                    nodesToRemove.Add(IPath);
+                                    nodesToRemove.Add(JPath);
+                                    continue;
+                                }
+                                // If both nodes are inside, add full strut
+                                else if (nodeInside[0] && nodeInside[1])
+                                    struts.Add(new LineCurve(node1, node2));
+                                // Else, strut requires trimming
+                                else
+                                {
+                                    // We are going to find the intersection point with the design space
+                                    Point3d[] intersectionPts = null;
+                                    LineCurve testLine = null;
+
+                                    // If brep design space
                                     if (brepDesignSpace != null)
                                     {
-                                        if (brepDesignSpace.IsPointInside(nodeTree[currentPath][0].Value, Rhino.RhinoMath.SqrtEpsilon, true))
-                                            nodeInside[0] = true;
-                                        if (brepDesignSpace.IsPointInside(nodeTree[neighbourPath][0].Value, Rhino.RhinoMath.SqrtEpsilon, true))
-                                            nodeInside[1] = true;
+                                        Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
+                                        LineCurve strutToTrim = new LineCurve(node1, node2);
+                                        // find intersection point
+                                        Intersection.CurveBrep(strutToTrim, brepDesignSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
                                     }
+                                    // If mesh design space
                                     else if (meshDesignSpace != null)
                                     {
-                                        if (meshDesignSpace.IsPointInside(nodeTree[currentPath][0].Value, Rhino.RhinoMath.SqrtEpsilon, true))
-                                            nodeInside[0] = true;
-                                        if (meshDesignSpace.IsPointInside(nodeTree[neighbourPath][0].Value, Rhino.RhinoMath.SqrtEpsilon, true))
-                                            nodeInside[1] = true;
+                                        int[] faceIds;  // dummy variable for MeshLine call
+                                        Line strutToTrim = new Line(node1, node2);
+                                        // find intersection point
+                                        intersectionPts = Intersection.MeshLine(meshDesignSpace, strutToTrim, out faceIds);
                                     }
 
-
-                                    // Now perform checks
-                                    // If neither node is inside, don't create a strut, skip to next loop
-                                    if (!nodeInside[0] && !nodeInside[1])
-                                        continue;
-                                    // If both nodes are inside, add full strut
-                                    else if (nodeInside[0] && nodeInside[1])
-                                        struts.Add(new GH_Line(new Line(node1, node2)));
-                                    // Else, strut requires trimming
-                                    else
+                                    // Now, if an intersection point was found, trim the strut
+                                    if (intersectionPts.Length > 0)
                                     {
-                                        // We are going to find the intersection point with the design space
-                                        Point3d[] intersectionPts = null;
-                                        GH_Line testLine = null;
-
-                                        // If brep design space
-                                        if (brepDesignSpace != null)
-                                        {
-                                            Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
-                                            LineCurve strutToTrim = new LineCurve(new Line(node1, node2), 0, 1);
-                                            // find intersection point
-                                            Intersection.CurveBrep(strutToTrim, brepDesignSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
-                                        }
-                                        // If mesh design space
-                                        else if (meshDesignSpace != null)
-                                        {
-                                            int[] faceIds;  // dummy variable for MeshLine call
-                                            Line strutToTrim = new Line(node1, node2);
-                                            // find intersection point
-                                            intersectionPts = Intersection.MeshLine(meshDesignSpace, strutToTrim, out faceIds);
-                                        }
-
-                                        // Now, if an intersection point was found, trim the strut
-                                        if (intersectionPts.Length > 0)
-                                        {
-                                            testLine = FrameTools.TrimStrut(node1, node2, intersectionPts[0], nodeInside);
-                                            // if the strut was succesfully trimmed, add it to the list
-                                            if (testLine != null) struts.Add(testLine);
-                                        }
-
+                                        testLine = FrameTools.TrimStrut(ref nodeTree, ref stateTree, ref nodesToRemove, IPath, JPath, intersectionPts[0], nodeInside);
+                                        // if the strut was succesfully trimmed, add it to the list
+                                        if (testLine != null) struts.Add(testLine);
                                     }
 
                                 }
@@ -273,9 +255,23 @@ namespace IntraLattice
                 }
             }
 
-
+            foreach (GH_Path nodeToRemove in nodesToRemove)
+            {
+                if (nodeTree.PathExists(nodeToRemove))
+                {
+                    if (nodeTree[nodeToRemove].Count > 1)  // if node is a swap node (replaced by intersection pt)
+                    {
+                        nodeTree[nodeToRemove].RemoveAt(0);
+                        stateTree[nodeToRemove].RemoveAt(0);
+                    }
+                    else if (!stateTree[nodeToRemove][0].Value) // if node is outside
+                        nodeTree.RemovePath(nodeToRemove);
+                }
+            }
+                
             // 8. Set output
-            DA.SetDataTree(0, nodeTree);
+            DA.SetDataList(0, struts);
+            DA.SetDataTree(1, nodeTree);
         }
 
         /// <summary>
@@ -297,7 +293,7 @@ namespace IntraLattice
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
+                //return Resources.checkd;
                 return null;
             }
         }

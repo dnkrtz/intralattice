@@ -6,6 +6,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 using Rhino;
+using IntraLattice.Properties;
 
 // This component converts the wireframe lattice into a solid mesh.
 // ================================================================
@@ -258,7 +259,7 @@ namespace IntraLattice
             get
             {
                 // You can add image files to your project resources and access them like this:
-                //return Resources.IconForThisComponent;
+                //return Resources.PresetCell;
                 return null;
             }
         }

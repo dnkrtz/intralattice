@@ -24,24 +24,22 @@ namespace IntraLattice
     {
 
         /// <summary>
-        /// This method fixes intersections (all nodes must be defined) and ensures that opposing faces are identical (for continuity)
+        /// This method explode lines at intersections (because all nodes must be defined)
         /// </summary>
-        public static int FixIntersections(ref List<Curve> lines)
+        public static void FixIntersections(ref List<Line> lines)
         {
             // Set tolerance
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
             // Check 2 - Fix any intersections, all nodes must be defined
             List<int> linesToRemove = new List<int>();
-            List<Curve> splitLines = new List<Curve>();
+            List<Line> splitLines = new List<Line>();
             for (int a=0; a<lines.Count; a++)
             {
                 for (int b=a+1; b<lines.Count; b++)
                 {
-                    Line lineA = new Line(lines[a].PointAtStart, lines[a].PointAtEnd);
-                    Line lineB = new Line(lines[b].PointAtStart, lines[b].PointAtEnd);
                     double paramA, paramB;
-                    bool intersectionFound = Intersection.LineLine(lineA, lineB, out paramA, out paramB, tol, true);
+                    bool intersectionFound = Intersection.LineLine(lines[a], lines[b], out paramA, out paramB, tol, true);
 
                     // if intersection was found
                     if (intersectionFound)
@@ -49,12 +47,14 @@ namespace IntraLattice
                         // if intersection isn't start/end point, we split the line
                         if ((paramA > tol) && (1 - paramA > tol) && !linesToRemove.Contains(a))
                         {
-                            splitLines.AddRange(new List<Curve>(lines[a].Split(paramA))); // create new struts
+                            splitLines.Add(new Line(lines[a].From, lines[a].PointAt(paramA)));
+                            splitLines.Add(new Line(lines[a].PointAt(paramA), lines[a].To));
                             linesToRemove.Add(a); // remove old and add new
                         }
                         if ((paramB > tol) && (1-paramB > tol) && !linesToRemove.Contains(b))
                         {
-                            splitLines.AddRange(new List<Curve>(lines[b].Split(paramB))); // create new struts
+                            splitLines.Add(new Line(lines[b].From, lines[b].PointAt(paramB)));
+                            splitLines.Add(new Line(lines[b].PointAt(paramB), lines[b].To));
                             linesToRemove.Add(b); // remove old strut
                         }
 
@@ -65,21 +65,19 @@ namespace IntraLattice
             linesToRemove.Reverse();
             foreach (int index in linesToRemove) lines.RemoveAt(index);
             lines.AddRange(splitLines);
-
-            return 1;
         }
 
 
         /// <summary>
         /// Converts list of lines into a unique list of nodes, and struts as an adjacency list
         /// </summary>
-        public static void ExtractTopology(ref List<Curve> lines, ref UnitCell cell)
+        public static void ExtractTopology(ref List<Line> lines, ref UnitCell cell)
         {
             // Iterate through list of lines
-            foreach (Curve line in lines)
+            foreach (Line line in lines)
             {
                 // Get line, and it's endpoints
-                Point3d[] pts = new Point3d[] { line.PointAtStart, line.PointAtEnd };
+                Point3d[] pts = new Point3d[] { line.From, line.To };
                 List<int> nodeIndex = new List<int>();
 
                 // Loop over end points, being sure to not create the same node twice
@@ -94,11 +92,14 @@ namespace IntraLattice
                     {
                         cell.Nodes.Add(endPt);
                         nodeIndex.Add(cell.Nodes.Count - 1);
+                        cell.NodeStruts.Add(new List<int>());
                     }
                 }
 
                 // Now we save the strut (as pair of node indices)
-                cell.Struts.Add(new IndexPair(nodeIndex[0], nodeIndex[1]));
+                cell.StrutNodes.Add(new IndexPair(nodeIndex[0], nodeIndex[1]));
+                cell.NodeStruts[nodeIndex[0]].Add(nodeIndex[1]);
+                cell.NodeStruts[nodeIndex[1]].Add(nodeIndex[0]);
             }
         }
 
@@ -132,15 +133,15 @@ namespace IntraLattice
         }
 
         /// <summary>
-        /// Converts to format that ensures no duplicate nodes or struts are created
-        /// ASSUMES VALID TOPOLOGY!!!
+        /// Defines relative paths of nodes, to ensure no duplicate nodes or struts are created
+        /// Assumes valid, normalized unit cell
         /// </summary>
         public static void FormatTopology(ref UnitCell cell)
         {
             // Set tolerance
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
-            // Set up boundary planes (no struts should exist on these planes, and nodes on these planes belong to other cells)
+            // Set up boundary planes (struts and nodes on these planes belong to other cells)
             Plane xy = Plane.WorldXY; xy.Translate(new Vector3d(0, 0, 1));
             Plane yz = Plane.WorldYZ; yz.Translate(new Vector3d(1, 0, 0));
             Plane zx = Plane.WorldZX; zx.Translate(new Vector3d(0, 1, 0));
@@ -178,10 +179,10 @@ namespace IntraLattice
 
             // now locate any struts that lie on the boundary planes
             List<int> strutsToRemove = new List<int>();
-            for (int i = 0; i < cell.Struts.Count; i++)
+            for (int i = 0; i < cell.StrutNodes.Count; i++)
             {
-                Point3d node1 = cell.Nodes[cell.Struts[i].I];
-                Point3d node2 = cell.Nodes[cell.Struts[i].J];
+                Point3d node1 = cell.Nodes[cell.StrutNodes[i].I];
+                Point3d node2 = cell.Nodes[cell.StrutNodes[i].J];
 
                 bool toRemove = false;
 
@@ -193,7 +194,7 @@ namespace IntraLattice
             }
             // discard them (reverse the list because when removing objects from list, all indices larger than the one being removed change by -1)
             strutsToRemove.Reverse();
-            foreach (int strutToRemove in strutsToRemove) cell.Struts.RemoveAt(strutToRemove);
+            foreach (int strutToRemove in strutsToRemove) cell.StrutNodes.RemoveAt(strutToRemove);
 
         }
 
@@ -203,7 +204,8 @@ namespace IntraLattice
     public class UnitCell
     {
         public Point3dList Nodes = new Point3dList();   // List of unique nodes (as Point3d)
-        public List<IndexPair> Struts = new List<IndexPair>();  // List of node index pairs
+        public List<IndexPair> StrutNodes = new List<IndexPair>();  // List of node index pairs 
+        public List<List<int>> NodeStruts = new List<List<int>>();  // Adjacency list 
         public List<int[]> NodePaths = new List<int[]>();   // Relative path of node in tree (u+?, v+?, w+?, ?)
     }
 

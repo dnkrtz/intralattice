@@ -4,6 +4,8 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
+using Rhino;
+using IntraLattice.Properties;
 
 namespace IntraLattice
 {
@@ -17,7 +19,7 @@ namespace IntraLattice
         /// </summary>
         public PresetCell()
             : base("PresetCell", "PresetCell",
-                "Description",
+                "Built-in selection of unit cell topologies.",
                 "IntraLattice2", "Cell")
         {
         }
@@ -47,6 +49,7 @@ namespace IntraLattice
             // 0. Setup inputs
             Component = this;
             GrasshopperDocument = this.OnPingDocument();
+            //    Generate all default input menus here
             if (Component.Params.Input[0].SourceCount == 0) InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 11);
 
             // 1. Retrieve input
@@ -77,7 +80,7 @@ namespace IntraLattice
             }
 
             // Make struts
-            var lines = new List<Curve>();
+            var lines = new List<Line>();
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
@@ -135,18 +138,18 @@ namespace IntraLattice
                         {
                             if (!nodeGrid.PathExists(neighbourPath)) continue;  // if neighbour path doesnt exist in node grid, skip loop
                             Line line = new Line(nodeGrid[currentPath][0].Value, nodeGrid[neighbourPath][0].Value);
-                            lines.Add(new LineCurve(line));
+                            lines.Add(line);
                         }
 
                     }
                 }
             }
 
+            //
             CellTools.FixIntersections(ref lines);
-
+            
             // 8. Set output
             DA.SetDataList(0, lines);
-
         }
 
         /// <summary>
@@ -157,8 +160,7 @@ namespace IntraLattice
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
+                return Resources.atom;
             }
         }
 

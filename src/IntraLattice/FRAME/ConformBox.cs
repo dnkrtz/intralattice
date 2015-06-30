@@ -6,6 +6,7 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 using Rhino;
+using IntraLattice.Properties;
 
 // This component generates a simple cartesian 3D lattice grid.
 // ============================================================
@@ -37,7 +38,7 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
             pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // '5' is the default value
             pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
@@ -51,8 +52,9 @@ namespace IntraLattice
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.HideParameter(1);
         }
 
         /// <summary>
@@ -64,7 +66,7 @@ namespace IntraLattice
         {
             // 1. Declare placeholder variables and assign initial invalid data.
             //    This way, if the input parameters fail to supply valid data, we know when to abort
-            var topology = new List<Curve>();
+            var topology = new List<Line>();
             double xCellSize = 0;
             double yCellSize = 0;
             double zCellSize = 0;
@@ -92,6 +94,7 @@ namespace IntraLattice
 
             // 4. Declare our point grid datatree
             var nodeTree = new GH_Structure<GH_Point>();
+            var derivTree = new GH_Structure<GH_Vector>();
 
             // 5. Prepare normalized unit cell topology
             var cell = new UnitCell();
@@ -105,35 +108,52 @@ namespace IntraLattice
             Vector3d vectorY = yCellSize * basePlane.YAxis;
             Vector3d vectorZ = zCellSize * basePlane.ZAxis;
 
+            float[] N = new float[3] { nX, nY, nZ };
+
             // 7. Map nodes to design space
             //    Loop through the uvw cell grid
-            for (int u = 0; u <= nX; u++)
+            for (int u = 0; u <= N[0]; u++)
             {
-                for (int v = 0; v <= nY; v++)
+                for (int v = 0; v <= N[1]; v++)
                 {
-                    for (int w = 0; w <= nZ; w++)
+                    for (int w = 0; w <= N[2]; w++)
                     {
                         // this loop maps each node in the cell onto the UV-surface maps
-                        for (int nodeIndex = 0; nodeIndex < cell.Nodes.Count; nodeIndex++)
+                        for (int i = 0; i < cell.Nodes.Count; i++)
                         {
+                            // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
+                                continue;
+                            
+                            double usub = cell.Nodes[i].X; // u-position within unit cell
+                            double vsub = cell.Nodes[i].Y; // v-position within unit cell
+                            double wsub = cell.Nodes[i].Z; // w-position within unit cell
 
-                            double usub = cell.Nodes[nodeIndex].X; // u-position within unit cell
-                            double vsub = cell.Nodes[nodeIndex].Y; // v-position within unit cell
-                            double wsub = cell.Nodes[nodeIndex].Z; // w-position within unit cell
+                            // these conditionals enforce the boundary, no nodes are created beyond the upper boundary
+                            if (u == N[0] && usub != 0) continue;
+                            if (v == N[1] && vsub != 0) continue;
+                            if (w == N[2] && wsub != 0) continue;
 
                             // compute position vector
                             Vector3d V = (u+usub) * vectorX + (v+vsub) * vectorY + (w+wsub) * vectorZ;
                             Point3d newPt = basePlane.Origin + V;
 
-                            GH_Path treePath = new GH_Path(u, v, w);            // construct path in tree
+                            GH_Path treePath = new GH_Path(u, v, w, i);            // construct path in tree
                             nodeTree.Append(new GH_Point(newPt), treePath);     // add point to tree
                         }
                     }
                 }
             }
 
+            // 7. Generate the struts
+            //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
+            var struts = new List<Curve>();
+            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, false);
+
             // 8. Set output
-            DA.SetDataTree(0, nodeTree);
+            DA.SetDataList(0, struts);
+            DA.SetDataTree(1, nodeTree);
+            
         }
         
         /// <summary>
@@ -156,7 +176,7 @@ namespace IntraLattice
             get
             {
                 // You can add image files to your project resources and access them like this:
-                //return Resources.IconForThisComponent;
+                //return Resources.circle1;
                 return null;
             }
         }
