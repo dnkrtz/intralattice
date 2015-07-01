@@ -23,23 +23,25 @@ The basic workflow is illustrated above. We begin with a design space, a cube in
 
 The complete algorithm is divided into the following modules.
 
-1. **GRID** - Generates point grid within the design space.
-  * [GridBox](../master/src/IntraLattice/1 - GRID/GridBox.cs) - Simple Cartesian Grid (3D)
-  * [GridCylinder](../master/src/IntraLattice/1 - GRID/GridCylinder.cs) - Simple Cylindrical Grid
-  * [GridSphere](../master/src/IntraLattice/1 - GRID/GridSphere.cs) - Simple Spherical Grid
-  * [GridConformSS](../master/src/IntraLattice/1 - GRID/GridConformSS.cs) - Conforming Surface-to-Surface Grid
-  * [GridConformSA](../master/src/IntraLattice/1 - GRID/GridConformSA.cs) - Conforming Surface-to-Axis Grid
-  * [GridUniform](../master/src/IntraLattice/1 - GRID/GridUniform.cs) - Uniform Trimmed Grid (within Brep or Mesh)
+1. **CELL** - Defines a unit cell topology
+  * [PresetCell](../master/src/IntraLattice/CELL/PresetCell.cs) - Library of built-in unit cells
+  * [CustomCell](../master/src/IntraLattice/CELL/CustomCell.cs) - Input for user-defined unit cell (includes validation)
+    * [CellTools](../master/src/IntraLattice/CELL/CellTools.cs) - Unit cell validification and formatting methods
+  
 
-2. **FRAME** - Generates a lattice frame by mapping unit cell topologies to the grid.
-  * [FrameConform](../master/src/IntraLattice/2 - FRAME/FrameConform.cs) - Maps lattice topology
-  * [FrameUniform](../master/src/IntraLattice/2 - FRAME/FrameUniform.cs) - Maps *and trims* lattice topology
-    * [FrameTools](../master/src/IntraLattice/2 - FRAME/FrameTools.cs) - Topology Generation
+2. **FRAME** - Generates a lattice frame by mapping the unit cell topology
+  * [ConformBox](../master/src/IntraLattice/FRAME/ConformBox.cs) - Simple box lattice
+  * [ConformCylinder](../master/src/IntraLattice/FRAME/ConformCylinder.cs) - Simple cylinder lattice
+  * [ConformSS](../master/src/IntraLattice/FRAME/ConformSS.cs) - Conforming Surface-to-Surface lattice
+  * [ConformSA](../master/src/IntraLattice/FRAME/ConformSA.cs) - Conforming Surface-to-Axis lattice
+  * [ConformSP](../master/src/IntraLattice/FRAME/ConformSP.cs) - Conforming Surface-to-Point lattice
+  * [UniformDS](../master/src/IntraLattice/FRAME/UniformDS.cs) - Trimmed Uniform Lattice (within Brep or Mesh)
+    * [FrameTools](../master/src/IntraLattice/FRAME/FrameTools.cs) - Topology Generation
 
 3. **MESH** - Generates solid mesh of the lattice frame.
-  * [LatticeMesh](../master/src/IntraLattice/3 - MESH/LatticeMesh.cs) - Under Development
-  * [ViewReport](../master/src/IntraLattice/3 - MESH/ViewReport.cs) - Validification of Mesh
-    * [MeshTools](../master/src/IntraLattice/3 - MESH/MeshTools.cs) - Mesh Stitching, 3D Convex Hull, Data Structure
+  * [LatticeMesh](../master/src/IntraLattice/MESH/LatticeMesh.cs) - Under Development
+  * [ViewReport](../master/src/IntraLattice/MESH/ViewReport.cs) - Validification of Mesh
+    * [MeshTools](../master/src/IntraLattice/MESH/MeshTools.cs) - Mesh Stitching, 3D Convex Hull, Data Structure
 
 ## Feature Components
 
@@ -53,7 +55,6 @@ The complete algorithm is divided into the following modules.
 Task | Description 
 --- | --- 
 `LatticeMesh` | Needs to be finished by friday
-`ConformSP` | Point grid conforming from Surface to point
 `ViewReport` | Add preview functionality
 `FEA` | Add Nastran interface
 `Icons` | Find icons for the component toolbar
