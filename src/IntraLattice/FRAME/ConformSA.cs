@@ -102,10 +102,10 @@ namespace IntraLattice
             CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
 
             // 7. Divide axis into equal segments, get curve parameters
-            double[] curveParams = axis.DivideByCount((int)N[0], true);
+            List<double> curveParams = new List<double>(axis.DivideByCount((int)N[0], true));
             double uStep = curveParams[1] - curveParams[0];
             //    If axis is closed curve, add last parameter to close the loop
-            if (axis.IsClosed) curveParams[curveParams.Length] = curveParams[0]; 
+            if (axis.IsClosed) curveParams.Add(0);
 
             // 8. Let's create the actual lattice nodes now
             //
@@ -113,38 +113,38 @@ namespace IntraLattice
             {
                 for (int v = 0; v <= N[1]; v++)
                 {
-                    // this loop maps each node in the cell onto the UV-surface map and axis (U)
-                    for (int i = 0; i < cell.Nodes.Count; i++)
+                    // create grid points on and between surface-axis
+                    for (int w = 0; w <= N[2]; w++)
                     {
-                        // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
-                        if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
-                            continue;
-
-                        // local node position within cell
-                        double usub = cell.Nodes[i].X; // u-position within unit cell
-                        double vsub = cell.Nodes[i].Y; // v-position within unit cell
-                        double wsub = cell.Nodes[i].Z; // w-position within unit cell
-
-                        // evaluate the point on the axis
-                        Point3d pt1;
-                        Point3d pt2; Vector3d[] derivatives; // initialize for surface 2
-
-                        // evaluate point and its derivatives on the axis and the surface
-                        pt1 = axis.PointAt(curveParams[u] + usub / N[0]);
-                        surface.Evaluate((u + usub) / N[0], (v + vsub) / N[1], 2, out pt2, out derivatives);
-
-                        // create vector joining the two points (this is our w-range)
-                        Vector3d wVect = pt2 - pt1;
-
-                        // create grid points on and between surface-axis
-                        for (int w = 0; w <= N[2]; w++)
+                        // this loop maps each node in the cell onto the UV-surface map and axis (U)
+                        for (int i = 0; i < cell.Nodes.Count; i++)
                         {
-                            GH_Path treePath = new GH_Path(u, v, w, i);    // u,v,w is the cell grid. the last index is for different nodes in each cell.
+                            // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
+                                continue;
+
+                            // local node position within cell
+                            double usub = cell.Nodes[i].X; // u-position within unit cell
+                            double vsub = cell.Nodes[i].Y; // v-position within unit cell
+                            double wsub = cell.Nodes[i].Z; // w-position within unit cell
 
                             // these conditionals enforce the boundary, no nodes are created beyond the upper boundary
                             if (u == N[0] && usub != 0) continue;
                             if (v == N[1] && vsub != 0) continue;
                             if (w == N[2] && wsub != 0) continue;
+
+                            // evaluate the point on the axis
+                            Point3d pt1;
+                            Point3d pt2; Vector3d[] derivatives; // initialize for surface 2
+
+                            // evaluate point and its derivatives on the axis and the surface
+                            pt1 = axis.PointAt(curveParams[u] + usub / N[0]);
+                            surface.Evaluate((u + usub) / N[0], (v + vsub) / N[1], 2, out pt2, out derivatives);
+
+                            // create vector joining the two points (this is our w-range)
+                            Vector3d wVect = pt2 - pt1;
+
+                            GH_Path treePath = new GH_Path(u, v, w, i);    // u,v,w is the cell grid. the last index is for different nodes in each cell.
 
                             // create the node, accounting for the position along the w-direction
                             Point3d newPt = pt1 + wVect * (w + wsub) / N[2];
