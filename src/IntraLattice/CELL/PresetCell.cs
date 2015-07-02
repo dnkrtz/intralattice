@@ -92,13 +92,14 @@ namespace IntraLattice
                         if (!nodeGrid.PathExists(currentPath)) continue; // if current path doesnt exist in tree, skip loop
 
                         List<GH_Path> neighbourPaths = new List<GH_Path>();
-
+                        //Grid
                         if (cellType == 0)
                         {
                             if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
                             if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
                             if (w < N[2]) neighbourPaths.Add(new GH_Path(u, v, w + 1));
                         }
+                        //X
                         if (cellType == 1)
                         {
                             if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
@@ -106,6 +107,7 @@ namespace IntraLattice
                             if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
                             if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
                         }
+                        //Star
                         if (cellType == 2)
                         {
                             if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
@@ -116,6 +118,7 @@ namespace IntraLattice
                             if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
                             if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
                         }
+                        //Cross
                         if (cellType == 3)
                         {
                             if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
@@ -125,6 +128,7 @@ namespace IntraLattice
                             if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
                             if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
                         }
+                        //Cross2
                         if (cellType == 4)
                         {
                             if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
