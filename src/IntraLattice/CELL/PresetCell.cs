@@ -38,6 +38,7 @@ namespace IntraLattice
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddLineParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
+            pManager.AddPointParameter("test", "", "", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -56,104 +57,202 @@ namespace IntraLattice
             int cellType = 0;
             if (!DA.GetData(0, ref cellType)) { return; }
 
+            var lines = new List<Line>();
+
             // Set cell size
             double cellSize = 5;
-                  
-            // Simple topologies
-            int[] N = new int[] { 1, 1, 1 };
-
-            // Make node grid
-            var nodeGrid = new GH_Structure<GH_Point>();
-            for (int u = 0; u <= N[0]; u++)
+            if (cellType <= 4)
             {
-                for (int v = 0; v <= N[1]; v++)
-                {
-                    for (int w = 0; w <= N[2]; w++)
-                    {
-                        Vector3d V = u * Plane.WorldXY.XAxis + v * Plane.WorldXY.YAxis + w * Plane.WorldXY.ZAxis;
-                        Point3d node = Plane.WorldXY.Origin + V * cellSize;
+                // Simple topologies
+                int[] N = new int[] { 1, 1, 1 };
 
-                        GH_Path currentPath = new GH_Path(u, v, w);
-                        nodeGrid.Append(new GH_Point(node), currentPath);
+                // Make node grid
+                var nodeGrid = new GH_Structure<GH_Point>();
+                for (int u = 0; u <= N[0]; u++)
+                {
+                    for (int v = 0; v <= N[1]; v++)
+                    {
+                        for (int w = 0; w <= N[2]; w++)
+                        {
+                            Vector3d V = u * Plane.WorldXY.XAxis + v * Plane.WorldXY.YAxis + w * Plane.WorldXY.ZAxis;
+                            Point3d node = Plane.WorldXY.Origin + V * cellSize;
+
+                            GH_Path currentPath = new GH_Path(u, v, w);
+                            nodeGrid.Append(new GH_Point(node), currentPath);
+                        }
                     }
                 }
-            }
 
-            // Make struts
-            var lines = new List<Line>();
-            for (int u = 0; u <= N[0]; u++)
-            {
-                for (int v = 0; v <= N[1]; v++)
+                // Make struts
+             
+                for (int u = 0; u <= N[0]; u++)
                 {
-                    for (int w = 0; w <= N[2]; w++)
+                    for (int v = 0; v <= N[1]; v++)
                     {
-                        // We'll be needing the data tree path of the current node, and those of its neighbours
-                        GH_Path currentPath = new GH_Path(u, v, w);
-                        if (!nodeGrid.PathExists(currentPath)) continue; // if current path doesnt exist in tree, skip loop
+                        for (int w = 0; w <= N[2]; w++)
+                        {
+                            // We'll be needing the data tree path of the current node, and those of its neighbours
+                            GH_Path currentPath = new GH_Path(u, v, w);
+                            if (!nodeGrid.PathExists(currentPath)) continue; // if current path doesnt exist in tree, skip loop
 
-                        List<GH_Path> neighbourPaths = new List<GH_Path>();
-                        //Grid
-                        if (cellType == 0)
-                        {
-                            if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
-                            if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
-                            if (w < N[2]) neighbourPaths.Add(new GH_Path(u, v, w + 1));
-                        }
-                        //X
-                        if (cellType == 1)
-                        {
-                            if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
-                            if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
-                            if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
-                            if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
-                        }
-                        //Star
-                        if (cellType == 2)
-                        {
-                            if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
-                            if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
-                            if (w < N[2]) neighbourPaths.Add(new GH_Path(u, v, w + 1));
-                            if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
-                            if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
-                            if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
-                            if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
-                        }
-                        //Cross
-                        if (cellType == 3)
-                        {
-                            if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
-                            if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
-                            if ((u < N[0]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v, w + 1));
-                            if ((v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u, v - 1, w + 1));
-                            if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
-                            if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
-                        }
-                        //Cross2
-                        if (cellType == 4)
-                        {
-                            if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
-                            if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
-                            if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
-                            if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
-                        }
-                        
+                            List<GH_Path> neighbourPaths = new List<GH_Path>();
+                            //Grid
+                            if (cellType == 0)
+                            {
+                                if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
+                                if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
+                                if (w < N[2]) neighbourPaths.Add(new GH_Path(u, v, w + 1));
+                            }
+                            //X
+                            if (cellType == 1)
+                            {
+                                if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
+                                if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
+                                if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
+                                if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
+                            }
+                            //Star
+                            if (cellType == 2)
+                            {
+                                if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
+                                if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
+                                if (w < N[2]) neighbourPaths.Add(new GH_Path(u, v, w + 1));
+                                if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
+                                if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
+                                if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
+                                if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
+                            }
+                            //Cross
+                            if (cellType == 3)
+                            {
+                                if (u < N[0]) neighbourPaths.Add(new GH_Path(u + 1, v, w));
+                                if (v < N[1]) neighbourPaths.Add(new GH_Path(u, v + 1, w));
+                                if ((u < N[0]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v, w + 1));
+                                if ((v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u, v - 1, w + 1));
+                                if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
+                                if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
+                            }
+                            //Cross2
+                            if (cellType == 4)
+                            {
+                                if ((u < N[0]) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v + 1, w + 1));
+                                if ((u > 0) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v - 1, w + 1));
+                                if ((u < N[0]) && (v > 0) && (w < N[2])) neighbourPaths.Add(new GH_Path(u + 1, v - 1, w + 1));
+                                if ((u > 0) && (v < N[1]) && (w < N[2])) neighbourPaths.Add(new GH_Path(u - 1, v + 1, w + 1));
+                            }
 
-                        foreach (GH_Path neighbourPath in neighbourPaths)
-                        {
-                            if (!nodeGrid.PathExists(neighbourPath)) continue;  // if neighbour path doesnt exist in node grid, skip loop
-                            Line line = new Line(nodeGrid[currentPath][0].Value, nodeGrid[neighbourPath][0].Value);
-                            lines.Add(line);
-                        }
 
+                            foreach (GH_Path neighbourPath in neighbourPaths)
+                            {
+                                if (!nodeGrid.PathExists(neighbourPath)) continue;  // if neighbour path doesnt exist in node grid, skip loop
+                                Line line = new Line(nodeGrid[currentPath][0].Value, nodeGrid[neighbourPath][0].Value);
+                                lines.Add(line);
+                            }
+
+                        }
                     }
                 }
+
+                CellTools.FixIntersections(ref lines);
+            }
+            else
+            {
+
+                List<GH_Point> pt = new List<GH_Point>();
+                //Vintiles
+                if (cellType == 5)
+                {
+                    foreach (double i in new double[2]{0, cellSize})
+                    {
+                        pt.Add(new GH_Point(new Point3d(0, cellSize / 4, i)));
+                        pt.Add(new GH_Point(new Point3d(0, 3 * cellSize / 4, i)));
+                        pt.Add(new GH_Point(new Point3d(cellSize / 4, cellSize, i)));
+                        pt.Add(new GH_Point(new Point3d(3 * cellSize / 4, cellSize, i)));
+                        pt.Add(new GH_Point(new Point3d(cellSize, 3 * cellSize / 4, i)));
+                        pt.Add(new GH_Point(new Point3d(cellSize, cellSize / 4, i)));
+                        pt.Add(new GH_Point(new Point3d(3 * cellSize / 4, 0, i)));
+                        pt.Add(new GH_Point(new Point3d(cellSize / 4, 0, i)));
+                    }
+
+                    foreach (double i in new double[2] { cellSize / 4.0, 3.0 * cellSize / 4.0 })
+                    {
+                        pt.Add(new GH_Point(new Point3d(0, cellSize / 2, i)));
+                        pt.Add(new GH_Point(new Point3d(cellSize / 2, cellSize, i)));
+                        pt.Add(new GH_Point(new Point3d(cellSize, cellSize / 2, i)));
+                        pt.Add(new GH_Point(new Point3d(cellSize / 2, 0, i)));
+                    }
+
+                    foreach (double i in new double[2] { cellSize / 4, 3 * cellSize / 4 })
+                    {
+                        pt.Add(new GH_Point(new Point3d(cellSize / 2, i, cellSize / 2)));
+                    }
+
+                    foreach (double i in new double[2] { cellSize / 4, 3 * cellSize / 4 })
+                    {
+                        pt.Add(new GH_Point(new Point3d(i, cellSize / 2, cellSize / 2)));
+                    }
+
+                    foreach (int i in new int[3] { 0, 1, 26 })
+                    {
+                        lines.Add(new Line(pt[16].Value, pt[i].Value));
+                    }
+
+                    foreach (int i in new int[3] { 2, 3, 25 })
+                    {
+                        lines.Add(new Line(pt[17].Value, pt[i].Value));
+                    }
+
+                    foreach (int i in new int[3] { 4, 5, 27 })
+                    {
+                        lines.Add(new Line(pt[18].Value, pt[i].Value));
+                    }
+
+                    foreach (int i in new int[3] { 6, 7, 24 })
+                    {
+                        lines.Add(new Line(pt[19].Value, pt[i].Value));
+                    }
+
+                    foreach (int i in new int[3] { 8, 9, 26 })
+                    {
+                        lines.Add(new Line(pt[20].Value, pt[i].Value));
+                    }
+
+                    foreach (int i in new int[3] { 10, 11, 25 })
+                    {
+                        lines.Add(new Line(pt[21].Value, pt[i].Value));
+                    }
+
+                    foreach (int i in new int[3] { 12, 13, 27 })
+                    {
+                        lines.Add(new Line(pt[22].Value, pt[i].Value));
+                    }
+
+                    foreach (int i in new int[3] { 14, 15, 24 })
+                    {
+                        lines.Add(new Line(pt[23].Value, pt[i].Value));
+                    }
+                    foreach (int i in new int[2] { 24, 25 })
+                    {
+                        lines.Add(new Line(pt[26].Value, pt[i].Value));
+                        lines.Add(new Line(pt[27].Value, pt[i].Value));
+                    }
+                    foreach (int i in new int[6] { 1, 3, 5, 9, 11, 13 })
+                    {
+                        lines.Add(new Line(pt[i].Value, pt[i + 1].Value));
+                    }
+
+                    lines.Add(new Line(pt[0].Value, pt[7].Value));
+                    lines.Add(new Line(pt[8].Value, pt[15].Value));
+                }
+
             }
 
-            //
-            CellTools.FixIntersections(ref lines);
+             //
+            
             
             // 8. Set output
             DA.SetDataList(0, lines);
+            
         }
 
         /// <summary>
