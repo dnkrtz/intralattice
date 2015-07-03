@@ -30,12 +30,15 @@ namespace IntraLattice
             var item4 = new Grasshopper.Kernel.Special.GH_ValueListItem("Cross", "3");
             var item5 = new Grasshopper.Kernel.Special.GH_ValueListItem("Cross2", "4");
             var item6 = new Grasshopper.Kernel.Special.GH_ValueListItem("Vintiles", "5");
+            var item7 = new Grasshopper.Kernel.Special.GH_ValueListItem("Octahedral", "6");
+
             vallist.ListItems.Add(item1);
             vallist.ListItems.Add(item2);
             vallist.ListItems.Add(item3);
             vallist.ListItems.Add(item4);
             vallist.ListItems.Add(item5);
             vallist.ListItems.Add(item6);
+            vallist.ListItems.Add(item7);
 
             // Until now, the slider is a hypothetical object.
             // This command makes it 'real' and adds it to the canvas.
