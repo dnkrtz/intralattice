@@ -158,91 +158,142 @@ namespace IntraLattice
             else
             {
 
-                List<GH_Point> pt = new List<GH_Point>();
+                List<Point3d> pt = new List<Point3d>();
                 //Vintiles
                 if (cellType == 5)
                 {
                     foreach (double i in new double[2]{0, cellSize})
                     {
-                        pt.Add(new GH_Point(new Point3d(0, cellSize / 4, i)));
-                        pt.Add(new GH_Point(new Point3d(0, 3 * cellSize / 4, i)));
-                        pt.Add(new GH_Point(new Point3d(cellSize / 4, cellSize, i)));
-                        pt.Add(new GH_Point(new Point3d(3 * cellSize / 4, cellSize, i)));
-                        pt.Add(new GH_Point(new Point3d(cellSize, 3 * cellSize / 4, i)));
-                        pt.Add(new GH_Point(new Point3d(cellSize, cellSize / 4, i)));
-                        pt.Add(new GH_Point(new Point3d(3 * cellSize / 4, 0, i)));
-                        pt.Add(new GH_Point(new Point3d(cellSize / 4, 0, i)));
+                        pt.Add(new Point3d(0, cellSize / 4, i));
+                        pt.Add(new Point3d(0, 3 * cellSize / 4, i));
+                        pt.Add(new Point3d(cellSize / 4, cellSize, i));
+                        pt.Add(new Point3d(3 * cellSize / 4, cellSize, i));
+                        pt.Add(new Point3d(cellSize, 3 * cellSize / 4, i));
+                        pt.Add(new Point3d(cellSize, cellSize / 4, i));
+                        pt.Add(new Point3d(3 * cellSize / 4, 0, i));
+                        pt.Add(new Point3d(cellSize / 4, 0, i));
                     }
 
                     foreach (double i in new double[2] { cellSize / 4.0, 3.0 * cellSize / 4.0 })
                     {
-                        pt.Add(new GH_Point(new Point3d(0, cellSize / 2, i)));
-                        pt.Add(new GH_Point(new Point3d(cellSize / 2, cellSize, i)));
-                        pt.Add(new GH_Point(new Point3d(cellSize, cellSize / 2, i)));
-                        pt.Add(new GH_Point(new Point3d(cellSize / 2, 0, i)));
+                        pt.Add(new Point3d(0, cellSize / 2, i));
+                        pt.Add(new Point3d(cellSize / 2, cellSize, i));
+                        pt.Add(new Point3d(cellSize, cellSize / 2, i));
+                        pt.Add(new Point3d(cellSize / 2, 0, i));
                     }
 
                     foreach (double i in new double[2] { cellSize / 4, 3 * cellSize / 4 })
                     {
-                        pt.Add(new GH_Point(new Point3d(cellSize / 2, i, cellSize / 2)));
+                        pt.Add(new Point3d(cellSize / 2, i, cellSize / 2));
                     }
 
                     foreach (double i in new double[2] { cellSize / 4, 3 * cellSize / 4 })
                     {
-                        pt.Add(new GH_Point(new Point3d(i, cellSize / 2, cellSize / 2)));
+                        pt.Add(new Point3d(i, cellSize / 2, cellSize / 2));
                     }
 
                     foreach (int i in new int[3] { 0, 1, 26 })
                     {
-                        lines.Add(new Line(pt[16].Value, pt[i].Value));
+                        lines.Add(new Line(pt[16], pt[i]));
                     }
 
                     foreach (int i in new int[3] { 2, 3, 25 })
                     {
-                        lines.Add(new Line(pt[17].Value, pt[i].Value));
+                        lines.Add(new Line(pt[17], pt[i]));
                     }
 
                     foreach (int i in new int[3] { 4, 5, 27 })
                     {
-                        lines.Add(new Line(pt[18].Value, pt[i].Value));
+                        lines.Add(new Line(pt[18], pt[i]));
                     }
 
                     foreach (int i in new int[3] { 6, 7, 24 })
                     {
-                        lines.Add(new Line(pt[19].Value, pt[i].Value));
+                        lines.Add(new Line(pt[19], pt[i]));
                     }
 
                     foreach (int i in new int[3] { 8, 9, 26 })
                     {
-                        lines.Add(new Line(pt[20].Value, pt[i].Value));
+                        lines.Add(new Line(pt[20], pt[i]));
                     }
 
                     foreach (int i in new int[3] { 10, 11, 25 })
                     {
-                        lines.Add(new Line(pt[21].Value, pt[i].Value));
+                        lines.Add(new Line(pt[21],pt[i]));
                     }
 
                     foreach (int i in new int[3] { 12, 13, 27 })
                     {
-                        lines.Add(new Line(pt[22].Value, pt[i].Value));
+                        lines.Add(new Line(pt[22], pt[i]));
                     }
 
                     foreach (int i in new int[3] { 14, 15, 24 })
                     {
-                        lines.Add(new Line(pt[23].Value, pt[i].Value));
+                        lines.Add(new Line(pt[23], pt[i]));
                     }
                     foreach (int i in new int[2] { 24, 25 })
                     {
-                        lines.Add(new Line(pt[26].Value, pt[i].Value));
-                        lines.Add(new Line(pt[27].Value, pt[i].Value));
+                        lines.Add(new Line(pt[26], pt[i]));
+                        lines.Add(new Line(pt[27], pt[i]));
                     }
                     foreach (int i in new int[6] { 1, 3, 5, 9, 11, 13 })
                     {
-                        lines.Add(new Line(pt[i].Value, pt[i + 1].Value));
+                        lines.Add(new Line(pt[i], pt[i + 1]));
                     }
 
-                    lines.Add(new Line(pt[0].Value, pt[7].Value));
-                    lines.Add(new Line(pt[8].Value, pt[15].Value));
+                    lines.Add(new Line(pt[0], pt[7]));
+                    lines.Add(new Line(pt[8], pt[15]));
+                }
+                //octahedral line
+                if (cellType == 6) 
+                {
+                    //corner points
+                    pt.Add(new Point3d(0,0,0));
+                    pt.Add(new Point3d(0, cellSize, 0));
+                    pt.Add(new Point3d(cellSize, cellSize, 0));
+                    pt.Add(new Point3d(cellSize, 0, 0));
+                    pt.Add(new Point3d(0, 0, cellSize));
+                    pt.Add(new Point3d(0, cellSize, cellSize));
+                    pt.Add(new Point3d(cellSize, cellSize, cellSize));
+                    pt.Add(new Point3d(cellSize, 0, cellSize));
+                    //face center points
+                    pt.Add(new Point3d(cellSize, cellSize/2, cellSize/2));
+                    pt.Add(new Point3d(cellSize/2, cellSize, cellSize/2));
+                    pt.Add(new Point3d(0, cellSize/2, cellSize / 2));
+                    pt.Add(new Point3d(cellSize / 2, 0, cellSize / 2));
+                    pt.Add(new Point3d(cellSize / 2, cellSize/2, 0));
+                    pt.Add(new Point3d(cellSize / 2, cellSize/2, cellSize));
+                    
+                    foreach(int i in new int[8]{0,1,2,3,8,9,10,11})
+                    {
+                        lines.Add(new Line(pt[12], pt[i]));
+                    }
+
+                    foreach (int i in new int[8] { 4,5, 6, 7, 8, 9, 10, 11 })
+                    {
+                        lines.Add(new Line(pt[13], pt[i]));
+                    }
+
+                    foreach (int i in new int[4] { 0, 1, 4, 5 })
+                    {
+                        lines.Add(new Line(pt[10], pt[i]));
+                    }
+
+                    foreach (int i in new int[6] { 1, 2, 5, 6, 8, 10 })
+                    {
+                        lines.Add(new Line(pt[9], pt[i]));
+                    }
+
+                    foreach (int i in new int[4] { 2,3,6,7 })
+                    {
+                        lines.Add(new Line(pt[8], pt[i]));
+                    }
+
+                    foreach (int i in new int[6] { 0,3,4,7,8,10 })
+                    {
+                        lines.Add(new Line(pt[11], pt[i]));
+                    }
+
                 }
 
             }
