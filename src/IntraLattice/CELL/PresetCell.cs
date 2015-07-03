@@ -293,6 +293,65 @@ namespace IntraLattice
                     {
                         lines.Add(new Line(pt[11], pt[i]));
                     }
+                }
+
+                if (cellType==7)
+                {
+                    foreach (double i in new double[2] { 0, cellSize }) 
+                    {
+                        //top and bottom (inner square)
+                        pt.Add(new Point3d(cellSize / 3, cellSize / 3, i));
+                        pt.Add(new Point3d(cellSize / 3, 2*cellSize / 3, i));
+                        pt.Add(new Point3d(2*cellSize / 3, 2*cellSize / 3, i));
+                        pt.Add(new Point3d(2*cellSize / 3, cellSize / 3, i));
+                    }
+                    //midsection(medium squre)
+                    pt.Add(new Point3d(cellSize / 6, cellSize / 6, cellSize / 2));
+                    pt.Add(new Point3d(cellSize / 6, 5*cellSize / 6, cellSize / 2));
+                    pt.Add(new Point3d(5 * cellSize / 6, 5 * cellSize / 6, cellSize / 2));
+                    pt.Add(new Point3d(5 * cellSize / 6, cellSize / 6, cellSize / 2));
+
+                    //midsection(connections)
+                    pt.Add(new Point3d(cellSize/6,0,cellSize/2));
+                    pt.Add(new Point3d(0, cellSize / 6, cellSize / 2));
+                    pt.Add(new Point3d(0, 5*cellSize/6, cellSize/2));
+                    pt.Add(new Point3d(cellSize/6, cellSize , cellSize / 2));
+                    pt.Add(new Point3d(5*cellSize/6, cellSize, cellSize/2));
+                    pt.Add(new Point3d(cellSize, 5 * cellSize / 6, cellSize / 2));
+                    pt.Add(new Point3d(cellSize, cellSize / 6, cellSize / 2));
+                    pt.Add(new Point3d(5 * cellSize / 6,0, cellSize / 2));
+
+                    foreach (int i in new int[4] {0,4,12,13}) 
+                    {
+                        lines.Add(new Line(pt[8], pt[i]));
+                    }
+
+                    foreach (int i in new int[4] { 1, 5, 14, 15 })
+                    {
+                        lines.Add(new Line(pt[9], pt[i]));
+                    }
+
+                    foreach (int i in new int[4] { 2, 6, 16, 17 })
+                    {
+                        lines.Add(new Line(pt[10], pt[i]));
+                    }
+
+                    foreach (int i in new int[4] { 3, 7, 18, 19 })
+                    {
+                        lines.Add(new Line(pt[11], pt[i]));
+                    }
+
+                    foreach (int i in new int[2] {1,3})
+                    {
+                        lines.Add(new Line(pt[0], pt[i]));
+                        lines.Add(new Line(pt[2], pt[i]));
+                    }
+
+                    foreach (int i in new int[2] { 5, 7 })
+                    {
+                        lines.Add(new Line(pt[4], pt[i]));
+                        lines.Add(new Line(pt[6], pt[i]));
+                    }
 
                 }
 
