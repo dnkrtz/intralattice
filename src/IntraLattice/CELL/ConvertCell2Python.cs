@@ -16,9 +16,9 @@ namespace IntraLattice.CELL
         /// Initializes a new instance of the ConvertCell2Python class.
         /// </summary>
         public ConvertCell2Python()
-            : base("ConvertCell2Python", "Nickname",
-                "Description",
-                "Category", "Subcategory")
+            : base("ConvertCell2Python", "CC2P",
+                "Converts polyline to python script",
+                "IntraLattice2", "Cell")
         {
         }
 
@@ -27,7 +27,8 @@ namespace IntraLattice.CELL
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddLineParameter("line", "", "list of line", GH_ParamAccess.list);
+            pManager.AddCurveParameter("Polyline", "PolyL", "list of polyline", GH_ParamAccess.list);
+
         }
 
         /// <summary>
@@ -53,16 +54,19 @@ namespace IntraLattice.CELL
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //Grasshopper.Kernel.Data.GH_Structure<Grasshopper.Kernel.Types.GH_Point> listofpoint = new Grasshopper.Kernel.Data.GH_Structure<Grasshopper.Kernel.Types.GH_Point>();
-            List<Grasshopper.Kernel.Types.GH_Line> listofline = new List<Grasshopper.Kernel.Types.GH_Line>();
+
+            List<Line[]> listofline = new List<Line[]>();
             List<Grasshopper.Kernel.Types.GH_Line> listof_unit_line = new List<Grasshopper.Kernel.Types.GH_Line>();
+            List<Polyline> ListPolyline = new List<Polyline>();
 
-            /*if (!(DA.GetDataTree(0, out listofpoint))) { return; }
-            if (listofpoint == null && listofpoint.DataCount == 0) { return; }*/
+            if (!(DA.GetDataList(0, ListPolyline))) { return; }
+            if (ListPolyline == null && ListPolyline.Count == 0) { return; }
 
-            if (!(DA.GetDataList(0, listofline))) { return; }
-            if (listofline == null && listofline.Count == 0) { return; }
-
+            foreach (var element in ListPolyline) 
+            {
+                listofline.Add(element.GetSegments());
+            } 
+            
             if (toggle_switch)
             {
 
@@ -86,21 +90,24 @@ namespace IntraLattice.CELL
                     var.Add("pt=[]");
                     var.Add("lines=[]");
 
-                    for (int i = 0; i < listofline.Count; i++)
+                    foreach (Line[] arrayelement in listofline)
                     {
-                        Vector3d first_point = new Vector3d(listofline[i].Value.From);
-                        Vector3d end_point = new Vector3d(listofline[i].Value.To);
+                        foreach (Line element in arrayelement)
+                        {
+                            Vector3d first_point = new Vector3d(element.From);
+                            Vector3d end_point = new Vector3d(element.To);
 
-                        if (first_point.Length > 0) { first_point.Unitize(); }
-                        if (end_point.Length > 0) { end_point.Unitize(); }
+                            if (first_point.Length > 0) { first_point.Unitize(); }
+                            if (end_point.Length > 0) { end_point.Unitize(); }
 
-                        var.Add(write_point(first_point));
-                        counter++;
-                        var.Add(write_point(end_point));
-                        counter++;
-                        var.Add(write_line(counter));
+                            var.Add(write_point(first_point));
+                            counter++;
+                            var.Add(write_point(end_point));
+                            counter++;
+                            var.Add(write_line(counter));
 
-                        listof_unit_line.Add(new Grasshopper.Kernel.Types.GH_Line());
+                            listof_unit_line.Add(new Grasshopper.Kernel.Types.GH_Line());
+                        }
 
                     }
 
