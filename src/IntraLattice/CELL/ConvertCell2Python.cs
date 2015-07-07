@@ -55,17 +55,21 @@ namespace IntraLattice.CELL
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            List<Line[]> listofline = new List<Line[]>();
+            List<Line> listofline = new List<Line>();
             List<Grasshopper.Kernel.Types.GH_Line> listof_unit_line = new List<Grasshopper.Kernel.Types.GH_Line>();
             List<Polyline> ListPolyline = new List<Polyline>();
 
             if (!(DA.GetDataList(0, ListPolyline))) { return; }
             if (ListPolyline == null && ListPolyline.Count == 0) { return; }
 
-            foreach (var element in ListPolyline) 
+            foreach (var PolyL in ListPolyline) 
             {
-                listofline.Add(element.GetSegments());
+                foreach(var Line in PolyL.GetSegments())
+                {
+                    listofline.Add(Line);
+                }
             } 
+
             
             if (toggle_switch)
             {
@@ -78,7 +82,6 @@ namespace IntraLattice.CELL
                 {
                     System.IO.FileStream python_file = (System.IO.FileStream)Saveprompt.OpenFile();
 
-
                     List<string> var = new List<string>();
 
                     var.Add("import rhinoscriptsyntax as rs");
@@ -90,26 +93,24 @@ namespace IntraLattice.CELL
                     var.Add("pt=[]");
                     var.Add("lines=[]");
 
-                    foreach (Line[] arrayelement in listofline)
+                    foreach (Line element in listofline)
                     {
-                        foreach (Line element in arrayelement)
-                        {
-                            Vector3d first_point = new Vector3d(element.From);
-                            Vector3d end_point = new Vector3d(element.To);
+                        Vector3d first_point = new Vector3d(element.From);
+                        Vector3d end_point = new Vector3d(element.To);
 
-                            if (first_point.Length > 0) { first_point.Unitize(); }
-                            if (end_point.Length > 0) { end_point.Unitize(); }
+                        if (first_point.Length > 0) { first_point.Unitize(); }
+                        if (end_point.Length > 0) { end_point.Unitize(); }
 
-                            var.Add(write_point(first_point));
-                            counter++;
-                            var.Add(write_point(end_point));
-                            counter++;
-                            var.Add(write_line(counter));
+                        var.Add(write_point(first_point));
+                        counter++;
+                        var.Add(write_point(end_point));
+                        counter++;
+                        var.Add(write_line(counter));
 
-                            listof_unit_line.Add(new Grasshopper.Kernel.Types.GH_Line());
-                        }
-
+                        listof_unit_line.Add(new Grasshopper.Kernel.Types.GH_Line());
                     }
+
+                    
 
 
                     System.IO.File.WriteAllLines(path_file, var);
