@@ -28,7 +28,11 @@ namespace IntraLattice.CELL
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddCurveParameter("Polyline", "PolyL", "list of polyline", GH_ParamAccess.list);
-
+            pManager[0].Optional = false;
+            pManager.AddNumberParameter("Segment Length", "s", "the minimal length of the polygonal segments",GH_ParamAccess.item,0.25);
+            pManager[1].Optional = true;
+            pManager.AddNumberParameter("max. Deviation", "d", "maximal deviation of the Line approximation to the original curve",GH_ParamAccess.item, GH_Component.DocumentTolerance());
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -36,7 +40,8 @@ namespace IntraLattice.CELL
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddLineParameter("unit line", "", "list of unit line", GH_ParamAccess.list);
+            pManager.AddLineParameter("list line", "", "list of line", GH_ParamAccess.list);
+
         }
 
         public override void CreateAttributes()
@@ -55,22 +60,58 @@ namespace IntraLattice.CELL
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
+
+            Line item = default(Line);
+            PolylineCurve polylineCurve = new PolylineCurve();
+
             List<Line> listofline = new List<Line>();
             List<Grasshopper.Kernel.Types.GH_Line> listof_unit_line = new List<Grasshopper.Kernel.Types.GH_Line>();
-            List<Polyline> ListPolyline = new List<Polyline>();
+            List<Curve> ListCurve = new List<Curve>();
+            double SegLength=0.01;
+            double maxDeviation = 0.25;
 
-            if (!(DA.GetDataList(0, ListPolyline))) { return; }
-            if (ListPolyline == null && ListPolyline.Count == 0) { return; }
 
-            foreach (var PolyL in ListPolyline) 
+            if (!(DA.GetDataList(0, ListCurve))) { return; }
+            if (!(DA.GetData(1, ref  SegLength))) { return; }
+            if (!(DA.GetData(2, ref  maxDeviation))) { return; }
+
+            if (ListCurve == null && ListCurve.Count == 0) { return; }
+
+            foreach (var element in ListCurve) 
             {
-                foreach(var Line in PolyL.GetSegments())
+                if (element.IsValid) 
                 {
-                    listofline.Add(Line);
-                }
-            } 
+                    if (element.IsLinear()) 
+                    { 
+                        listofline.Add(new Line(element.PointAtStart, element.PointAtEnd));
+                    }
+                    else
+                    {
+                        if(!element.IsPolyline())
+                        {
+                            item = new Line(element.PointAtStart, element.PointAtEnd);
+                            polylineCurve = element.ToPolyline(0, 0, Math.PI, 0.1, 0.0, SegLength, maxDeviation, item.Length, true);
+                        }
+                        else
+                        {
+                            polylineCurve = (PolylineCurve)element;
+                        }
+                        if(polylineCurve.PointCount>0)
+                        {
+                            for (int i = 1; i < polylineCurve.PointCount; i++) 
+                            {
+                                item = new Line(polylineCurve.Point(i - 1), polylineCurve.Point(i));
+                                listofline.Add(item);
+                            }
 
-            
+                        }
+
+                    }
+                
+                }
+                
+            }
+
             if (toggle_switch)
             {
 
@@ -110,13 +151,12 @@ namespace IntraLattice.CELL
                         listof_unit_line.Add(new Grasshopper.Kernel.Types.GH_Line());
                     }
 
-                    
-
-
                     System.IO.File.WriteAllLines(path_file, var);
                 }
                 toggle_switch = false;
             }
+
+            DA.SetDataList(0, listofline);
         }
 
         private string write_point(Vector3d point)
