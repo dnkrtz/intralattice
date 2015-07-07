@@ -6,6 +6,14 @@ using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
+// This is a component that approximate user drawn cell to a list of line and can create a python script from it
+// =====================================================
+//polygonize curve
+//explode polyline
+//create list of line
+//create python representation of list of line
+
+// Written by Marc Wang
 
 
 namespace IntraLattice.CELL
@@ -77,6 +85,7 @@ namespace IntraLattice.CELL
 
             if (ListCurve == null && ListCurve.Count == 0) { return; }
 
+            //polygonize curve
             foreach (var element in ListCurve) 
             {
                 if (element.IsValid) 
@@ -103,18 +112,15 @@ namespace IntraLattice.CELL
                                 item = new Line(polylineCurve.Point(i - 1), polylineCurve.Point(i));
                                 listofline.Add(item);
                             }
-
                         }
-
-                    }
-                
-                }
-                
+                    }              
+                }               
             }
 
+            //python script generation code
             if (toggle_switch)
             {
-
+                
                 System.Windows.Forms.SaveFileDialog Saveprompt = new System.Windows.Forms.SaveFileDialog();
                 Saveprompt.Filter = "python script (*.py)|*.py|All files (*.*)|*.*";
                 Saveprompt.ShowDialog();
@@ -138,7 +144,7 @@ namespace IntraLattice.CELL
                     {
                         Vector3d first_point = new Vector3d(element.From);
                         Vector3d end_point = new Vector3d(element.To);
-
+                        //unitize everyvector
                         if (first_point.Length > 0) { first_point.Unitize(); }
                         if (end_point.Length > 0) { end_point.Unitize(); }
 
@@ -204,6 +210,7 @@ namespace IntraLattice.CELL
             base.SetupTooltip(point, e);
             e.Description = "Double click to save python file";
         }
+
 
         public override GH_ObjectResponse RespondToMouseDoubleClick(GH_Canvas sender, GH_CanvasMouseEvent e)
         {
