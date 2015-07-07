@@ -8,10 +8,11 @@ using Rhino.Geometry;
 
 // This is a component that approximate user drawn cell to a list of line and can create a python script from it
 // =====================================================
-//polygonize curve
+//Input custom cell
+//polygonize cell
 //explode polyline
-//create list of line
-//create python representation of list of line
+//outputs list of line
+//on double click create python representation of the list of line
 
 // Written by Marc Wang
 
@@ -35,7 +36,7 @@ namespace IntraLattice.CELL
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Polyline", "PolyL", "list of polyline", GH_ParamAccess.list);
+            pManager.AddCurveParameter("Curve", "Curve", "list of Curve", GH_ParamAccess.list);
             pManager[0].Optional = false;
             pManager.AddNumberParameter("Segment Length", "s", "the minimal length of the polygonal segments",GH_ParamAccess.item,0.25);
             pManager[1].Optional = true;
@@ -73,7 +74,7 @@ namespace IntraLattice.CELL
             PolylineCurve polylineCurve = new PolylineCurve();
 
             List<Line> listofline = new List<Line>();
-            List<Grasshopper.Kernel.Types.GH_Line> listof_unit_line = new List<Grasshopper.Kernel.Types.GH_Line>();
+
             List<Curve> ListCurve = new List<Curve>();
             double SegLength=0.01;
             double maxDeviation = 0.25;
@@ -129,6 +130,7 @@ namespace IntraLattice.CELL
                 {
                     System.IO.FileStream python_file = (System.IO.FileStream)Saveprompt.OpenFile();
 
+                    //initialise a list for output stream
                     List<string> var = new List<string>();
 
                     var.Add("import rhinoscriptsyntax as rs");
@@ -144,9 +146,12 @@ namespace IntraLattice.CELL
                     {
                         Vector3d first_point = new Vector3d(element.From);
                         Vector3d end_point = new Vector3d(element.To);
-                        //unitize everyvector
+
+                        /*
+                         * //unitize everyvector deleted because not sure if needed
                         if (first_point.Length > 0) { first_point.Unitize(); }
                         if (end_point.Length > 0) { end_point.Unitize(); }
+                        */
 
                         var.Add(write_point(first_point));
                         counter++;
@@ -154,7 +159,6 @@ namespace IntraLattice.CELL
                         counter++;
                         var.Add(write_line(counter));
 
-                        listof_unit_line.Add(new Grasshopper.Kernel.Types.GH_Line());
                     }
 
                     System.IO.File.WriteAllLines(path_file, var);
@@ -208,7 +212,7 @@ namespace IntraLattice.CELL
         public override void SetupTooltip(PointF point, GH_TooltipDisplayEventArgs e)
         {
             base.SetupTooltip(point, e);
-            e.Description = "Double click to save python file";
+            e.Description = "Double click to save as python file";
         }
 
 
