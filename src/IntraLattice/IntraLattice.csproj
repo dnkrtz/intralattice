@@ -61,7 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CELL\CellTools.cs" />
-    <Compile Include="CELL\ConvertCell2Python.cs" />
+    <Compile Include="CELL\CustomCell.cs" />
     <Compile Include="CELL\TopologySymmetryCheck.cs" />
     <Compile Include="FRAME\ConformSP.cs" />
     <Compile Include="FRAME\ConformBox.cs" />

@@ -19,14 +19,14 @@ using Rhino.Geometry;
 
 namespace IntraLattice.CELL
 {
-    public class ConvertCell2Python : GH_Component
+    public class CustomCell : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the ConvertCell2Python class.
         /// </summary>
-        public ConvertCell2Python()
-            : base("ConvertCell2Python", "CC2P",
-                "Converts polyline to python script",
+        public CustomCell()
+            : base("CustomCell", "CustCell",
+                "Converts curve to list of line as well as python script if double clicked",
                 "IntraLattice2", "Cell")
         {
         }
@@ -49,7 +49,7 @@ namespace IntraLattice.CELL
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddLineParameter("list line", "", "list of line", GH_ParamAccess.list);
+            pManager.AddLineParameter("list of line", "", "list of line", GH_ParamAccess.list);
 
         }
 
@@ -83,8 +83,6 @@ namespace IntraLattice.CELL
             if (!(DA.GetDataList(0, ListCurve))) { return; }
             if (!(DA.GetData(1, ref  SegLength))) { return; }
             if (!(DA.GetData(2, ref  maxDeviation))) { return; }
-
-            if (ListCurve == null && ListCurve.Count == 0) { return; }
 
             //polygonize curve
             foreach (var element in ListCurve) 
@@ -204,7 +202,7 @@ namespace IntraLattice.CELL
     public class GUI : Grasshopper.Kernel.Attributes.GH_ComponentAttributes// change inheritence if want to modify UI
     {
 
-        public GUI(ConvertCell2Python owner)
+        public GUI(CustomCell owner)
             : base(owner)
         {
         }
@@ -220,7 +218,7 @@ namespace IntraLattice.CELL
         {
             if (e.Button == System.Windows.Forms.MouseButtons.Left)
             {
-                ConvertCell2Python solve = Owner as ConvertCell2Python;
+                CustomCell solve = Owner as CustomCell;
 
                 solve.toggle_switch = true;
                 solve.ExpireSolution(true);
