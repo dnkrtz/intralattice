@@ -27,7 +27,7 @@ namespace IntraLattice
         /// new tabs/panels will automatically be created.
         /// </summary>
         public ConformBox()
-            : base("ConformBox", "ConformBox",
+            : base("Conform Box", "ConformBox",
                 "Generates a lattice grid box.",
                 "IntraLattice2", "Frame")
         {

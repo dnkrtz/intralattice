@@ -18,6 +18,8 @@ using IntraLattice.Properties;
 // ** Design space may be a Mesh, Brep or Solid Surface.
 // ** Orientation plane does not need to be centered at any particular location
 
+// Currently doesn't work well for meshes.. issues with intersection and isInside
+
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
 

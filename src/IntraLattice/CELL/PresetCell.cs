@@ -46,10 +46,10 @@ namespace IntraLattice
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // 0. Setup inputs
+            // 0. Setup input
             Component = this;
             GrasshopperDocument = this.OnPingDocument();
-            //    Generate all default input menus here
+            //    Generate default input menu
             if (Component.Params.Input[0].SourceCount == 0) InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 11);
 
             // 1. Retrieve input
