@@ -5,7 +5,7 @@ using System.Text;
 using Rhino.Geometry;
 
 
-namespace IntraLattice.CELL
+namespace IntraLattice
 {
     class TopologySymmetryCheck
     {

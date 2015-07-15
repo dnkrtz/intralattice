@@ -8,24 +8,24 @@ using Rhino.Geometry;
 
 // This is a component that approximate user drawn cell to a list of line and can create a python script from it
 // =====================================================
-//Input custom cell
+//  Takes in input custom cell
 //polygonize cell
 //explode polyline
 //outputs list of line
 //on double click create python representation of the list of line
 
-// Written by Marc Wang
+// Written by Marc Wang (marc.wang@mail.mcgill.ca)
 
 
-namespace IntraLattice.CELL
+namespace IntraLattice
 {
-    public class CustomCell : GH_Component
+    public class ConvertCell2Python : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the ConvertCell2Python class.
         /// </summary>
-        public CustomCell()
-            : base("CustomCell", "CustCell",
+        public ConvertCell2Python()
+            : base("ConvertCell2Python", "Cell2Python",
                 "Converts curve to list of line as well as python script if double clicked",
                 "IntraLattice2", "Cell")
         {
@@ -68,7 +68,6 @@ namespace IntraLattice.CELL
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-
 
             Line item = default(Line);
             PolylineCurve polylineCurve = new PolylineCurve();
@@ -202,7 +201,7 @@ namespace IntraLattice.CELL
     public class GUI : Grasshopper.Kernel.Attributes.GH_ComponentAttributes// change inheritence if want to modify UI
     {
 
-        public GUI(CustomCell owner)
+        public GUI(ConvertCell2Python owner)
             : base(owner)
         {
         }
@@ -218,7 +217,7 @@ namespace IntraLattice.CELL
         {
             if (e.Button == System.Windows.Forms.MouseButtons.Left)
             {
-                CustomCell solve = Owner as CustomCell;
+                ConvertCell2Python solve = Owner as ConvertCell2Python;
 
                 solve.toggle_switch = true;
                 solve.ExpireSolution(true);
