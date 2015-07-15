@@ -24,7 +24,7 @@ namespace IntraLattice
 
             //populate value list with our own data
             vallist.ListItems.Clear();
-<<<<<<< HEAD
+
             var item1 = new Grasshopper.Kernel.Special.GH_ValueListItem("Grid", "0");
             var item2 = new Grasshopper.Kernel.Special.GH_ValueListItem("X", "1");
             var item3 = new Grasshopper.Kernel.Special.GH_ValueListItem("Star", "2");
@@ -32,7 +32,6 @@ namespace IntraLattice
             var item5 = new Grasshopper.Kernel.Special.GH_ValueListItem("Cross2", "4");
             var item6 = new Grasshopper.Kernel.Special.GH_ValueListItem("Vintiles", "5");
             var item7 = new Grasshopper.Kernel.Special.GH_ValueListItem("Octahedral", "6");
-            var item8 = new Grasshopper.Kernel.Special.GH_ValueListItem("hexagonal", "7");
 
             vallist.ListItems.Add(item1);
             vallist.ListItems.Add(item2);
@@ -42,7 +41,7 @@ namespace IntraLattice
             vallist.ListItems.Add(item6);
             vallist.ListItems.Add(item7);
             vallist.ListItems.Add(item8);
-=======
+
             var items = new List<Grasshopper.Kernel.Special.GH_ValueListItem>();
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Grid", "0"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("X", "1"));
@@ -51,7 +50,6 @@ namespace IntraLattice
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cross2", "4"));
 
             vallist.ListItems.AddRange(items);
->>>>>>> origin/mesh-development
 
             // Until now, the slider is a hypothetical object.
             // This command makes it 'real' and adds it to the canvas.

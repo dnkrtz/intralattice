@@ -49,7 +49,7 @@ namespace IntraLattice.FEAInterface.Components
         public FEAInterfaceComponent()
             : base("FEA_Interface_Nastran", "FEA/Nastran",
                 "Generate Nastran File for FEA analysis",
-                "IntraLattice2", "FEA")
+                "IntraLattice2", "Optimization")
         {
             // Temporarily initialize the material
             m_ListOfMaterial = new List<MAT1>();

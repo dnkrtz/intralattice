@@ -19,7 +19,7 @@ namespace IntraLattice.FEAInterface.Components
         public SPCComponentComponent()
             : base("SPCComponent", "SPC",
                 "Generate SPC for certain Node",
-                "IntraLattice2", "FEA")
+                "IntraLattice2", "Optimization")
         {
         }
 

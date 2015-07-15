@@ -19,7 +19,7 @@ namespace IntraLattice.FEAInterface.Components
         public PointLoadComponent()
             : base("PointLoad", "PLoad",
                 "Generate Load script of FEA analysis",
-                "IntraLattice2", "FEA")
+                "IntraLattice2", "Optimization")
         {
             m_ListOfLoadPoint = new List<GH_Point>();
             m_ListOfNode = new List<GH_Point>();
