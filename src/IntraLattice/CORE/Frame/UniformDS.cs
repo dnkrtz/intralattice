@@ -31,7 +31,7 @@ namespace IntraLattice
         /// Initializes a new instance of the GridUniform class.
         /// </summary>
         public GridUniform()
-            : base("UniformDS", "UniformDS",
+            : base("Uniform DS", "UniformDS",
                 "Generates a uniform lattice within by a design space",
                 "IntraLattice2", "Frame")
         {

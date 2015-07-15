@@ -64,7 +64,6 @@
     <Compile Include="CORE\Cell\CustomCell.cs" />
     <Compile Include="CORE\Cell\TopologySymmetryCheck.cs" />
     <Compile Include="FEAInterface\Components\FEAInterfaceComponent.cs" />
-    <Compile Include="FEAInterface\Components\FEAInterfaceInfo.cs" />
     <Compile Include="FEAInterface\Components\PointLoadComponent.cs" />
     <Compile Include="FEAInterface\Components\SPCComponentComponent.cs" />
     <Compile Include="FEAInterface\Data\BeamCrossection.cs" />

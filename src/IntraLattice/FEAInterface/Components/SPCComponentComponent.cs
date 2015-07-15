@@ -121,6 +121,17 @@ namespace IntraLattice.FEAInterface.Components
         }
 
         /// <summary>
+        /// Here we set the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
+        public override GH_Exposure Exposure
+        {
+            get
+            {
+                return GH_Exposure.primary;
+            }
+        }
+
+        /// <summary>
         /// Provides an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.
         /// </summary>

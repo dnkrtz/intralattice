@@ -24,30 +24,14 @@ namespace IntraLattice
 
             //populate value list with our own data
             vallist.ListItems.Clear();
-
-            var item1 = new Grasshopper.Kernel.Special.GH_ValueListItem("Grid", "0");
-            var item2 = new Grasshopper.Kernel.Special.GH_ValueListItem("X", "1");
-            var item3 = new Grasshopper.Kernel.Special.GH_ValueListItem("Star", "2");
-            var item4 = new Grasshopper.Kernel.Special.GH_ValueListItem("Cross", "3");
-            var item5 = new Grasshopper.Kernel.Special.GH_ValueListItem("Cross2", "4");
-            var item6 = new Grasshopper.Kernel.Special.GH_ValueListItem("Vintiles", "5");
-            var item7 = new Grasshopper.Kernel.Special.GH_ValueListItem("Octahedral", "6");
-
-            vallist.ListItems.Add(item1);
-            vallist.ListItems.Add(item2);
-            vallist.ListItems.Add(item3);
-            vallist.ListItems.Add(item4);
-            vallist.ListItems.Add(item5);
-            vallist.ListItems.Add(item6);
-            vallist.ListItems.Add(item7);
-            vallist.ListItems.Add(item8);
-
             var items = new List<Grasshopper.Kernel.Special.GH_ValueListItem>();
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Grid", "0"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("X", "1"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Star", "2"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cross", "3"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cross2", "4"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Vintiles", "5"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Octahedral", "6"));
 
             vallist.ListItems.AddRange(items);
 
