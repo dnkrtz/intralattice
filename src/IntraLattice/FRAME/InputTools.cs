@@ -24,6 +24,7 @@ namespace IntraLattice
 
             //populate value list with our own data
             vallist.ListItems.Clear();
+<<<<<<< HEAD
             var item1 = new Grasshopper.Kernel.Special.GH_ValueListItem("Grid", "0");
             var item2 = new Grasshopper.Kernel.Special.GH_ValueListItem("X", "1");
             var item3 = new Grasshopper.Kernel.Special.GH_ValueListItem("Star", "2");
@@ -41,6 +42,16 @@ namespace IntraLattice
             vallist.ListItems.Add(item6);
             vallist.ListItems.Add(item7);
             vallist.ListItems.Add(item8);
+=======
+            var items = new List<Grasshopper.Kernel.Special.GH_ValueListItem>();
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Grid", "0"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("X", "1"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Star", "2"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cross", "3"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cross2", "4"));
+
+            vallist.ListItems.AddRange(items);
+>>>>>>> origin/mesh-development
 
             // Until now, the slider is a hypothetical object.
             // This command makes it 'real' and adds it to the canvas.
@@ -51,7 +62,46 @@ namespace IntraLattice
             Component.Params.Input[index].CollectData();
         }
 
-        public static void BooleanSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
+        // index represents the input position (first input is index == 0)
+        public static void GradientSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
+        {
+            //instantiate  new value list
+            var vallist = new Grasshopper.Kernel.Special.GH_ValueList();
+            vallist.ListMode = Grasshopper.Kernel.Special.GH_ValueListMode.DropDown;
+            vallist.CreateAttributes();
+
+            //customise value list position
+            float xCoord = (float)Component.Attributes.Pivot.X - 200;
+            float yCoord = (float)Component.Attributes.Pivot.Y + index * 40 - offset;
+            PointF cornerPt = new PointF(xCoord, yCoord);
+            vallist.Attributes.Pivot = cornerPt;
+
+            //populate value list with our own data
+            vallist.ListItems.Clear();
+            var items = new List<Grasshopper.Kernel.Special.GH_ValueListItem>();
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Linear (X)", "0"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Linear (Y)", "1"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Linear (Z)", "2"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Centered (X)", "3"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Centered (Y)", "4"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Centered (Z)", "5"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cylindrical (X)", "6"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cylindrical (Y)", "7"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cylindrical (Z)", "8"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Spherical", "9"));
+
+            vallist.ListItems.AddRange(items);
+
+            // Until now, the slider is a hypothetical object.
+            // This command makes it 'real' and adds it to the canvas.
+            GrasshopperDocument.AddObject(vallist, false);
+
+            //Connect the new slider to this component
+            Component.Params.Input[index].AddSource(vallist);
+            Component.Params.Input[index].CollectData();
+        }
+
+        /*public static void BooleanSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
             //instantiate  new value list
             var boollist = new Grasshopper.Kernel.Special.GH_BooleanToggle();
@@ -98,7 +148,7 @@ namespace IntraLattice
             //Connect the new slider to this component
             Component.Params.Input[index].AddSource(numberSlider);
             Component.Params.Input[index].CollectData();
-        }
+        }*/
 
 
     }

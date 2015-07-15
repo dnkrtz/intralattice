@@ -230,6 +230,23 @@ namespace IntraLattice
                     List<Point3d> hullPoints = new List<Point3d>();
                     foreach (int pIndex in nodes[i].PlateIndices) hullPoints.AddRange(plates[pIndex].Vtc);
                     MeshTools.ConvexHull(ref hullMesh, hullPoints, sides);
+                    
+                    Point3d[] hullVtcs = hullMesh.Vertices.ToPoint3dArray();
+
+                    for (int vtcIndex=0; vtcIndex<hullVtcs.Length; vtcIndex++)
+                    {
+                        Point3d hullVtx = hullVtcs[vtcIndex];
+                        int[] meshFaces = hullMesh.Vertices.GetVertexFaces(vtcIndex);
+
+                        for (int faceIndex = 0; faceIndex<meshFaces.Length; faceIndex++)
+                        {
+                            foreach (int plateIndex in nodes[i].PlateIndices)
+                            {
+
+                            }
+                        }
+                    }
+
                     hullMeshes.Add(hullMesh);
                 }
             }

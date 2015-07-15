@@ -19,9 +19,6 @@ namespace IntraLattice
 {
     public class GridConformSS : GH_Component
     {
-        GH_Document GrasshopperDocument;
-        IGH_Component Component;
-
         public GridConformSS()
             : base("Conform Surface-Surface", "ConformSS",
                 "Generates a conforming lattice between two surfaces.",
@@ -51,13 +48,6 @@ namespace IntraLattice
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // 0. Setup inputs
-            Component = this;
-            GrasshopperDocument = this.OnPingDocument();
-            // generate all default input here
-            if (Component.Params.Input[3].SourceCount == 0) InputTools.BooleanSelect(ref Component, ref GrasshopperDocument, 4, 11);
-            if (Component.Params.Input[4].SourceCount == 0) InputTools.NumberSelect(ref Component, ref GrasshopperDocument, 5, 11, 1, 30, false);
-
             // 1. Retrieve and validate inputs
             var topology = new List<Line>();
             Surface s1 = null;
@@ -115,36 +105,35 @@ namespace IntraLattice
             {
                 for (int v = 0; v <= N[1]; v++)
                 {
-                    // this loop maps each node in the cell onto the UV-surface maps
-                    for (int i = 0; i < cell.Nodes.Count; i++)
+                    for (int w = 0; w <= N[2]; w++)
                     {
-                        // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
-                        if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
-                            continue;                            
-
-                        Point3d pt1; Vector3d[] derivatives1; // initialize for surface 1
-                        Point3d pt2; Vector3d[] derivatives2; // initialize for surface 2
-
-                        double usub = cell.Nodes[i].X; // u-position within unit cell
-                        double vsub = cell.Nodes[i].Y; // v-position within unit cell
-                        double wsub = cell.Nodes[i].Z; // w-position within unit cell
-
-                        // evaluate point and its derivatives on both surfaces
-                        s1.Evaluate((u+usub) / N[0], (v+vsub) / N[1], 2, out pt1, out derivatives1);
-                        s2.Evaluate((u+usub) / N[0], (v+vsub) / N[1], 2, out pt2, out derivatives2);
-
-                        // create vector joining the two points (this is our w-range)
-                        Vector3d wVect = pt2 - pt1;
-
-                        // create grid points on and between surfaces
-                        for (int w = 0; w <= N[2]; w++)
+                        // this loop maps each node in the cell onto the UV-surface maps
+                        for (int i = 0; i < cell.Nodes.Count; i++)
                         {
+                            // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
+                                continue;                            
+
+                            Point3d pt1; Vector3d[] derivatives1; // initialize for surface 1
+                            Point3d pt2; Vector3d[] derivatives2; // initialize for surface 2
+
+                            double usub = cell.Nodes[i].X; // u-position within unit cell
+                            double vsub = cell.Nodes[i].Y; // v-position within unit cell
+                            double wsub = cell.Nodes[i].Z; // w-position within unit cell
+
                             GH_Path treePath = new GH_Path(u, v, w, i);    // u,v,w is the cell grid. the last index is for different nodes in each cell.
 
                             // these conditionals enforce the boundary, no nodes are created beyond the upper boundary
-                            if ( u==N[0] && usub!=0) continue;
-                            if ( v==N[1] && vsub!=0) continue;
-                            if ( w==N[2] && wsub!=0) continue;
+                            if (u == N[0] && usub != 0) continue;
+                            if (v == N[1] && vsub != 0) continue;
+                            if (w == N[2] && wsub != 0) continue;
+
+                            // evaluate point and its derivatives on both surfaces
+                            s1.Evaluate((u+usub) / N[0], (v+vsub) / N[1], 2, out pt1, out derivatives1);
+                            s2.Evaluate((u+usub) / N[0], (v+vsub) / N[1], 2, out pt2, out derivatives2);
+
+                            // create vector joining the two points (this is our w-range)
+                            Vector3d wVect = pt2 - pt1;
 
                             // create the node, accounting for the position along the w-direction
                             Point3d newPt = pt1 + wVect * (w + wsub) / N[2];

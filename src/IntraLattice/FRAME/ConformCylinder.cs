@@ -19,7 +19,7 @@ namespace IntraLattice
     public class ConformCylinder : GH_Component
     {
         public ConformCylinder()
-            : base("ConformCylinder", "ConformCylinder",
+            : base("Conform Cylinder", "ConformCylinder",
                 "Generates a conformal lattice cylinder.",
                 "IntraLattice2", "Frame")
         {

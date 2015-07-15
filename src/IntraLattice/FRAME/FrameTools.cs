@@ -51,7 +51,7 @@ namespace IntraLattice
                                 directionVector1.Unitize();
 
                                 // if user requested morphing, we need to compute bezier curve struts
-                                if (morphed)
+                                if (morphed && directionVector1.Z==0)
                                 {
                                     // compute directional derivatives
                                     // we use the du and dv derivatives as the basis for the directional derivative
