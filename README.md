@@ -2,6 +2,8 @@
 
 Intralattice is a collection of generative CAD components for [Grasshopper](http://www.grasshopper3d.com/), which are used to generate parametric lattice structures within a 3D design space. It is written in C# with the RhinoCommon SDK.
 
+View releases - https://github.com/dnkrtz/intralattice/releases
+
 
 ## Motivation
 
