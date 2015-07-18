@@ -134,7 +134,7 @@ namespace IntraLattice
 
         /// <summary>
         /// Defines relative paths of nodes, to ensure no duplicate nodes or struts are created
-        /// Assumes valid, normalized unit cell
+        /// ASSUMPTION: valid, normalized unit cell
         /// </summary>
         public static void FormatTopology(ref UnitCell cell)
         {
