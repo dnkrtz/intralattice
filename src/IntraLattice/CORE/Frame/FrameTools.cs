@@ -8,13 +8,15 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry.Intersect;
 
-// This is a set of methods used by the frame components
-// =====================================================
-//      - ConformMapping
-//      - CastDesignSpace
-//      - TrimStrut
 
-// Written by Aidan Kurtz (http://aidankurtz.com)
+// Summary:     This class contains a set of methods used by the frame components
+// ===============================================================================
+// Methods:     ConformMapping (written by Aidan)   - Generates conforming wire lattice for a (u,v,w,i) node grid.
+//              UniformMapping(written by Aidan)    - Generates trimmed wire lattice for a (u,v,w,i) node grid.
+//              TrimStrut (written by Aidan)        - Trims strut at an intersection point and keeps the trimmed strut that is inside a design space.
+//              CastDesignSpace (written by Aidan)  - Casts GeometryBase design space to a Brep or Mesh.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
@@ -22,6 +24,11 @@ namespace IntraLattice
     {
         /// <summary>
         /// Maps cell topology to the node grid created by one of the conform components
+        /// ============================================================================
+        /// 3 morphing options  - No morphing
+        ///                     - Space morphing (discretization of the struts as a set of points, which are mapped to the uvw cell spaces, and interpolated as NURBS-curves)
+        ///                     - Bezier morphing (uses interpolated directional surface derivatives to morph the struts as Bezier curves)
+        /// ============================================================================                    
         /// </summary>
         public static void ConformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Vector> derivTree, ref GH_Structure<GH_Surface> spaceTree, ref UnitCell cell, float[] N, int morphed, double morphTol = 0)
         {
@@ -131,6 +138,11 @@ namespace IntraLattice
 
         /// <summary>
         /// Maps cell topology to the node grid and trims to the design space
+        /// =================================================================
+        /// - stateTree contains information about whether a node in the nodeTree is inside/outside the design space.
+        /// - Trimming is performed by the TrimStrut method, note that it's set up so that the intersection pt replaces the external node
+        /// - We remove the external nodes (the intersection nodes will replace them, since they are appended to the path in the trimStrut method)
+        /// =================================================================
         /// </summary>
          public static void UniformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Boolean> stateTree, ref UnitCell cell, float[] N, Brep brepDesignSpace, Mesh meshDesignSpace)
         {
@@ -213,6 +225,7 @@ namespace IntraLattice
                 }
             }
 
+            // Remove the external nodes
             foreach (GH_Path nodeToRemove in nodesToRemove)
             {
                 if (nodeTree.PathExists(nodeToRemove))
@@ -229,27 +242,12 @@ namespace IntraLattice
 
         }
 
-        public static bool CastDesignSpace(ref GeometryBase designSpace, ref Brep brepDesignSpace, ref Mesh meshDesignSpace)
-        {
-            //    If brep design space, cast as such
-            if (designSpace.ObjectType == ObjectType.Brep)
-                brepDesignSpace = (Brep)designSpace;
-            //    If mesh design space, cast as such
-            else if (designSpace.ObjectType == ObjectType.Mesh)
-                meshDesignSpace = (Mesh)designSpace;
-            //    If solid surface, convert to brep
-            else if (designSpace.ObjectType == ObjectType.Surface)
-            {
-                Surface testSpace = (Surface)designSpace;
-                if (testSpace.IsSolid) brepDesignSpace = testSpace.ToBrep();
-            }
-            //    Else the design space is unacceptable
-            else
-                return false;
-
-            return true;
-        }
-
+        /// <summary>
+        /// Trims strut with known intersection point, returning  the trimmed LineCurve which is inside the space
+        /// =================================================================
+        /// - Intersection point and information about inside/outside state are passed to this method, to know where to trim and which side to keep.
+        /// =================================================================
+        /// </summary>
         public static LineCurve TrimStrut(ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Boolean> stateTree, ref List<GH_Path> nodesToRemove, GH_Path IPath, GH_Path JPath, Point3d intersectionPt, bool[] isInside)
         {
             GH_Path[] paths = new GH_Path[] { IPath, JPath };
@@ -282,6 +280,32 @@ namespace IntraLattice
            
             return null;
         }
+
+        /// <summary>
+        /// Casts a GeometryBase design space to a brep or a mesh.
+        /// </summary>
+        public static bool CastDesignSpace(ref GeometryBase designSpace, ref Brep brepDesignSpace, ref Mesh meshDesignSpace)
+        {
+            //    If brep design space, cast as such
+            if (designSpace.ObjectType == ObjectType.Brep)
+                brepDesignSpace = (Brep)designSpace;
+            //    If mesh design space, cast as such
+            else if (designSpace.ObjectType == ObjectType.Mesh)
+                meshDesignSpace = (Mesh)designSpace;
+            //    If solid surface, convert to brep
+            else if (designSpace.ObjectType == ObjectType.Surface)
+            {
+                Surface testSpace = (Surface)designSpace;
+                if (testSpace.IsSolid) brepDesignSpace = testSpace.ToBrep();
+            }
+            //    Else the design space is unacceptable
+            else
+                return false;
+
+            return true;
+        }
+
+        
 
 
     }
