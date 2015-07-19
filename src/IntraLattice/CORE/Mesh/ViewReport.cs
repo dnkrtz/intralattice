@@ -21,7 +21,7 @@ namespace IntraLattice
         public ViewReport()
             : base("View Report", "ViewReport",
                 "Verifies the validity of the mesh, and generates a preview",
-                "IntraLattice2", "Mesh")
+                "IntraLattice2", "Solid")
         {
         }
 

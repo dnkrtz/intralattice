@@ -9,14 +9,14 @@ using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
 
-// This component generates a conformal lattice grid between a surface and an axis
+// Summary:     This component generates a conformal lattice grid between a surface and an axis
 // ===============================================================================
-// The axis can be an open curve or a closed curve. Of course, it may also be a straight line.
-// The surface does not need to loop a full 360 degrees around the axis.
-// Our implementation assumes that the axis is a set of U parameters, thus it should be aligned with U parameters of the surface.
-// The flipUV input allows the user to swap U and V parameters of the surface.
-
-// Written by Aidan Kurtz (http://aidankurtz.com)
+// Details:     - The axis can be an open curve or a closed curve. Of course, it may also be a straight line.
+//              - The surface does not need to loop a full 360 degrees around the axis.
+//              - Our implementation assumes that the axis is a set of U parameters.
+//              - The flipUV input allows the user to swap U and V parameters of the surface.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
@@ -38,7 +38,7 @@ namespace IntraLattice
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
-            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, false);
+            pManager.AddIntegerParameter("Morph", "Morph", "0: No Morph\n1: Space Morph\n2: Bezier Morph", GH_ParamAccess.item, 0);
             pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 
@@ -46,7 +46,7 @@ namespace IntraLattice
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
             pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
-            pManager.HideParameter(1);
+            pManager.HideParameter(1);  // Do not display the 'Nodes' output points
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -59,7 +59,7 @@ namespace IntraLattice
             int nU = 0;
             int nV = 0;
             int nW = 0;
-            bool morphed = false;
+            int morphed = 0;
             double morphFactor = 0;
 
             if (!DA.GetDataList(0, topology)) { return; }
@@ -82,6 +82,7 @@ namespace IntraLattice
             // 2. Initialize the grid tree and derivatives tree
             var nodeTree = new GH_Structure<GH_Point>();
             var derivTree = new GH_Structure<GH_Vector>();
+            var spaceTree = new GH_Structure<GH_Surface>();
 
             // 3. Flip the UV parameters if specified
             if (flipUV) surface = surface.Transpose();
@@ -167,7 +168,7 @@ namespace IntraLattice
             // 9. Generate the struts
             //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
+            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref spaceTree, ref cell, N, morphed, morphFactor);
 
             // 10. Set output
             DA.SetDataList(0, struts);

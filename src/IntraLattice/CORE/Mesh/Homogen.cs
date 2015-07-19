@@ -10,7 +10,7 @@ namespace IntraLattice
 {
     public class Homogen : GH_Component
     {
-        public Homogen() : base("Homogen","Homogen","Homogeneous solidification of lattice wireframe","IntraLattice2", "Mesh") { }
+        public Homogen() : base("Homogen","Homogen","Homogeneous solidification of lattice wireframe","IntraLattice2", "Solid") { }
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
