@@ -45,7 +45,7 @@ namespace IntraLattice
                             // prepare the path of the nodes (path in tree)
                             int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
                             int[] JRel = cell.NodePaths[cellStrut.J];
-                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2], IRel[3]);
+                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2], IRel[3]); // absolute path
                             GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2], JRel[3]);
 
                             // make sure both nodes exist (will be false at boundaries)
@@ -63,18 +63,26 @@ namespace IntraLattice
                                 // Space morphing
                                 else if ( morphed == 1 )
                                 {
-                                    if (u == N[0] || v == N[1]) continue;
+                                    GH_Path spacePath;
 
-                                    GH_Path spacePath = new GH_Path(u, v);
+                                    if (u == N[0] && v == N[1])
+                                        spacePath = new GH_Path(u - 1, v - 1);
+                                    else if (u == N[0])
+                                        spacePath = new GH_Path(u - 1, v);
+                                    else if (v == N[1])
+                                        spacePath = new GH_Path(u, v-1);
+                                    else
+                                        spacePath = new GH_Path(u, v);
+
                                     Surface ss1 = spaceTree[spacePath][0].Value.Surfaces[0]; // uv cell space, as pair of subsurfaces (subsurface of the full surface)
-                                    Surface ss2 = spaceTree[spacePath][1].Value.Surfaces[0]; // this surface will be null if 
-                                    ss1.SetDomain(0, new Interval(0, 1));
+                                    Surface ss2 = spaceTree[spacePath][1].Value.Surfaces[0]; // this surface will be null if
+                                    ss1.SetDomain(0, new Interval(0, 1));   // unitize domains
                                     ss1.SetDomain(1, new Interval(0, 1));
                                     ss2.SetDomain(0, new Interval(0, 1));
                                     ss2.SetDomain(1, new Interval(0, 1));
 
                                     // Discretize the unit cell line for morph mapping
-                                    int ptCount = 10 + 1;
+                                    int ptCount = 16;
                                     //int divNumber = (int)(node1.DistanceTo(node2) / morphTol);    // number of discrete segments
                                     var templatePts = new List<Point3d>();   // unitized cell points (x,y of these points are u,v of sub-surface)
                                     Line templateLine = new Line(cell.Nodes[cellStrut.I], cell.Nodes[cellStrut.J]);
@@ -88,9 +96,13 @@ namespace IntraLattice
                                     {
                                         Point3d surfPt1, surfPt2;
                                         Vector3d[] surfDerivs1, surfDerivs2;
+                                        double uParam = tempPt.X;
+                                        double vParam = tempPt.Y;
+                                        if (u == N[0]) uParam = 1-uParam;
+                                        if (v == N[1]) vParam = 1-vParam;
                                         // Evaluate surfaces, to map the template point to the uv space
-                                        ss1.Evaluate(tempPt.X, tempPt.Y, 0, out surfPt1, out surfDerivs1);
-                                        ss2.Evaluate(tempPt.X, tempPt.Y, 0, out surfPt2, out surfDerivs2);
+                                        ss1.Evaluate(uParam, vParam, 0, out surfPt1, out surfDerivs1);
+                                        ss2.Evaluate(uParam, vParam, 0, out surfPt2, out surfDerivs2);
                                         // Vector for w-mapping
                                         Vector3d wVect = surfPt2 - surfPt1;
 
