@@ -7,6 +7,7 @@ using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
+using Grasshopper;
 
 
 // Summary:     This component generates a simple cartesian 3D lattice.
@@ -94,8 +95,8 @@ namespace IntraLattice
             if (nZ == 0) { return; }
 
             // 4. Declare our point grid datatree
-            var nodeTree = new GH_Structure<GH_Point>();
-            var stateTree = new GH_Structure<GH_Boolean>();
+            var nodeTree = new DataTree<Point3d>();
+            var stateTree = new DataTree<Boolean>();
 
             // 5. Prepare normalized unit cell topology
             var cell = new UnitCell();
@@ -140,8 +141,8 @@ namespace IntraLattice
                             Point3d newPt = basePlane.Origin + V;
 
                             GH_Path treePath = new GH_Path(u, v, w, i);             // construct path in tree
-                            nodeTree.Append(new GH_Point(newPt), treePath);         // add point to tree
-                            stateTree.Append(new GH_Boolean(true), treePath);       // state (inside or outside design space, always in for our case)
+                            nodeTree.Add(newPt, treePath);                          // add point to tree
+                            stateTree.Add(true, treePath);                          // state (inside or outside design space, always in for our case)
                         }
                     }
                 }

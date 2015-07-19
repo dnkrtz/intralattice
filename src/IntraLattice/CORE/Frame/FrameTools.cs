@@ -7,6 +7,7 @@ using Rhino.DocObjects;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry.Intersect;
+using Grasshopper;
 
 
 // Summary:     This class contains a set of methods used by the frame components
@@ -30,7 +31,7 @@ namespace IntraLattice
         /// 2) Bezier morphing (uses interpolated directional surface derivatives to morph the struts as Bezier curves)
         /// ============================================================================                    
         /// </summary>
-        public static void ConformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Vector> derivTree, ref GH_Structure<GH_Surface> spaceTree, ref UnitCell cell, float[] N, int morphed, double morphTol = 0)
+        public static void ConformMapping(ref List<Curve> struts, ref DataTree<Point3d> nodeTree, ref DataTree<Vector3d> derivTree, ref DataTree<GeometryBase> spaceTree, ref UnitCell cell, float[] N, int morphed, double morphTol = 0)
         {
             for (int u = 0; u <= N[0]; u++)
             {
@@ -51,8 +52,8 @@ namespace IntraLattice
                             // make sure both nodes exist (will be false at boundaries)
                             if (nodeTree.PathExists(IPath) && nodeTree.PathExists(JPath))
                             {
-                                Point3d node1 = nodeTree[IPath][0].Value;
-                                Point3d node2 = nodeTree[JPath][0].Value;
+                                Point3d node1 = nodeTree[IPath, 0];
+                                Point3d node2 = nodeTree[JPath, 0];
 
                                 // No morphing
                                 if ( morphed == 0 )
@@ -65,6 +66,7 @@ namespace IntraLattice
                                 {
                                     GH_Path spacePath;
 
+                                    // if we're at a boundary, we need to use the previous space
                                     if (u == N[0] && v == N[1])
                                         spacePath = new GH_Path(u - 1, v - 1);
                                     else if (u == N[0])
@@ -74,12 +76,8 @@ namespace IntraLattice
                                     else
                                         spacePath = new GH_Path(u, v);
 
-                                    Surface ss1 = spaceTree[spacePath][0].Value.Surfaces[0]; // uv cell space, as pair of subsurfaces (subsurface of the full surface)
-                                    Surface ss2 = spaceTree[spacePath][1].Value.Surfaces[0]; // this surface will be null if
-                                    ss1.SetDomain(0, new Interval(0, 1));   // unitize domains
-                                    ss1.SetDomain(1, new Interval(0, 1));
-                                    ss2.SetDomain(0, new Interval(0, 1));
-                                    ss2.SetDomain(1, new Interval(0, 1));
+                                    GeometryBase ss1 = spaceTree[spacePath, 0]; // retrieve uv cell space (will be casted in the tempPt loop)
+                                    GeometryBase ss2 = spaceTree[spacePath, 1];
 
                                     // Discretize the unit cell line for morph mapping
                                     int ptCount = 16;
@@ -89,25 +87,43 @@ namespace IntraLattice
                                     for (int ptIndex=0; ptIndex<=ptCount; ptIndex++)
                                         templatePts.Add(templateLine.PointAt(ptIndex / (double)ptCount));                                    
 
-                                    // We will map each template point to its uvw cell-space
+                                    // We will map the lines' points to its uvw cell-space
                                     var controlPoints = new List<Point3d>();    // interpolation points in space
                                     
                                     foreach (Point3d tempPt in templatePts)
                                     {
-                                        Point3d surfPt1, surfPt2;
-                                        Vector3d[] surfDerivs1, surfDerivs2;
+                                        Point3d surfPt;
+                                        Vector3d[] surfDerivs;
+                                        // uv params are simply the xy coordinate of the template point
                                         double uParam = tempPt.X;
                                         double vParam = tempPt.Y;
+                                        // if at boundary, we're using a previous morph space, so reverse the parameter(s)
                                         if (u == N[0]) uParam = 1-uParam;
                                         if (v == N[1]) vParam = 1-vParam;
-                                        // Evaluate surfaces, to map the template point to the uv space
-                                        ss1.Evaluate(uParam, vParam, 0, out surfPt1, out surfDerivs1);
-                                        ss2.Evaluate(uParam, vParam, 0, out surfPt2, out surfDerivs2);
-                                        // Vector for w-mapping
-                                        Vector3d wVect = surfPt2 - surfPt1;
 
-                                        Point3d uvwPt = surfPt1 + wVect * (w + tempPt.Z) / N[2];
-                                        controlPoints.Add(uvwPt);
+
+                                        // Now, we will map the template point to the uvw-space
+                                        ((Surface)ss1).Evaluate(uParam, vParam, 0, out surfPt, out surfDerivs);
+                                        Vector3d wVect = Vector3d.Unset;
+                                        switch (ss2.ObjectType)
+                                        {
+                                            case ObjectType.Point:      // point
+                                                wVect = ((Point)ss2).Location - surfPt;;
+                                                break;
+                                            case ObjectType.Curve:      // axis
+                                                wVect = ((Curve)ss2).PointAt(uParam) - surfPt;
+                                                break;
+                                            case ObjectType.Surface:    // surface
+                                                Point3d surfPt2;
+                                                Vector3d[] surfDerivs2;
+                                                ((Surface)ss2).Evaluate(uParam, vParam, 0, out surfPt2, out surfDerivs2);
+                                                wVect = surfPt2 - surfPt;
+                                                break;
+                                        }
+                                        // The mapped point
+                                        Point3d uvwPt = surfPt + wVect * (w + tempPt.Z) / N[2];
+                                        controlPoints.Add(uvwPt);                                            
+                                        
                                     }
 
                                     // Now create interpolated curve based on control points
@@ -124,10 +140,10 @@ namespace IntraLattice
 
                                     // compute directional derivatives
                                     // we use the du and dv derivatives as the basis for the directional derivative
-                                    Vector3d deriv1 = derivTree[IPath][0].Value * directionVector1.X + derivTree[IPath][1].Value * directionVector1.Y;
+                                    Vector3d deriv1 = derivTree[IPath, 0] * directionVector1.X + derivTree[IPath, 1] * directionVector1.Y;
                                     // same process for node2, but reverse the direction vector
                                     Vector3d directionVector2 = -directionVector1;
-                                    Vector3d deriv2 = derivTree[JPath][0].Value * directionVector2.X + derivTree[JPath][1].Value * directionVector2.Y;
+                                    Vector3d deriv2 = derivTree[JPath, 0] * directionVector2.X + derivTree[JPath, 1] * directionVector2.Y;
 
                                     // now we have everything we need to build a bezier curve
                                     List<Point3d> controlPoints = new List<Point3d>();

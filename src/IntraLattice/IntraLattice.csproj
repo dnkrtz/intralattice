@@ -73,7 +73,6 @@
     <Compile Include="FEAInterface\Data\SPC.cs" />
     <Compile Include="FEAInterface\Manager\FileManager.cs" />
     <Compile Include="CORE\Frame\ConformSP.cs" />
-    <Compile Include="CORE\Frame\ConformBox.cs" />
     <Compile Include="CORE\Frame\ConformCylinder.cs" />
     <Compile Include="CORE\Frame\ConformSS.cs" />
     <Compile Include="CORE\Frame\ConformSA.cs" />
