@@ -9,11 +9,11 @@ using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
 
-// This component generates a conformal lattice between two surfaces.
-// =======================================================================
-// Assumption : The surfaces are oriented in the same direction (for UV-Map indices)
-
-// Written by Aidan Kurtz (http://aidankurtz.com)
+// Summary:     This component generates a (u,v,w) lattice between two surfaces
+// ===============================================================================
+// Details:     - 
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {

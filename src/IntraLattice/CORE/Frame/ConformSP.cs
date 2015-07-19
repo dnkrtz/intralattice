@@ -7,6 +7,13 @@ using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using IntraLattice.Properties;
 
+// Summary:     This component generates a (u,v,w) lattice between a surface and a point
+// ===============================================================================
+// Details:     - Surface does not need to be closed, but it can be.
+//              - Point does not need to be center with respect to the surface.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.FRAME
 {
     public class ConformSP : GH_Component

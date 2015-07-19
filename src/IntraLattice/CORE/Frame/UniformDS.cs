@@ -10,17 +10,15 @@ using Rhino.Collections;
 using Rhino.Geometry.Intersect;
 using IntraLattice.Properties;
 
-// This component generates a trimmed uniform lattice grid
-// =======================================================================
-// Uniform lattice grids have unmorphed unit cells, and are trimmed by the design space.
-// Points inside the design space, as well as their immediate neighbours, are generated.
-// This is necessary since the struts between inner-outer points are trimmed later.
-// ** Design space may be a Mesh, Brep or Solid Surface.
-// ** Orientation plane does not need to be centered at any particular location
-
-// Currently doesn't work well for meshes.. issues with intersection and isInside
-
-// Written by Aidan Kurtz (http://aidankurtz.com)
+// Summary:     This component generates a uniform lattice trimmed to the shape of design space
+// ===============================================================================
+// Details:     - Uniform lattice grids have unmorphed unit cells, and are trimmed by the design space.
+//              - Design space may be a Mesh, Brep or Solid Surface.
+//              - Orientation plane does not need to be centered at any particular location
+// ===============================================================================
+// Issues:      = Currently doesn't work well for meshes.. issues with Rhino's isInside method
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 
 namespace IntraLattice

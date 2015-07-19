@@ -9,7 +9,7 @@ using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
 
-// Summary:     This component generates a conformal lattice grid between a surface and an axis
+// Summary:     This component generates a (u,v,w) lattice grid between a surface and an axis
 // ===============================================================================
 // Details:     - The axis can be an open curve or a closed curve. Of course, it may also be a straight line.
 //              - The surface does not need to loop a full 360 degrees around the axis.

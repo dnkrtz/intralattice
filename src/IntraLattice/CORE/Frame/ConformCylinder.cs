@@ -8,11 +8,11 @@ using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
 
-// This component generates a simple cylindrical lattice grid.
-// ===========================================================
-// Both the points and their interpolated derivatives are returned.
-
-// Written by Aidan Kurtz (http://aidankurtz.com)
+// Summary:     This component generates a simple cylindrical lattice.
+// ===============================================================================
+// Details:     - 
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {

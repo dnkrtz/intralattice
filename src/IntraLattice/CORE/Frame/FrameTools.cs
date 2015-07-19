@@ -47,13 +47,13 @@ namespace IntraLattice
                                 Point3d node1 = nodeTree[IPath][0].Value;
                                 Point3d node2 = nodeTree[JPath][0].Value;
 
-                                // no morphing
+                                // No morphing
                                 if ( morphed == 0 )
                                 {
                                     LineCurve newStrut = new LineCurve(node1, node2);
                                     struts.Add(newStrut);
                                 }
-                                // space morphing
+                                // Space morphing
                                 else if ( morphed == 1 )
                                 {
                                     if (u == N[0] || v == N[1]) continue;
@@ -95,7 +95,7 @@ namespace IntraLattice
                                     // finally, save the new strut
                                     struts.Add(curve);
                                 }
-                                // bezier morphing
+                                // Bezier morphing
                                 else if ( morphed == 2 )
                                 {
                                     // get direction vector from the normalized 'cellNodes'
