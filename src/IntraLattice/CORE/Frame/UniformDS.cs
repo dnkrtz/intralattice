@@ -57,7 +57,7 @@ namespace IntraLattice
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
             pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
-            pManager.HideParameter(1);
+            pManager.HideParameter(1); // Do not display the 'Nodes' output points
         }
 
         /// <summary>
@@ -178,98 +178,8 @@ namespace IntraLattice
             }
 
             // 3. Compute list of struts
-            var struts = new List<LineCurve>();
-            var nodesToRemove = new List<GH_Path>();
-
-            for (int u = 0; u <= N[0]; u++)
-            {
-                for (int v = 0; v <= N[1]; v++)
-                {
-                    for (int w = 0; w <= N[2]; w++)
-                    {
-                        // we're inside a unit cell
-                        // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.StrutNodes)
-                        {
-                            // prepare the path of the two nodes (path in tree)
-                            int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
-                            int[] JRel = cell.NodePaths[cellStrut.J];
-                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2], IRel[3]);
-                            GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2], JRel[3]);
-
-                            // make sure both nodes exist (will be false at boundaries)
-                            if (nodeTree.PathExists(IPath) && nodeTree.PathExists(JPath))
-                            {
-                                Point3d node1 = nodeTree[IPath][0].Value;
-                                Point3d node2 = nodeTree[JPath][0].Value;
-
-                                // Determine inside/outside state of both nodes
-                                bool[] nodeInside = new bool[2];
-                                nodeInside[0] = stateTree[IPath][0].Value;
-                                nodeInside[1] = stateTree[JPath][0].Value;
-
-                                // If neither node is inside, remove them and skip to next loop
-                                if (!nodeInside[0] && !nodeInside[1])
-                                {
-                                    nodesToRemove.Add(IPath);
-                                    nodesToRemove.Add(JPath);
-                                    continue;
-                                }
-                                // If both nodes are inside, add full strut
-                                else if (nodeInside[0] && nodeInside[1])
-                                    struts.Add(new LineCurve(node1, node2));
-                                // Else, strut requires trimming
-                                else
-                                {
-                                    // We are going to find the intersection point with the design space
-                                    Point3d[] intersectionPts = null;
-                                    LineCurve testLine = null;
-
-                                    // If brep design space
-                                    if (brepDesignSpace != null)
-                                    {
-                                        Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
-                                        LineCurve strutToTrim = new LineCurve(node1, node2);
-                                        // find intersection point
-                                        Intersection.CurveBrep(strutToTrim, brepDesignSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
-                                    }
-                                    // If mesh design space
-                                    else if (meshDesignSpace != null)
-                                    {
-                                        int[] faceIds;  // dummy variable for MeshLine call
-                                        Line strutToTrim = new Line(node1, node2);
-                                        // find intersection point
-                                        intersectionPts = Intersection.MeshLine(meshDesignSpace, strutToTrim, out faceIds);
-                                    }
-
-                                    // Now, if an intersection point was found, trim the strut
-                                    if (intersectionPts.Length > 0)
-                                    {
-                                        testLine = FrameTools.TrimStrut(ref nodeTree, ref stateTree, ref nodesToRemove, IPath, JPath, intersectionPts[0], nodeInside);
-                                        // if the strut was succesfully trimmed, add it to the list
-                                        if (testLine != null) struts.Add(testLine);
-                                    }
-
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            foreach (GH_Path nodeToRemove in nodesToRemove)
-            {
-                if (nodeTree.PathExists(nodeToRemove))
-                {
-                    if (nodeTree[nodeToRemove].Count > 1)  // if node is a swap node (replaced by intersection pt)
-                    {
-                        nodeTree[nodeToRemove].RemoveAt(0);
-                        stateTree[nodeToRemove].RemoveAt(0);
-                    }
-                    else if (!stateTree[nodeToRemove][0].Value) // if node is outside
-                        nodeTree.RemovePath(nodeToRemove);
-                }
-            }
+            var struts = new List<Curve>();
+            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, N, brepDesignSpace, meshDesignSpace);           
                 
             // 8. Set output
             DA.SetDataList(0, struts);
