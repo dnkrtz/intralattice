@@ -35,7 +35,7 @@ namespace IntraLattice
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("Morph", "Morph", "0: No Morph\n1: Space Morph\n2: Bezier Morph", GH_ParamAccess.item, 0);
+            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, false);
             pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 
@@ -43,7 +43,7 @@ namespace IntraLattice
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
             pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
-            pManager.HideParameter(1); // Do not display the 'Nodes' output points
+            pManager.HideParameter(1);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -56,7 +56,7 @@ namespace IntraLattice
             int nU = 0;
             int nV = 0;
             int nW = 0;
-            int morphed = 0;
+            bool morphed = false;
             double morphFactor = 0;
 
             if (!DA.GetDataList(0, topology)) { return; }
@@ -79,7 +79,6 @@ namespace IntraLattice
             // 2. Initialize the grid tree and derivatives tree
             var nodeTree = new GH_Structure<GH_Point>();     // will contain lattice nodes
             var derivTree = new GH_Structure<GH_Vector>();   // will contain derivatives (du,dv) in a parallel tree
-            var spaceTree = new GH_Structure<GH_Surface>();  // will contain the surface segments, defining the morphed cell spaces
 
             // 3. Flip the UV parameters a surface if specified
             if (flipUV) s1 = s1.Transpose();
@@ -152,24 +151,13 @@ namespace IntraLattice
                             }
                         }
                     }
-
-                    // Define the uv space map
-                    if (u < N[0] && v < N[1])
-                    {
-                        GH_Path spacePath = new GH_Path(u, v);
-                        var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);
-                        var vInterval = new Interval((v) / N[1], (v + 1) / N[1]);
-                        spaceTree.Append(new GH_Surface(s1.Trim(uInterval, vInterval)), spacePath);
-                        spaceTree.Append(new GH_Surface(s2.Trim(uInterval, vInterval)), spacePath);
-                    }
-                    
                 }
             }
 
             // 8. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref spaceTree, ref cell, N, morphed, morphFactor);
+            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
 
             // 9. Set output
             DA.SetDataList(0, struts);
