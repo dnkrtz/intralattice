@@ -183,7 +183,7 @@ namespace IntraLattice
 
             // 3. Compute list of struts
             var struts = new List<Curve>();
-            FrameTools.UniformMapping(ref struts, ref designSpace, ref nodeTree, ref stateTree, ref cell, N, spaceType);           
+            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, designSpace, spaceType, N);           
                 
             // 8. Set output
             DA.SetDataList(0, struts);

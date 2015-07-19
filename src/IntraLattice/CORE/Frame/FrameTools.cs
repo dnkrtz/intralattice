@@ -172,7 +172,7 @@ namespace IntraLattice
         /// - We remove the external nodes (the intersection nodes will replace them, since they are appended to the path in the trimStrut method)
         /// =================================================================
         /// </summary>
-         public static void UniformMapping(ref List<Curve> struts, ref GeometryBase designSpace, ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref UnitCell cell, float[] N, int spaceType)
+        public static void UniformMapping(ref List<Curve> struts, ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref UnitCell cell, GeometryBase designSpace, int spaceType, float[] N)
         {
             // nodes that must be removed from the data structure
             var nodesToRemove = new List<GH_Path>();
