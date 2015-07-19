@@ -4,11 +4,24 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using System.Drawing;
 
+// Summary:     This class contains a set of methods used to automatically generate input menus
+// ===============================================================================
+// Methods:     TopoSelect (written by Aidan)       - Menu for unit cell topologhy
+//              GradientSelect (written by Aidan)   - Menu for thickness gradient expressions
+// ===============================================================================
+// Issues:      Menus are generated after the component runs succesfully. This means that we cannot automatically generate menus for
+//              components which require inputs that are non-default-able.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice
 {
     public class InputTools
     {
-        // index represents the input position (first input is index == 0)
+        /// <summary>
+        /// The 'index' input represents the input index (first input is index 0)
+        /// The 'offset' parameter is the vertical offset of the menu, to help with positioning
+        /// </summary>
         public static void TopoSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
             //instantiate  new value list

@@ -7,6 +7,14 @@ using Grasshopper.Kernel.Data;
 using Rhino;
 using IntraLattice.Properties;
 
+// Summary:     This component can generate a selection of pre-defined unit cell topologies
+// ===============================================================================
+// Details:     - Selection menu is automatically generated (if you add a topology, make sure to add it to the selection menu, in InputTools.TopoSelect()
+//              - The cells don't need to be unitized (bounding box 1x1x1) or at the origin, the framing components are responsible of this
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com) - Simple topologies (tree neighbour format)
+//              Marc Wang (marc.wang@mail.mcgill.ca) - Translated VinTiles and Octahedral from Python(by Aidan) to C#.
+
 namespace IntraLattice
 {
     public class PresetCell : GH_Component
