@@ -172,7 +172,7 @@ namespace IntraLattice
         /// - We remove the external nodes (the intersection nodes will replace them, since they are appended to the path in the trimStrut method)
         /// =================================================================
         /// </summary>
-         public static void UniformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Boolean> stateTree, ref UnitCell cell, float[] N, Brep brepDesignSpace, Mesh meshDesignSpace)
+         public static void UniformMapping(ref List<Curve> struts, ref GeometryBase designSpace, ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref UnitCell cell, float[] N, int spaceType)
         {
             // nodes that must be removed from the data structure
             var nodesToRemove = new List<GH_Path>();
@@ -196,13 +196,13 @@ namespace IntraLattice
                             // make sure both nodes exist (will be false at boundaries)
                             if (nodeTree.PathExists(IPath) && nodeTree.PathExists(JPath))
                             {
-                                Point3d node1 = nodeTree[IPath][0].Value;
-                                Point3d node2 = nodeTree[JPath][0].Value;
+                                Point3d node1 = nodeTree[IPath, 0];
+                                Point3d node2 = nodeTree[JPath, 0];
 
                                 // Determine inside/outside state of both nodes
                                 bool[] isInside = new bool[2];
-                                isInside[0] = stateTree[IPath][0].Value;
-                                isInside[1] = stateTree[JPath][0].Value;
+                                isInside[0] = stateTree[IPath, 0];
+                                isInside[1] = stateTree[JPath, 0];
 
                                 // If neither node is inside, remove them and skip to next loop
                                 if (!isInside[0] && !isInside[1])
@@ -219,25 +219,34 @@ namespace IntraLattice
                                 {
                                     // We are going to find the intersection point with the design space
                                     Point3d[] intersectionPts = null;
+                                    LineCurve strutToTrim = null;
+
+                                    switch (spaceType)
+                                    {
+                                        // Brep design space
+                                        case 1: 
+                                            Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
+                                            strutToTrim = new LineCurve(node1, node2);
+                                            // find intersection point
+                                            Intersection.CurveBrep(strutToTrim, (Brep)designSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
+                                            break;
+                                        // Mesh design space
+                                        case 2:
+                                            int[] faceIds;  // dummy variable for MeshLine call
+                                            strutToTrim = new LineCurve(node1, node2);
+                                            // find intersection point
+                                            intersectionPts = Intersection.MeshLine((Mesh)designSpace, strutToTrim.Line, out faceIds);
+                                            break;
+                                        // Solid surface design space
+                                        case 3:
+                                            overlapCurves = null;   // dummy variable for CurveBrep call
+                                            strutToTrim = new LineCurve(node1, node2);
+                                            // find intersection point
+                                            Intersection.CurveBrep(strutToTrim, ((Surface)designSpace).ToBrep(), Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
+                                            break;
+                                    }
+
                                     LineCurve testLine = null;
-
-                                    // If brep design space
-                                    if (brepDesignSpace != null)
-                                    {
-                                        Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
-                                        LineCurve strutToTrim = new LineCurve(node1, node2);
-                                        // find intersection point
-                                        Intersection.CurveBrep(strutToTrim, brepDesignSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
-                                    }
-                                    // If mesh design space
-                                    else if (meshDesignSpace != null)
-                                    {
-                                        int[] faceIds;  // dummy variable for MeshLine call
-                                        Line strutToTrim = new Line(node1, node2);
-                                        // find intersection point
-                                        intersectionPts = Intersection.MeshLine(meshDesignSpace, strutToTrim, out faceIds);
-                                    }
-
                                     // Now, if an intersection point was found, trim the strut
                                     if (intersectionPts.Length > 0)
                                     {
@@ -253,17 +262,24 @@ namespace IntraLattice
                 }
             }
 
-            // Remove the external nodes
+            // Remove the external nodes, and replace them with the intersection nodes
             foreach (GH_Path nodeToRemove in nodesToRemove)
             {
                 if (nodeTree.PathExists(nodeToRemove))
                 {
-                    if (nodeTree[nodeToRemove].Count > 1)  // if node is a swap node (replaced by intersection pt)
+                    // In the TrimStrut method, we append the intersection point at the path of the node to remove
+                    // Thus, if there is a second item at this path...
+                    // We know it's a swap node
+                    if (nodeTree.ItemExists(nodeToRemove, 1))
                     {
-                        nodeTree[nodeToRemove].RemoveAt(0);
-                        stateTree[nodeToRemove].RemoveAt(0);
+                        Point3d swapNode = nodeTree[nodeToRemove, 1];
+                        nodeTree.RemovePath(nodeToRemove);      // remove full node path (both items)
+                        nodeTree.Add(swapNode, nodeToRemove);   // create new node at same path
+                        stateTree.RemovePath(nodeToRemove);
+                        stateTree.Add(true, nodeToRemove);      // new node is necessarily "inside"
                     }
-                    else if (!stateTree[nodeToRemove][0].Value) // if node is outside
+                    // If it's not a swap node, but it's outside, we just remove it
+                    else if (!stateTree[nodeToRemove, 0]) // if node is outside
                         nodeTree.RemovePath(nodeToRemove);
                 }
             }
@@ -276,10 +292,10 @@ namespace IntraLattice
         /// - Intersection point and information about inside/outside state are passed to this method, to know where to trim and which side to keep.
         /// =================================================================
         /// </summary>
-        public static LineCurve TrimStrut(ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Boolean> stateTree, ref List<GH_Path> nodesToRemove, GH_Path IPath, GH_Path JPath, Point3d intersectionPt, bool[] isInside)
+        public static LineCurve TrimStrut(ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref List<GH_Path> nodesToRemove, GH_Path IPath, GH_Path JPath, Point3d intersectionPt, bool[] isInside)
         {
             GH_Path[] paths = new GH_Path[] { IPath, JPath };
-            Point3d[] nodes = new Point3d[] { nodeTree[IPath][0].Value, nodeTree[JPath][0].Value };
+            Point3d[] nodes = new Point3d[] { nodeTree[IPath, 0], nodeTree[JPath, 0] };
             LineCurve testStrut = new LineCurve(new Line(nodes[0], nodes[1]), 0, 1);  // set line, with curve parameter domain [0,1]
 
             // We only create strut if the trimmed strut is a certain length
@@ -293,8 +309,8 @@ namespace IntraLattice
                     // if trimmed length is less than 10% of full strut length
                     if (testLength > strutLength * 0.1)
                     {
-                        nodeTree[paths[(index + 1) % 2]].Add(new GH_Point(intersectionPt)); // the intersection point will replace the outside node in the tree
-                        stateTree[paths[(index + 1) % 2]].Add(new GH_Boolean(true));
+                        nodeTree.Add(intersectionPt, paths[(index + 1) % 2]); // the intersection point will replace the outside node in the tree
+                        stateTree.Add(true, paths[(index + 1) % 2]);
                         return new LineCurve(nodes[index], intersectionPt);
                     }
                         
@@ -312,28 +328,20 @@ namespace IntraLattice
         /// <summary>
         /// Casts a GeometryBase design space to a brep or a mesh.
         /// </summary>
-        public static bool CastDesignSpace(ref GeometryBase designSpace, ref Brep brepDesignSpace, ref Mesh meshDesignSpace)
+        public static int CastDesignSpace(ref GeometryBase designSpace)
         {
-            //    If brep design space, cast as such
+            // Types: 0-invalid, 1-brep, 2-mesh, 3-solid surface
+            int type = 0;
+
             if (designSpace.ObjectType == ObjectType.Brep)
-                brepDesignSpace = (Brep)designSpace;
-            //    If mesh design space, cast as such
+                type = 1;
             else if (designSpace.ObjectType == ObjectType.Mesh)
-                meshDesignSpace = (Mesh)designSpace;
-            //    If solid surface, convert to brep
-            else if (designSpace.ObjectType == ObjectType.Surface)
-            {
-                Surface testSpace = (Surface)designSpace;
-                if (testSpace.IsSolid) brepDesignSpace = testSpace.ToBrep();
-            }
-            //    Else the design space is unacceptable
-            else
-                return false;
+                type = 2;
+            else if (designSpace.ObjectType == ObjectType.Surface && ((Surface)designSpace).IsSolid)
+                type = 3;
 
-            return true;
+            return type;
         }
-
-        
 
 
     }

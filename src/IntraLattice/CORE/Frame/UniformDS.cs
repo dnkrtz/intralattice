@@ -9,6 +9,7 @@ using Rhino.DocObjects;
 using Rhino.Collections;
 using Rhino.Geometry.Intersect;
 using IntraLattice.Properties;
+using Grasshopper;
 
 // Summary:     This component generates a uniform lattice trimmed to the shape of design space
 // ===============================================================================
@@ -16,7 +17,7 @@ using IntraLattice.Properties;
 //              - Design space may be a Mesh, Brep or Solid Surface.
 //              - Orientation plane does not need to be centered at any particular location
 // ===============================================================================
-// Issues:      = Currently doesn't work well for meshes.. issues with Rhino's isInside method
+// Issues:      = Currently trimming for the meshes occasionally has really weird behaviour.. issue with Rhino's isInside method!
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -87,9 +88,8 @@ namespace IntraLattice
             if (zCellSize == 0) { return; }
 
             // 2. Validate the design space
-            Brep brepDesignSpace = null;
-            Mesh meshDesignSpace = null;
-            if (!FrameTools.CastDesignSpace(ref designSpace, ref brepDesignSpace, ref meshDesignSpace))
+            int spaceType = FrameTools.CastDesignSpace(ref designSpace);
+            if (spaceType == 0)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Design space must be a Brep, Mesh or Closed Surface");
                 return;
@@ -112,8 +112,8 @@ namespace IntraLattice
             float[] N = new float[3] { nX, nY, nZ };
 
             // 5. Initialize nodeTree
-            var nodeTree = new GH_Structure<GH_Point>();
-            var stateTree = new GH_Structure<GH_Boolean>(); // true if point is inside design space
+            var nodeTree = new DataTree<Point3d>();     // will contain the lattice nodes
+            var stateTree = new DataTree<Boolean>();    // will contain the node states in a parallel tree (true if node is inside design space)
 
             // 7. Prepare normalized unit cell topology
             var cell = new UnitCell();
@@ -152,23 +152,29 @@ namespace IntraLattice
                             // create current node
                             GH_Path currentPath = new GH_Path(u, v, w, i);
                             if (!nodeTree.PathExists(currentPath))
-                                nodeTree.Append(new GH_Point(currentPt), currentPath);
+                                nodeTree.Add(currentPt, currentPath);
 
-                            // check if point is inside
+                            // check if point is inside - use unstrict tolerance, meaning it can be outside the surface by the specified tolerance
                             bool isInside = false;
-                            // if design space is a BREP
-                            if (brepDesignSpace != null)
-                                // check if it is inside the space (within unstrict tolerance, meaning it can be outside the surface by the specified tolerance)
-                                isInside = brepDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
-                            // if design space is a MESH
-                            if (meshDesignSpace != null)
-                                isInside = meshDesignSpace.IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                            
+                            switch (spaceType)
+                            {
+                                case 1: // Brep design space
+                                    isInside = ((Brep)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    break;
+                                case 2: // Mesh design space
+                                    isInside = ((Mesh)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    break;
+                                case 3: // Solid surface design space (must be converted to brep)
+                                    isInside = ((Surface)designSpace).ToBrep().IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    break;
+                            }
 
                             // store wether the pt is inside or outside
                             if (isInside)
-                                stateTree.Append(new GH_Boolean(true), currentPath);
+                                stateTree.Add(true, currentPath);
                             else
-                                stateTree.Append(new GH_Boolean(false), currentPath);
+                                stateTree.Add(false, currentPath);
 
                         }
                     }
@@ -177,7 +183,7 @@ namespace IntraLattice
 
             // 3. Compute list of struts
             var struts = new List<Curve>();
-            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, N, brepDesignSpace, meshDesignSpace);           
+            FrameTools.UniformMapping(ref struts, ref designSpace, ref nodeTree, ref stateTree, ref cell, N, spaceType);           
                 
             // 8. Set output
             DA.SetDataList(0, struts);
