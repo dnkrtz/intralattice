@@ -23,11 +23,11 @@ namespace IntraLattice
     public class FrameTools
     {
         /// <summary>
-        /// Maps cell topology to the node grid created by one of the conform components
+        /// Maps cell topology to the node grid created by one of the conform components, with 3 morphing options
         /// ============================================================================
-        /// 3 morphing options  - No morphing
-        ///                     - Space morphing (discretization of the struts as a set of points, which are mapped to the uvw cell spaces, and interpolated as NURBS-curves)
-        ///                     - Bezier morphing (uses interpolated directional surface derivatives to morph the struts as Bezier curves)
+        /// 0) No morphing
+        /// 1) Space morphing (discretization of the struts as a set of points, which are mapped to the uvw cell spaces, and interpolated as NURBS-curves)
+        /// 2) Bezier morphing (uses interpolated directional surface derivatives to morph the struts as Bezier curves)
         /// ============================================================================                    
         /// </summary>
         public static void ConformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Vector> derivTree, ref GH_Structure<GH_Surface> spaceTree, ref UnitCell cell, float[] N, int morphed, double morphTol = 0)
@@ -88,18 +88,19 @@ namespace IntraLattice
                                     {
                                         Point3d surfPt1, surfPt2;
                                         Vector3d[] surfDerivs1, surfDerivs2;
+                                        // Evaluate surfaces, to map the template point to the uv space
                                         ss1.Evaluate(tempPt.X, tempPt.Y, 0, out surfPt1, out surfDerivs1);
                                         ss2.Evaluate(tempPt.X, tempPt.Y, 0, out surfPt2, out surfDerivs2);
+                                        // Vector for w-mapping
                                         Vector3d wVect = surfPt2 - surfPt1;
 
                                         Point3d uvwPt = surfPt1 + wVect * (w + tempPt.Z) / N[2];
                                         controlPoints.Add(uvwPt);
                                     }
 
+                                    // Now create interpolated curve based on control points
                                     Curve curve = Curve.CreateInterpolatedCurve(controlPoints, 3);
 
-                                    //Curve curve = NurbsCurve.Create(false, controlPoints.Count - 1, controlPoints);
-                                    // finally, save the new strut
                                     struts.Add(curve);
                                 }
                                 // Bezier morphing
@@ -134,7 +135,6 @@ namespace IntraLattice
                 }
             }
         }
-
 
         /// <summary>
         /// Maps cell topology to the node grid and trims to the design space
