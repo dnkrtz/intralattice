@@ -151,7 +151,7 @@ namespace IntraLattice
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, N, null, null);
+            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, null, 0, N);
 
             // 8. Set output
             DA.SetDataList(0, struts);
