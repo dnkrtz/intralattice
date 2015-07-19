@@ -6,6 +6,7 @@ using Rhino;
 using Rhino.DocObjects;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Rhino.Geometry.Intersect;
 
 // This is a set of methods used by the frame components
 // =====================================================
@@ -22,7 +23,7 @@ namespace IntraLattice
         /// <summary>
         /// Maps cell topology to the node grid created by one of the conform components
         /// </summary>
-        public static void ConformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Vector> derivTree, ref UnitCell cell, float[] N, bool morphed)
+        public static void ConformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Vector> derivTree, ref GH_Structure<GH_Surface> spaceTree, ref UnitCell cell, float[] N, int morphed, double morphTol = 0)
         {
             for (int u = 0; u <= N[0]; u++)
             {
@@ -46,13 +47,54 @@ namespace IntraLattice
                                 Point3d node1 = nodeTree[IPath][0].Value;
                                 Point3d node2 = nodeTree[JPath][0].Value;
 
-                                // get direction vector from the normalized 'cellNodes'
-                                Vector3d directionVector1 = new Vector3d(cell.Nodes[cellStrut.J] - cell.Nodes[cellStrut.I]);
-                                directionVector1.Unitize();
-
-                                // if user requested morphing, we need to compute bezier curve struts
-                                if (morphed && directionVector1.Z==0)
+                                // no morphing
+                                if ( morphed == 0 )
                                 {
+                                    LineCurve newStrut = new LineCurve(node1, node2);
+                                    struts.Add(newStrut);
+                                }
+                                // space morphing
+                                else if ( morphed == 1 )
+                                {
+
+                                    GH_Path spacePath = new GH_Path(u, v);
+                                    Surface ss1 = spaceTree[spacePath][0].Value.Surfaces[0]; // uv cell space, as pair of subsurfaces (subsurface of the full surface)
+                                    Surface ss2 = spaceTree[spacePath][1].Value.Surfaces[0]; // this surface will be null if 
+                                    ss1.SetDomain(0, new Interval(0,1));
+                                    ss2.SetDomain(1, new Interval(0,1));
+
+                                    // Discretize the unit cell line for morph mapping
+                                    int divNumber = (int)(node1.DistanceTo(node2) / morphTol);    // number of discrete segments
+                                    var templatePoints = new Point3d[divNumber + 1];   // unitized cell points (x,y of these points are u,v of sub-surface)
+                                    LineCurve templateLine = new LineCurve(cell.Nodes[cellStrut.I], cell.Nodes[cellStrut.J]);
+                                    templateLine.DivideByCount(divNumber, true, out templatePoints);
+
+                                    // We will map each template point to its uvw cell-space
+                                    var controlPoints = new List<Point3d>();    // interpolation points in space
+                                    
+                                    foreach (Point3d tempPt in templatePoints)
+                                    {
+                                        Point3d surfPt1, surfPt2;
+                                        Vector3d[] surfDerivs1, surfDerivs2;
+                                        ss1.Evaluate(tempPt.X, tempPt.Y, 0, out surfPt1, out surfDerivs1);
+                                        ss2.Evaluate(tempPt.X, tempPt.Y, 0, out surfPt2, out surfDerivs2);
+                                        Vector3d wVect = surfPt2 - surfPt1;
+
+                                        Point3d uvwPt = surfPt1 + wVect * (w + cell.Nodes[cellStrut.I].Z) / N[2];
+                                        controlPoints.Add(uvwPt);
+                                    }
+
+                                    Curve curve = NurbsCurve.Create(false, controlPoints.Count - 1, controlPoints);
+                                    // finally, save the new strut
+                                    struts.Add(curve);
+                                }
+                                // bezier morphing
+                                else if ( morphed == 2 )
+                                {
+                                    // get direction vector from the normalized 'cellNodes'
+                                    Vector3d directionVector1 = new Vector3d(cell.Nodes[cellStrut.J] - cell.Nodes[cellStrut.I]);
+                                    directionVector1.Unitize();
+
                                     // compute directional derivatives
                                     // we use the du and dv derivatives as the basis for the directional derivative
                                     Vector3d deriv1 = derivTree[IPath][0].Value * directionVector1.X + derivTree[IPath][1].Value * directionVector1.Y;
@@ -71,17 +113,113 @@ namespace IntraLattice
                                     // finally, save the new strut (converted to nurbs)
                                     struts.Add(curve.ToNurbsCurve());
                                 }
-                                // if user set morph to false, create a simple linear strut
+                            
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Maps cell topology to the node grid and trims to the design space
+        /// </summary>
+         public static void UniformMapping(ref List<Curve> struts, ref GH_Structure<GH_Point> nodeTree, ref GH_Structure<GH_Boolean> stateTree, ref UnitCell cell, float[] N, Brep brepDesignSpace, Mesh meshDesignSpace)
+        {
+            // nodes that must be removed from the data structure
+            var nodesToRemove = new List<GH_Path>();
+
+            for (int u = 0; u <= N[0]; u++)
+            {
+                for (int v = 0; v <= N[1]; v++)
+                {
+                    for (int w = 0; w <= N[2]; w++)
+                    {
+                        // we're inside a unit cell
+                        // loop through all pairs of nodes that make up struts
+                        foreach (IndexPair cellStrut in cell.StrutNodes)
+                        {
+                            // prepare the path of the nodes (path in tree)
+                            int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
+                            int[] JRel = cell.NodePaths[cellStrut.J];
+                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2], IRel[3]);
+                            GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2], JRel[3]);
+
+                            // make sure both nodes exist (will be false at boundaries)
+                            if (nodeTree.PathExists(IPath) && nodeTree.PathExists(JPath))
+                            {
+                                Point3d node1 = nodeTree[IPath][0].Value;
+                                Point3d node2 = nodeTree[JPath][0].Value;
+
+                                // Determine inside/outside state of both nodes
+                                bool[] isInside = new bool[2];
+                                isInside[0] = stateTree[IPath][0].Value;
+                                isInside[1] = stateTree[JPath][0].Value;
+
+                                // If neither node is inside, remove them and skip to next loop
+                                if (!isInside[0] && !isInside[1])
+                                {
+                                    nodesToRemove.Add(IPath);
+                                    nodesToRemove.Add(JPath);
+                                    continue;
+                                }
+                                // If both nodes are inside, add full strut
+                                else if (isInside[0] && isInside[1])
+                                    struts.Add(new LineCurve(node1, node2));
+                                // Else, strut requires trimming
                                 else
                                 {
-                                    LineCurve newStrut = new LineCurve(node1, node2);
-                                    struts.Add(newStrut);
+                                    // We are going to find the intersection point with the design space
+                                    Point3d[] intersectionPts = null;
+                                    LineCurve testLine = null;
+
+                                    // If brep design space
+                                    if (brepDesignSpace != null)
+                                    {
+                                        Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
+                                        LineCurve strutToTrim = new LineCurve(node1, node2);
+                                        // find intersection point
+                                        Intersection.CurveBrep(strutToTrim, brepDesignSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
+                                    }
+                                    // If mesh design space
+                                    else if (meshDesignSpace != null)
+                                    {
+                                        int[] faceIds;  // dummy variable for MeshLine call
+                                        Line strutToTrim = new Line(node1, node2);
+                                        // find intersection point
+                                        intersectionPts = Intersection.MeshLine(meshDesignSpace, strutToTrim, out faceIds);
+                                    }
+
+                                    // Now, if an intersection point was found, trim the strut
+                                    if (intersectionPts.Length > 0)
+                                    {
+                                        testLine = FrameTools.TrimStrut(ref nodeTree, ref stateTree, ref nodesToRemove, IPath, JPath, intersectionPts[0], isInside);
+                                        // if the strut was succesfully trimmed, add it to the list
+                                        if (testLine != null) struts.Add(testLine);
+                                    }
+
                                 }
                             }
                         }
                     }
                 }
             }
+
+            foreach (GH_Path nodeToRemove in nodesToRemove)
+            {
+                if (nodeTree.PathExists(nodeToRemove))
+                {
+                    if (nodeTree[nodeToRemove].Count > 1)  // if node is a swap node (replaced by intersection pt)
+                    {
+                        nodeTree[nodeToRemove].RemoveAt(0);
+                        stateTree[nodeToRemove].RemoveAt(0);
+                    }
+                    else if (!stateTree[nodeToRemove][0].Value) // if node is outside
+                        nodeTree.RemovePath(nodeToRemove);
+                }
+            }
+
         }
 
         public static bool CastDesignSpace(ref GeometryBase designSpace, ref Brep brepDesignSpace, ref Mesh meshDesignSpace)

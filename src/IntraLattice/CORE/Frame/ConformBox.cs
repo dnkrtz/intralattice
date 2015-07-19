@@ -94,7 +94,7 @@ namespace IntraLattice
 
             // 4. Declare our point grid datatree
             var nodeTree = new GH_Structure<GH_Point>();
-            var derivTree = new GH_Structure<GH_Vector>();
+            var stateTree = new GH_Structure<GH_Boolean>();
 
             // 5. Prepare normalized unit cell topology
             var cell = new UnitCell();
@@ -138,8 +138,9 @@ namespace IntraLattice
                             Vector3d V = (u+usub) * vectorX + (v+vsub) * vectorY + (w+wsub) * vectorZ;
                             Point3d newPt = basePlane.Origin + V;
 
-                            GH_Path treePath = new GH_Path(u, v, w, i);            // construct path in tree
-                            nodeTree.Append(new GH_Point(newPt), treePath);     // add point to tree
+                            GH_Path treePath = new GH_Path(u, v, w, i);             // construct path in tree
+                            nodeTree.Append(new GH_Point(newPt), treePath);         // add point to tree
+                            stateTree.Append(new GH_Boolean(true), treePath);       // state (inside or outside design space, always in for our case)
                         }
                     }
                 }
@@ -148,7 +149,7 @@ namespace IntraLattice
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, false);
+            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, N, null, null);
 
             // 8. Set output
             DA.SetDataList(0, struts);
