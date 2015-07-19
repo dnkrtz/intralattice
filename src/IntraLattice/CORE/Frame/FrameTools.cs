@@ -57,6 +57,14 @@ namespace IntraLattice
                                 else if ( morphed == 1 )
                                 {
 
+                                    if ( u == N[0] || v == N[1])
+                                    {
+                                        LineCurve newStrut = new LineCurve(node1, node2);
+                                        struts.Add(newStrut);
+                                        continue;
+                                    }
+
+                                    
                                     GH_Path spacePath = new GH_Path(u, v);
                                     Surface ss1 = spaceTree[spacePath][0].Value.Surfaces[0]; // uv cell space, as pair of subsurfaces (subsurface of the full surface)
                                     Surface ss2 = spaceTree[spacePath][1].Value.Surfaces[0]; // this surface will be null if 
@@ -64,7 +72,8 @@ namespace IntraLattice
                                     ss2.SetDomain(1, new Interval(0,1));
 
                                     // Discretize the unit cell line for morph mapping
-                                    int divNumber = (int)(node1.DistanceTo(node2) / morphTol);    // number of discrete segments
+                                    int divNumber = 10;
+                                    //int divNumber = (int)(node1.DistanceTo(node2) / morphTol);    // number of discrete segments
                                     var templatePoints = new Point3d[divNumber + 1];   // unitized cell points (x,y of these points are u,v of sub-surface)
                                     LineCurve templateLine = new LineCurve(cell.Nodes[cellStrut.I], cell.Nodes[cellStrut.J]);
                                     templateLine.DivideByCount(divNumber, true, out templatePoints);
@@ -84,7 +93,9 @@ namespace IntraLattice
                                         controlPoints.Add(uvwPt);
                                     }
 
-                                    Curve curve = NurbsCurve.Create(false, controlPoints.Count - 1, controlPoints);
+                                    Curve curve = Curve.CreateInterpolatedCurve(controlPoints, 3);
+
+                                    //Curve curve = NurbsCurve.Create(false, controlPoints.Count - 1, controlPoints);
                                     // finally, save the new strut
                                     struts.Add(curve);
                                 }

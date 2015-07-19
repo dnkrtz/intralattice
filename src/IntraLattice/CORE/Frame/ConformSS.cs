@@ -43,6 +43,7 @@ namespace IntraLattice
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
             pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.AddSurfaceParameter("test", "t", "tes", GH_ParamAccess.tree);
             pManager.HideParameter(1); // Do not display the 'Nodes' output points
         }
 
@@ -150,6 +151,7 @@ namespace IntraLattice
                                 deriv = deriv / (morphFactor * N[derivIndex]);
                                 derivTree.Append(new GH_Vector(deriv), treePath);
                             }
+
                         }
                     }
 
@@ -174,6 +176,7 @@ namespace IntraLattice
             // 9. Set output
             DA.SetDataList(0, struts);
             DA.SetDataTree(1, nodeTree);
+            DA.SetDataTree(2, spaceTree);
 
         }
 
