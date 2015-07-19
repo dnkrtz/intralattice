@@ -56,32 +56,28 @@ namespace IntraLattice
                                 // space morphing
                                 else if ( morphed == 1 )
                                 {
+                                    if (u == N[0] || v == N[1]) continue;
 
-                                    if ( u == N[0] || v == N[1])
-                                    {
-                                        LineCurve newStrut = new LineCurve(node1, node2);
-                                        struts.Add(newStrut);
-                                        continue;
-                                    }
-
-                                    
                                     GH_Path spacePath = new GH_Path(u, v);
                                     Surface ss1 = spaceTree[spacePath][0].Value.Surfaces[0]; // uv cell space, as pair of subsurfaces (subsurface of the full surface)
                                     Surface ss2 = spaceTree[spacePath][1].Value.Surfaces[0]; // this surface will be null if 
-                                    ss1.SetDomain(0, new Interval(0,1));
-                                    ss2.SetDomain(1, new Interval(0,1));
+                                    ss1.SetDomain(0, new Interval(0, 1));
+                                    ss1.SetDomain(1, new Interval(0, 1));
+                                    ss2.SetDomain(0, new Interval(0, 1));
+                                    ss2.SetDomain(1, new Interval(0, 1));
 
                                     // Discretize the unit cell line for morph mapping
-                                    int divNumber = 10;
+                                    int ptCount = 10 + 1;
                                     //int divNumber = (int)(node1.DistanceTo(node2) / morphTol);    // number of discrete segments
-                                    var templatePoints = new Point3d[divNumber + 1];   // unitized cell points (x,y of these points are u,v of sub-surface)
-                                    LineCurve templateLine = new LineCurve(cell.Nodes[cellStrut.I], cell.Nodes[cellStrut.J]);
-                                    templateLine.DivideByCount(divNumber, true, out templatePoints);
+                                    var templatePts = new List<Point3d>();   // unitized cell points (x,y of these points are u,v of sub-surface)
+                                    Line templateLine = new Line(cell.Nodes[cellStrut.I], cell.Nodes[cellStrut.J]);
+                                    for (int ptIndex=0; ptIndex<=ptCount; ptIndex++)
+                                        templatePts.Add(templateLine.PointAt(ptIndex / (double)ptCount));                                    
 
                                     // We will map each template point to its uvw cell-space
                                     var controlPoints = new List<Point3d>();    // interpolation points in space
                                     
-                                    foreach (Point3d tempPt in templatePoints)
+                                    foreach (Point3d tempPt in templatePts)
                                     {
                                         Point3d surfPt1, surfPt2;
                                         Vector3d[] surfDerivs1, surfDerivs2;
@@ -89,7 +85,7 @@ namespace IntraLattice
                                         ss2.Evaluate(tempPt.X, tempPt.Y, 0, out surfPt2, out surfDerivs2);
                                         Vector3d wVect = surfPt2 - surfPt1;
 
-                                        Point3d uvwPt = surfPt1 + wVect * (w + cell.Nodes[cellStrut.I].Z) / N[2];
+                                        Point3d uvwPt = surfPt1 + wVect * (w + tempPt.Z) / N[2];
                                         controlPoints.Add(uvwPt);
                                     }
 
