@@ -7,21 +7,24 @@ using Rhino.DocObjects;
 using IntraLattice.Properties;
 using System.Drawing;
 
-// This component is a post-processing tool used to inspect a mesh
-// ===============================================================
-// Checks that the mesh represents a solid
+// Summary:     This component is a post-processing tool used to inspect and preview a mesh
+// ===============================================================================
+// Details:     - Checks that the mesh represents a solid, and gives a comprehensive report.
+//              - Overrides the default Grasshopper previewer to display a colored mesh and it's edges.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
     public class ViewReport : GH_Component
     {
-        // mesh for previewing, declared at class level
+        // Mesh for previewing, declared at class level
         private Mesh m_mesh;
 
         public ViewReport()
             : base("View Report", "ViewReport",
                 "Verifies the validity of the mesh, and generates a preview",
-                "IntraLattice2", "Mesh")
+                "IntraLattice2", "Solid")
         {
         }
 

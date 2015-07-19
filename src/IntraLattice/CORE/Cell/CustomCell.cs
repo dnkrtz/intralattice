@@ -1,10 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using System.Drawing;
 using Rhino;
+
+// Summary:     This component processes/verifies user-defined unit cells, and outputs a valid Topo unit cell
+// ===============================================================================
+// Details:     - Assumes unit cell is aligned with the xyz world axes
+//              - Begins by fixing any undefined intersections (intersections must be defined nodes)
+//              - Checks validity of the unit cell (opposing faces must be identical, in terms of nodes, to ensure continuity)     
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {

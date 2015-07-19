@@ -7,12 +7,14 @@ using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
+using Grasshopper;
 
-// This component generates a simple cartesian 3D lattice grid.
-// ============================================================
-// Includes comments explaining the purpose of each method of a C# Grasshopper Component (GH_Component).
 
-// Written by Aidan Kurtz (http://aidankurtz.com)
+// Summary:     This component generates a simple cartesian 3D lattice.
+// ===============================================================================
+// Details:     - 
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
@@ -93,8 +95,8 @@ namespace IntraLattice
             if (nZ == 0) { return; }
 
             // 4. Declare our point grid datatree
-            var nodeTree = new GH_Structure<GH_Point>();
-            var derivTree = new GH_Structure<GH_Vector>();
+            var nodeTree = new DataTree<Point3d>();
+            var stateTree = new DataTree<Boolean>();
 
             // 5. Prepare normalized unit cell topology
             var cell = new UnitCell();
@@ -138,8 +140,9 @@ namespace IntraLattice
                             Vector3d V = (u+usub) * vectorX + (v+vsub) * vectorY + (w+wsub) * vectorZ;
                             Point3d newPt = basePlane.Origin + V;
 
-                            GH_Path treePath = new GH_Path(u, v, w, i);            // construct path in tree
-                            nodeTree.Append(new GH_Point(newPt), treePath);     // add point to tree
+                            GH_Path treePath = new GH_Path(u, v, w, i);             // construct path in tree
+                            nodeTree.Add(newPt, treePath);                          // add point to tree
+                            stateTree.Add(true, treePath);                          // state (inside or outside design space, always in for our case)
                         }
                     }
                 }
@@ -148,7 +151,7 @@ namespace IntraLattice
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, false);
+            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, N, null, null);
 
             // 8. Set output
             DA.SetDataList(0, struts);

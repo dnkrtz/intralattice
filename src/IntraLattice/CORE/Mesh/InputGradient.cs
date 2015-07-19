@@ -25,7 +25,7 @@ namespace IntraLattice
         public InputGradient()
             : base("Select Gradient", "Gradient",
                 "Generates gradient string (i.e. a spatial math expression)",
-                "IntraLattice2", "Mesh")
+                "IntraLattice2", "Solid")
         {
         }
 

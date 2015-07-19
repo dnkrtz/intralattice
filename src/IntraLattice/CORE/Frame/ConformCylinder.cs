@@ -7,12 +7,13 @@ using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
+using Grasshopper;
 
-// This component generates a simple cylindrical lattice grid.
-// ===========================================================
-// Both the points and their interpolated derivatives are returned.
-
-// Written by Aidan Kurtz (http://aidankurtz.com)
+// Summary:     This component generates a simple cylindrical lattice.
+// ===============================================================================
+// Details:     - 
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice
 {
@@ -33,7 +34,7 @@ namespace IntraLattice
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 15);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 4);
-            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, false);
+            pManager.AddIntegerParameter("Morph", "Morph", "0: No Morph\n1: Space Morph\n2: Bezier Morph", GH_ParamAccess.item, 0);
             pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 
@@ -41,7 +42,7 @@ namespace IntraLattice
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
             pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
-            pManager.HideParameter(1);
+            pManager.HideParameter(1);  // Do not display the 'Nodes' output points
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -53,7 +54,7 @@ namespace IntraLattice
             int nU = 0;
             int nV = 0;
             int nW = 0;
-            bool morphed = false;
+            int morphed = 0;
             double morphFactor = 0;
 
             if (!DA.GetDataList(0, topology)) { return; }
@@ -72,21 +73,25 @@ namespace IntraLattice
             if (nV == 0) { return; }
             if (nW == 0) { return; }
 
-            // 2. Initialize the grid tree and derivatives tree
-            var nodeTree = new GH_Structure<GH_Point>();
-            var derivTree = new GH_Structure<GH_Vector>();
+            // 2. Initialize the node tree, derivative tree and morphed space tree
+            var nodeTree = new DataTree<Point3d>();                                 // will contain lattice nodes
+            var derivTree = new DataTree<Vector3d>();                               // will contain derivatives (du,dv) in a parallel tree
+            var spaceTree = new DataTree<GeometryBase>();                           // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
             
             // 3. Define cylinder
             Plane basePlane = Plane.WorldXY;
             Surface cylinder = ( new Cylinder(new Circle(basePlane, radius), height) ).ToNurbsSurface();
             cylinder = cylinder.Transpose();
+            LineCurve axis = new LineCurve(basePlane.Origin, basePlane.Origin + height*basePlane.ZAxis);
 
             // 4. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
 
             // 5. Normalize the UV-domain
-            cylinder.SetDomain(0, new Interval(0, 1)); // surface u-direction
-            cylinder.SetDomain(1, new Interval(0, 1)); // surface v-direction
+            Interval normalDomain = new Interval(0, 1);
+            cylinder.SetDomain(0, normalDomain); // surface u-direction
+            cylinder.SetDomain(1, normalDomain); // surface v-direction
+            axis.Domain = normalDomain;
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
@@ -117,8 +122,8 @@ namespace IntraLattice
 
                         // construct z-position vector
                         Vector3d vectorZ = height * basePlane.ZAxis * (u+usub) / N[0];
-                        pt1 = basePlane.Origin + vectorZ;                                   // compute pt1 (is on axis)
-                        cylinder.Evaluate( (u+usub)/N[0], (v+vsub)/N[1], 2, out pt2, out derivatives);     // compute pt2, and derivates (on surface)
+                        pt1 = basePlane.Origin + vectorZ;                                                   // compute pt1 (is on axis)
+                        cylinder.Evaluate( (u+usub)/N[0], (v+vsub)/N[1], 2, out pt2, out derivatives);      // compute pt2, and derivates (on surface)
 
                         // create vector joining these two points
                         Vector3d wVect = pt2 - pt1;
@@ -134,7 +139,7 @@ namespace IntraLattice
                             // add point to gridTree
                             Point3d newPt = pt1 + wVect * (w+wsub)/N[2];
                             GH_Path treePath = new GH_Path(u, v, w, i);
-                            nodeTree.Append(new GH_Point(newPt), treePath);
+                            nodeTree.Add(newPt, treePath);
 
                             // for each of the 2 directional directives (du and dv)
                             for (int derivIndex = 0; derivIndex < 2; derivIndex++)
@@ -143,9 +148,24 @@ namespace IntraLattice
                                 Vector3d deriv = derivatives[derivIndex] * (w + wsub) / N[2];
                                 // this division scales the derivatives (gives better control of the bezier curves)
                                 deriv = deriv / (morphFactor * N[derivIndex]);
-                                derivTree.Append(new GH_Vector(deriv), treePath);
+                                derivTree.Add(deriv, treePath);
                             }
                         }
+                    }
+
+                    // Define the uv space map
+                    if (u < N[0] && v < N[1])
+                    {
+                        GH_Path spacePath = new GH_Path(u, v);
+                        var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);                   // set trimming interval
+                        var vInterval = new Interval((v) / N[1], (v + 1) / N[1]);
+                        Surface ss1 = cylinder.Trim(uInterval, vInterval);                          // create sub-surface
+                        Curve ss2 = axis.Trim(uInterval);
+                        ss1.SetDomain(0, normalDomain); ss1.SetDomain(1, normalDomain);             // normalize domains
+                        ss2.Domain = normalDomain;
+                        // Save to the space tree
+                        spaceTree.Add(ss1, spacePath);
+                        spaceTree.Add(ss2, spacePath);
                     }
                 }
             }
@@ -153,7 +173,7 @@ namespace IntraLattice
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref cell, N, morphed);
+            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref spaceTree, ref cell, N, morphed, morphFactor);
 
             // 8. Set output
             DA.SetDataList(0, struts);
