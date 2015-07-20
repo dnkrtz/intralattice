@@ -63,6 +63,7 @@
     <Compile Include="CORE\Cell\CellTools.cs" />
     <Compile Include="CORE\Cell\CustomCell.cs" />
     <Compile Include="CORE\Cell\TopologySymmetryCheck.cs" />
+    <Compile Include="CORE\Frame\ConformBox.cs" />
     <Compile Include="FEAInterface\Components\FEAInterfaceComponent.cs" />
     <Compile Include="FEAInterface\Components\PointLoadComponent.cs" />
     <Compile Include="FEAInterface\Components\SPCComponentComponent.cs" />
