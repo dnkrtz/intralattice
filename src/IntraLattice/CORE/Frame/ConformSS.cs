@@ -44,7 +44,6 @@ namespace IntraLattice
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
             pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
-            pManager.AddSurfaceParameter("test", "t", "tes", GH_ParamAccess.tree);
             pManager.HideParameter(1); // Do not display the 'Nodes' output points
         }
 
@@ -98,6 +97,7 @@ namespace IntraLattice
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
+            CellTools.FixIntersections(ref topology);
             CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into a node indexpair list format
             CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
             CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up relative path references (for nodes)
@@ -182,7 +182,6 @@ namespace IntraLattice
             // 9. Set output
             DA.SetDataList(0, struts);
             DA.SetDataTree(1, nodeTree);
-            DA.SetDataTree(2, spaceTree);
 
         }
 

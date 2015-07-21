@@ -41,7 +41,7 @@ namespace IntraLattice
                     {
                         // we're inside a unit cell
                         // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.StrutNodes)
+                        foreach (IndexPair cellStrut in cell.NodePairs)
                         {
                             // prepare the path of the nodes (path in tree)
                             int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
@@ -185,7 +185,7 @@ namespace IntraLattice
                     {
                         // we're inside a unit cell
                         // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.StrutNodes)
+                        foreach (IndexPair cellStrut in cell.NodePairs)
                         {
                             // prepare the path of the nodes (path in tree)
                             int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)

@@ -107,6 +107,7 @@ namespace IntraLattice.FRAME
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
+            CellTools.FixIntersections(ref topology);
             CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into a node indexpair list format
             CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
             CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
