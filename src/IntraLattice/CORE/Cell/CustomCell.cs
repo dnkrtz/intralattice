@@ -19,7 +19,7 @@ namespace IntraLattice
     {
         public CustomCell()
             : base("CustomCell", "CustomCell",
-                "Use to define custom cells. Checks validity of cell and outputs topology.",
+                "Pre-processes a custom unit cell by check validity and outputting topology.",
                 "IntraLattice2", "Cell")
         {
         }

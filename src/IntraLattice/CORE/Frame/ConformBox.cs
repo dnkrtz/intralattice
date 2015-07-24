@@ -30,7 +30,7 @@ namespace IntraLattice
         /// </summary>
         public ConformBox()
             : base("Conform Box", "ConformBox",
-                "Generates a lattice grid box.",
+                "Generates a lattice box.",
                 "IntraLattice2", "Frame")
         {
         }
