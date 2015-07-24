@@ -62,6 +62,7 @@ namespace IntraLattice
                 }
             }
             // remove lines that were split, and add the new lines
+            linesToRemove.Sort();
             linesToRemove.Reverse();
             foreach (int index in linesToRemove) lines.RemoveAt(index);
             lines.AddRange(splitLines);
