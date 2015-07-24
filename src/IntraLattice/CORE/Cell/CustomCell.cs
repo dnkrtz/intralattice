@@ -42,7 +42,18 @@ namespace IntraLattice
 
             // Convert curve input to line input
             var lines = new List<Line>();
-            foreach (LineCurve curve in curves) lines.Add(curve.Line);
+            foreach (Curve curve in curves)
+            {
+                // Make sure the curve is linear, if not, abort and return error
+                if (!curve.IsLinear())
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "All struts must be linear.");
+                    return;
+                }
+                // Convert curve to line
+                lines.Add(new Line(curve.PointAtStart, curve.PointAtEnd));
+                
+            }
 
             // Set tolerance
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
