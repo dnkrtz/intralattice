@@ -44,7 +44,7 @@ namespace IntraLattice
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Cross", "3"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Tesseract", "4"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Vintiles", "5"));
-            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Octahedral", "6"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Octet", "6"));
 
             vallist.ListItems.AddRange(items);
 

@@ -10,7 +10,12 @@ namespace IntraLattice
 {
     public class HeterogenCustom : GH_Component
     {
-        public HeterogenCustom() : base("Heterogen Custom", "HeterogenCustom", "Heterogeneous solidification of lattice wireframe", "IntraLattice2", "Solid") { }
+        public HeterogenCustom()
+            : base("Heterogen Custom", "HeterogenCustom",
+                "Heterogeneous solidification of lattice wireframe",
+                "IntraLattice2", "Mesh")
+        {
+        }
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {

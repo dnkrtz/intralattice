@@ -62,6 +62,7 @@ namespace IntraLattice
                 }
             }
             // remove lines that were split, and add the new lines
+            // sort and reverse because we need to delete items in decreasing index order (since a removed item moves following item indices -1)
             linesToRemove.Sort();
             linesToRemove.Reverse();
             foreach (int index in linesToRemove) lines.RemoveAt(index);
