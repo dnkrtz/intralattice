@@ -45,7 +45,6 @@ namespace IntraLattice
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddLineParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
-            pManager.AddPointParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -76,36 +75,18 @@ namespace IntraLattice
                 // "GRID"
                 case 0:
                     // generate nodes
-                    nodes.Add(new Point3d(0, 0, 0));
-                    nodes.Add(new Point3d(d, 0, 0));
-                    nodes.Add(new Point3d(d, d, 0));
-                    nodes.Add(new Point3d(0, d, 0));
-                    nodes.Add(new Point3d(0, 0, d));
-                    nodes.Add(new Point3d(d, 0, d));
-                    nodes.Add(new Point3d(d, d, d));
-                    nodes.Add(new Point3d(0, d, d));
+                    makeCornerNodes(ref nodes, d);
                     // generate struts
-                    foreach (int i in (new int[3] { 1, 3, 4 }))
-                        lines.Add(new Line(nodes[0], nodes[i]));
-                    foreach (int i in (new int[3] { 1, 3, 6 }))
-                        lines.Add(new Line(nodes[2], nodes[i]));
-                    foreach (int i in (new int[3] { 1, 4, 6 }))
-                        lines.Add(new Line(nodes[5], nodes[i]));
-                    foreach (int i in (new int[3] { 3, 4, 6 }))
-                        lines.Add(new Line(nodes[7], nodes[i]));
+                    foreach (int i in (new int[3] { 1, 3, 4 }))     lines.Add(new Line(nodes[0], nodes[i]));
+                    foreach (int i in (new int[3] { 1, 3, 6 }))     lines.Add(new Line(nodes[2], nodes[i]));
+                    foreach (int i in (new int[3] { 1, 4, 6 }))     lines.Add(new Line(nodes[5], nodes[i]));
+                    foreach (int i in (new int[3] { 3, 4, 6 }))     lines.Add(new Line(nodes[7], nodes[i]));
                     break;
                 
                 // "X"
                 case 1:
                     // generate nodes
-                    nodes.Add(new Point3d(0, 0, 0));
-                    nodes.Add(new Point3d(d, 0, 0));
-                    nodes.Add(new Point3d(d, d, 0));
-                    nodes.Add(new Point3d(0, d, 0));
-                    nodes.Add(new Point3d(0, 0, d));
-                    nodes.Add(new Point3d(d, 0, d));
-                    nodes.Add(new Point3d(d, d, d));
-                    nodes.Add(new Point3d(0, d, d));
+                    makeCornerNodes(ref nodes, d);
                     // generate struts
                     lines.Add(new Line(nodes[0], nodes[6]));
                     lines.Add(new Line(nodes[1], nodes[7]));
@@ -116,40 +97,22 @@ namespace IntraLattice
                 // "STAR"
                 case 2:
                     // generate nodes
-                    nodes.Add(new Point3d(0, 0, 0));
-                    nodes.Add(new Point3d(d, 0, 0));
-                    nodes.Add(new Point3d(d, d, 0));
-                    nodes.Add(new Point3d(0, d, 0));
-                    nodes.Add(new Point3d(0, 0, d));
-                    nodes.Add(new Point3d(d, 0, d));
-                    nodes.Add(new Point3d(d, d, d));
-                    nodes.Add(new Point3d(0, d, d));
+                    makeCornerNodes(ref nodes, d);
                     // generate struts
                     lines.Add(new Line(nodes[0], nodes[6]));
                     lines.Add(new Line(nodes[1], nodes[7]));
                     lines.Add(new Line(nodes[3], nodes[5]));
                     lines.Add(new Line(nodes[2], nodes[4]));
-                    foreach (int i in (new int[3] { 1, 3, 4 }))
-                        lines.Add(new Line(nodes[0], nodes[i]));
-                    foreach (int i in (new int[3] { 1, 3, 6 }))
-                        lines.Add(new Line(nodes[2], nodes[i]));
-                    foreach (int i in (new int[3] { 1, 4, 6 }))
-                        lines.Add(new Line(nodes[5], nodes[i]));
-                    foreach (int i in (new int[3] { 3, 4, 6 }))
-                        lines.Add(new Line(nodes[7], nodes[i]));
+                    foreach (int i in (new int[3] { 1, 3, 4 }))     lines.Add(new Line(nodes[0], nodes[i]));
+                    foreach (int i in (new int[3] { 1, 3, 6 }))     lines.Add(new Line(nodes[2], nodes[i]));
+                    foreach (int i in (new int[3] { 1, 4, 6 }))     lines.Add(new Line(nodes[5], nodes[i]));
+                    foreach (int i in (new int[3] { 3, 4, 6 }))     lines.Add(new Line(nodes[7], nodes[i]));
                     break;
 
                 // "CROSS"
                 case 3:
                     // generate nodes
-                    nodes.Add(new Point3d(0, 0, 0));
-                    nodes.Add(new Point3d(d, 0, 0));
-                    nodes.Add(new Point3d(d, d, 0));
-                    nodes.Add(new Point3d(0, d, 0));
-                    nodes.Add(new Point3d(0, 0, d));
-                    nodes.Add(new Point3d(d, 0, d));
-                    nodes.Add(new Point3d(d, d, d));
-                    nodes.Add(new Point3d(0, d, d));
+                    makeCornerNodes(ref nodes, d);
                     // generate struts
                     foreach (int i in (new int[2] { 5, 7 }))
                     {
@@ -171,14 +134,7 @@ namespace IntraLattice
                 // "TESSERACT"
                 case 4:
                     // generate nodes
-                    nodes.Add(new Point3d(0, 0, 0));        // outer nodes
-                    nodes.Add(new Point3d(d, 0, 0));
-                    nodes.Add(new Point3d(d, d, 0));
-                    nodes.Add(new Point3d(0, d, 0));
-                    nodes.Add(new Point3d(0, 0, d));
-                    nodes.Add(new Point3d(d, 0, d));
-                    nodes.Add(new Point3d(d, d, d));
-                    nodes.Add(new Point3d(0, d, d));
+                    makeCornerNodes(ref nodes, d);          // outer nodes
                     nodes.Add(new Point3d(d/4, d/4, d/4));  // inner nodes
                     nodes.Add(new Point3d(3*d/4, d/4, d/4));
                     nodes.Add(new Point3d(3*d/4, 3*d/4, d/4));
@@ -265,17 +221,10 @@ namespace IntraLattice
                     lines.Add(new Line(nodes[8], nodes[15]));
                     break;
 
-                // "OCTAHEDRAL"
+                // "OCTET"
                 case 6:
                     // generate nodes
-                    nodes.Add(new Point3d(0, 0, 0));
-                    nodes.Add(new Point3d(0, d, 0));
-                    nodes.Add(new Point3d(d, d, 0));
-                    nodes.Add(new Point3d(d, 0, 0));
-                    nodes.Add(new Point3d(0, 0, d));
-                    nodes.Add(new Point3d(0, d, d));
-                    nodes.Add(new Point3d(d, d, d));
-                    nodes.Add(new Point3d(d, 0, d));
+                    makeCornerNodes(ref nodes, d);
                     nodes.Add(new Point3d(d, d/2, d/2));
                     nodes.Add(new Point3d(d/2, d, d/2));
                     nodes.Add(new Point3d(0, d/2, d/2));
@@ -287,23 +236,35 @@ namespace IntraLattice
                         lines.Add(new Line(nodes[12], nodes[i]));
                     foreach (int i in new int[8] { 4, 5, 6, 7, 8, 9, 10, 11 })
                         lines.Add(new Line(nodes[13], nodes[i]));
-                    foreach (int i in new int[4] { 0, 1, 4, 5 })
+                    foreach (int i in new int[4] { 0, 3, 4, 7 })
                         lines.Add(new Line(nodes[10], nodes[i]));
-                    foreach (int i in new int[6] { 1, 2, 5, 6, 8, 10 })
+                    foreach (int i in new int[6] { 2, 3, 6, 7, 8, 10 })
                         lines.Add(new Line(nodes[9], nodes[i]));
-                    foreach (int i in new int[4] { 2, 3, 6, 7 })
+                    foreach (int i in new int[4] { 1, 2, 5, 6 })
                         lines.Add(new Line(nodes[8], nodes[i]));
-                    foreach (int i in new int[6] { 0, 3, 4, 7, 8, 10 })
+                    foreach (int i in new int[6] { 0, 1, 4, 5, 8, 10 })
                         lines.Add(new Line(nodes[11], nodes[i]));
                     break;
             }
 
+            // not really required, since it's done by the Frame module, but can help isolate issues
             CellTools.FixIntersections(ref lines);
 
             // 8. Set output
-            DA.SetDataList(0, lines);
-            DA.SetDataList(1, nodes);
-            
+            DA.SetDataList(0, lines);            
+        }
+
+        // Quick method for generating the corner nodes of a cell
+        private void makeCornerNodes(ref List<Point3d> nodes, double d)
+        {
+            nodes.Add(new Point3d(0, 0, 0));
+            nodes.Add(new Point3d(d, 0, 0));
+            nodes.Add(new Point3d(d, d, 0));
+            nodes.Add(new Point3d(0, d, 0));
+            nodes.Add(new Point3d(0, 0, d));
+            nodes.Add(new Point3d(d, 0, d));
+            nodes.Add(new Point3d(d, d, d));
+            nodes.Add(new Point3d(0, d, d));
         }
 
         /// <summary>

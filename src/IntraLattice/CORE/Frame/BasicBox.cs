@@ -18,7 +18,7 @@ using Grasshopper;
 
 namespace IntraLattice
 {
-    public class ConformBox : GH_Component
+    public class BasicBox : GH_Component
     {
 
         /// <summary>
@@ -28,8 +28,8 @@ namespace IntraLattice
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public ConformBox()
-            : base("Conform Box", "ConformBox",
+        public BasicBox()
+            : base("Basic Box", "BasicBox",
                 "Generates a lattice box.",
                 "IntraLattice2", "Frame")
         {

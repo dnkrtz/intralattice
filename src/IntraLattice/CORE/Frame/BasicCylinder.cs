@@ -17,10 +17,10 @@ using Grasshopper;
 
 namespace IntraLattice
 {
-    public class ConformCylinder : GH_Component
+    public class BasicCylinder : GH_Component
     {
-        public ConformCylinder()
-            : base("Conform Cylinder", "ConformCylinder",
+        public BasicCylinder()
+            : base("Basic Cylinder", "BasicCylinder",
                 "Generates a conformal lattice cylinder.",
                 "IntraLattice2", "Frame")
         {
@@ -35,7 +35,7 @@ namespace IntraLattice
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 15);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 4);
             pManager.AddIntegerParameter("Morph", "Morph", "0: No Morph\n1: Space Morph\n2: Bezier Morph", GH_ParamAccess.item, 0);
-            pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
+            pManager.AddNumberParameter("Morph Factor", "MF", "Contraction factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)

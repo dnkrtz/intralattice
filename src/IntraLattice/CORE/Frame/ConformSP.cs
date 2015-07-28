@@ -42,7 +42,7 @@ namespace IntraLattice.FRAME
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, 0);
-            pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
+            pManager.AddNumberParameter("Morph Factor", "MF", "Contraction factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 
         /// <summary>
