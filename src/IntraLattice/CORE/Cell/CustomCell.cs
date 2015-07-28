@@ -81,6 +81,9 @@ namespace IntraLattice
             Plane[] zx = new Plane[2];
             zx[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.YAxis);
             zx[1] = new Plane(bound.Corner(true, false, true), Plane.WorldXY.YAxis);
+
+
+
             // Loop through nodes
             foreach (Point3d node in cell.Nodes)
             {
