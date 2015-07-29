@@ -69,12 +69,13 @@ namespace IntraLattice
             //====================================================================================
 
             // Initialize lists of objects
-            List<LatticePlate> plates = new List<LatticePlate>();
+            List<LatticePlate> struts = new List<LatticePlate>();
             List<LatticeNode> nodes = new List<LatticeNode>();
-            // To avoid creating duplicates nodes, this list stores which nodes have been created
-            Point3dList nodeLookup = new Point3dList();
-
+            
             // Cycle through all the struts, building the model as we go
+            // - No duplicate nodes are created
+            // - No duplicate struts are created
+            Point3dList nodeLookup = new Point3dList(); // To avoid creating duplicates nodes
             for (int i = 0; i < lineList.Count; i++)
             {
                 // Define plates for current strut
@@ -90,6 +91,7 @@ namespace IntraLattice
                 pts.Add(lineList[i].From); pts.Add(lineList[i].To);   // Start point first
 
                 // Loops over the 2 nodes, updating the lattice model
+                bool strutExists = true;
                 for (int j = 0; j < 2; j++)
                 {
                     int nodeIndex;
