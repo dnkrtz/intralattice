@@ -18,7 +18,7 @@ using Grasshopper;
 
 namespace IntraLattice
 {
-    public class ConformBox : GH_Component
+    public class BasicBox : GH_Component
     {
 
         /// <summary>
@@ -28,9 +28,9 @@ namespace IntraLattice
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public ConformBox()
-            : base("Conform Box", "ConformBox",
-                "Generates a lattice grid box.",
+        public BasicBox()
+            : base("Basic Box", "BasicBox",
+                "Generates a lattice box.",
                 "IntraLattice2", "Frame")
         {
         }
@@ -100,6 +100,7 @@ namespace IntraLattice
 
             // 5. Prepare normalized unit cell topology
             var cell = new UnitCell();
+            CellTools.FixIntersections(ref topology);
             CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
             CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
             CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes

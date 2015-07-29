@@ -11,7 +11,12 @@ namespace IntraLattice
 {
     public class HeterogenGradient : GH_Component
     {
-        public HeterogenGradient() : base("Heterogen Gradient", "HeterogenGradient", "Heterogeneous solidification (thickness gradient) of lattice wireframe", "IntraLattice2", "Solid") { }
+        public HeterogenGradient()
+            : base("Heterogen Gradient", "HeterogenGradient",
+                "Heterogeneous solidification (thickness gradient) of lattice wireframe",
+                "IntraLattice2", "Mesh")
+        {
+        }
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {

@@ -16,15 +16,15 @@ using System.Drawing;
 
 namespace IntraLattice
 {
-    public class ViewReport : GH_Component
+    public class MeshReport : GH_Component
     {
         // Mesh for previewing, declared at class level
         private Mesh m_mesh;
 
-        public ViewReport()
-            : base("View Report", "ViewReport",
+        public MeshReport()
+            : base("Mesh Report", "MeshReport",
                 "Verifies the validity of the mesh, and generates a preview",
-                "IntraLattice2", "Solid")
+                "IntraLattice2", "Utility")
         {
         }
 

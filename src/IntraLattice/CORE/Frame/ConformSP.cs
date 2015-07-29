@@ -37,12 +37,11 @@ namespace IntraLattice.FRAME
             pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
             pManager.AddSurfaceParameter("Surface", "Surf", "Surface to conform to", GH_ParamAccess.item);
             pManager.AddPointParameter("Point", "Pt", "Point", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Flip UV", "FlipUV", "Flip the U and V parameters on the surface", GH_ParamAccess.item, false); // default value is true
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, 0);
-            pManager.AddNumberParameter("Morph Factor", "MF", "Division factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
+            pManager.AddNumberParameter("Morph Factor", "MF", "Contraction factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
         }
 
         /// <summary>
@@ -65,7 +64,6 @@ namespace IntraLattice.FRAME
             var topology = new List<Line>();
             Surface surface = null;
             Point3d pt = Point3d.Unset;
-            bool flipUV = false;
             int nU = 0;
             int nV = 0;
             int nW = 0;
@@ -75,12 +73,11 @@ namespace IntraLattice.FRAME
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref surface)) { return; }
             if (!DA.GetData(2, ref pt)) { return; }
-            if (!DA.GetData(3, ref flipUV)) { return; }
-            if (!DA.GetData(4, ref nU)) { return; }
-            if (!DA.GetData(5, ref nV)) { return; }
-            if (!DA.GetData(6, ref nW)) { return; }
-            if (!DA.GetData(7, ref morphed)) { return; }
-            if (!DA.GetData(8, ref morphFactor)) { return; }
+            if (!DA.GetData(3, ref nU)) { return; }
+            if (!DA.GetData(4, ref nV)) { return; }
+            if (!DA.GetData(5, ref nW)) { return; }
+            if (!DA.GetData(6, ref morphed)) { return; }
+            if (!DA.GetData(7, ref morphFactor)) { return; }
 
             if (topology.Count < 2) { return; }
             if (!surface.IsValid) { return; }
@@ -94,24 +91,22 @@ namespace IntraLattice.FRAME
             var derivTree = new DataTree<Vector3d>();                               // will contain derivatives (du,dv) in a parallel tree
             var spaceTree = new DataTree<GeometryBase>();                           // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)  
 
-            // 3. Flip the UV parameters if specified
-            if (flipUV) surface = surface.Transpose();
-
-            // 4. Package the number of cells in each direction into an array
+            // 3. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
 
-            // 5. Normalize the UV-domain
+            // 4. Normalize the UV-domain
             Interval normalDomain = new Interval(0, 1);
             surface.SetDomain(0, normalDomain); // surface u-direction
             surface.SetDomain(1, normalDomain); // surface v-direction
 
-            // 6. Prepare normalized/formatted unit cell topology
+            // 5. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
+            CellTools.FixIntersections(ref topology);
             CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into a node indexpair list format
             CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
             CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
 
-            // 8. Let's create the actual lattice nodes now
+            // 6. Let's create the actual lattice nodes now
             //
             for (int u = 0; u <= N[0]; u++)
             {
@@ -181,12 +176,12 @@ namespace IntraLattice.FRAME
                 }
             }
 
-            // 9. Generate the struts
+            // 7. Generate the struts
             //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
             FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref spaceTree, ref cell, N, morphed, morphFactor);
 
-            // 10. Set output
+            // 8. Set output
             DA.SetDataList(0, struts);
             DA.SetDataTree(1, nodeTree);
 

@@ -19,7 +19,7 @@ namespace IntraLattice
     {
         public CustomCell()
             : base("CustomCell", "CustomCell",
-                "Use to define custom cells. Checks validity of cell and outputs topology.",
+                "Pre-processes a custom unit cell by check validity and outputting topology.",
                 "IntraLattice2", "Cell")
         {
         }
@@ -42,7 +42,18 @@ namespace IntraLattice
 
             // Convert curve input to line input
             var lines = new List<Line>();
-            foreach (LineCurve curve in curves) lines.Add(curve.Line);
+            foreach (Curve curve in curves)
+            {
+                // Make sure the curve is linear, if not, abort and return error
+                if (!curve.IsLinear())
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "All struts must be linear.");
+                    return;
+                }
+                // Convert curve to line
+                lines.Add(new Line(curve.PointAtStart, curve.PointAtEnd));
+                
+            }
 
             // Set tolerance
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
@@ -70,6 +81,9 @@ namespace IntraLattice
             Plane[] zx = new Plane[2];
             zx[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.YAxis);
             zx[1] = new Plane(bound.Corner(true, false, true), Plane.WorldXY.YAxis);
+
+
+
             // Loop through nodes
             foreach (Point3d node in cell.Nodes)
             {

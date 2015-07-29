@@ -62,6 +62,8 @@ namespace IntraLattice
                 }
             }
             // remove lines that were split, and add the new lines
+            // sort and reverse because we need to delete items in decreasing index order (since a removed item moves following item indices -1)
+            linesToRemove.Sort();
             linesToRemove.Reverse();
             foreach (int index in linesToRemove) lines.RemoveAt(index);
             lines.AddRange(splitLines);
@@ -92,14 +94,14 @@ namespace IntraLattice
                     {
                         cell.Nodes.Add(endPt);
                         nodeIndex.Add(cell.Nodes.Count - 1);
-                        cell.NodeStruts.Add(new List<int>());
+                        cell.NodeNeighbours.Add(new List<int>());
                     }
                 }
 
                 // Now we save the strut (as pair of node indices)
-                cell.StrutNodes.Add(new IndexPair(nodeIndex[0], nodeIndex[1]));
-                cell.NodeStruts[nodeIndex[0]].Add(nodeIndex[1]);
-                cell.NodeStruts[nodeIndex[1]].Add(nodeIndex[0]);
+                cell.NodePairs.Add(new IndexPair(nodeIndex[0], nodeIndex[1]));
+                cell.NodeNeighbours[nodeIndex[0]].Add(nodeIndex[1]);
+                cell.NodeNeighbours[nodeIndex[1]].Add(nodeIndex[0]);
             }
         }
 
@@ -179,10 +181,10 @@ namespace IntraLattice
 
             // now locate any struts that lie on the boundary planes
             List<int> strutsToRemove = new List<int>();
-            for (int i = 0; i < cell.StrutNodes.Count; i++)
+            for (int i = 0; i < cell.NodePairs.Count; i++)
             {
-                Point3d node1 = cell.Nodes[cell.StrutNodes[i].I];
-                Point3d node2 = cell.Nodes[cell.StrutNodes[i].J];
+                Point3d node1 = cell.Nodes[cell.NodePairs[i].I];
+                Point3d node2 = cell.Nodes[cell.NodePairs[i].J];
 
                 bool toRemove = false;
 
@@ -194,7 +196,7 @@ namespace IntraLattice
             }
             // discard them (reverse the list because when removing objects from list, all indices larger than the one being removed change by -1)
             strutsToRemove.Reverse();
-            foreach (int strutToRemove in strutsToRemove) cell.StrutNodes.RemoveAt(strutToRemove);
+            foreach (int strutToRemove in strutsToRemove) cell.NodePairs.RemoveAt(strutToRemove);
 
         }
 
@@ -204,9 +206,9 @@ namespace IntraLattice
     public class UnitCell
     {
         public Point3dList Nodes = new Point3dList();   // List of unique nodes (as Point3d)
-        public List<IndexPair> StrutNodes = new List<IndexPair>();  // List of node index pairs 
-        public List<List<int>> NodeStruts = new List<List<int>>();  // Adjacency list 
-        public List<int[]> NodePaths = new List<int[]>();   // Relative path of node in tree (u+?, v+?, w+?, ?)
+        public List<int[]> NodePaths = new List<int[]>();   // List of relative paths in tree (parallel to Nodes list)
+        public List<List<int>> NodeNeighbours = new List<List<int>>();  // List of node adjacency lists (parallel to Nodes list)
+        public List<IndexPair> NodePairs = new List<IndexPair>();  // List of struts as node index pairs
     }
 
 }

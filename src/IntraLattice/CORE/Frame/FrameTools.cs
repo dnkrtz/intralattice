@@ -41,7 +41,7 @@ namespace IntraLattice
                     {
                         // we're inside a unit cell
                         // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.StrutNodes)
+                        foreach (IndexPair cellStrut in cell.NodePairs)
                         {
                             // prepare the path of the nodes (path in tree)
                             int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
@@ -172,7 +172,7 @@ namespace IntraLattice
         /// - We remove the external nodes (the intersection nodes will replace them, since they are appended to the path in the trimStrut method)
         /// =================================================================
         /// </summary>
-        public static void UniformMapping(ref List<Curve> struts, ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref UnitCell cell, GeometryBase designSpace, int spaceType, float[] N)
+        public static void UniformMapping(ref List<Curve> struts, ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref UnitCell cell, GeometryBase designSpace, int spaceType, float[] N, double tol)
         {
             // nodes that must be removed from the data structure
             var nodesToRemove = new List<GH_Path>();
@@ -185,7 +185,7 @@ namespace IntraLattice
                     {
                         // we're inside a unit cell
                         // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.StrutNodes)
+                        foreach (IndexPair cellStrut in cell.NodePairs)
                         {
                             // prepare the path of the nodes (path in tree)
                             int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
@@ -250,7 +250,7 @@ namespace IntraLattice
                                     // Now, if an intersection point was found, trim the strut
                                     if (intersectionPts.Length > 0)
                                     {
-                                        testLine = FrameTools.TrimStrut(ref nodeTree, ref stateTree, ref nodesToRemove, IPath, JPath, intersectionPts[0], isInside);
+                                        testLine = FrameTools.TrimStrut(ref nodeTree, ref stateTree, ref nodesToRemove, IPath, JPath, intersectionPts[0], isInside, tol);
                                         // if the strut was succesfully trimmed, add it to the list
                                         if (testLine != null) struts.Add(testLine);
                                     }
@@ -292,7 +292,7 @@ namespace IntraLattice
         /// - Intersection point and information about inside/outside state are passed to this method, to know where to trim and which side to keep.
         /// =================================================================
         /// </summary>
-        public static LineCurve TrimStrut(ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref List<GH_Path> nodesToRemove, GH_Path IPath, GH_Path JPath, Point3d intersectionPt, bool[] isInside)
+        public static LineCurve TrimStrut(ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref List<GH_Path> nodesToRemove, GH_Path IPath, GH_Path JPath, Point3d intersectionPt, bool[] isInside, double trimTolerance)
         {
             GH_Path[] paths = new GH_Path[] { IPath, JPath };
             Point3d[] nodes = new Point3d[] { nodeTree[IPath, 0], nodeTree[JPath, 0] };
@@ -301,13 +301,15 @@ namespace IntraLattice
             // We only create strut if the trimmed strut is a certain length
             double strutLength = nodes[0].DistanceTo(nodes[1]);
 
+            // Loop through the 2 nodes
             for (int index=0; index<2; index++ )
             {
+                // if current node is inside
                 if (isInside[index])
                 {
                     double testLength = intersectionPt.DistanceTo(nodes[index]);
-                    // if trimmed length is less than 10% of full strut length
-                    if (testLength > strutLength * 0.1)
+                    // if trimmed length is greater than trim tolerance (i.e. minimum strut length)
+                    if (testLength > trimTolerance)
                     {
                         nodeTree.Add(intersectionPt, paths[(index + 1) % 2]); // the intersection point will replace the outside node in the tree
                         stateTree.Add(true, paths[(index + 1) % 2]);
@@ -315,6 +317,8 @@ namespace IntraLattice
                     }
                         
                 }
+                // otherwise, current node is outside and should be removed
+                // if it's not already in the nodesToRemove list, add it
                 else if (!nodesToRemove.Contains(paths[index]))
                 {
                     nodesToRemove.Add(paths[index]);

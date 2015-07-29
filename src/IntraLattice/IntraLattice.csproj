@@ -63,7 +63,7 @@
     <Compile Include="CORE\Cell\CellTools.cs" />
     <Compile Include="CORE\Cell\CustomCell.cs" />
     <Compile Include="CORE\Cell\TopologySymmetryCheck.cs" />
-    <Compile Include="CORE\Frame\ConformBox.cs" />
+    <Compile Include="CORE\Frame\BasicBox.cs" />
     <Compile Include="FEAInterface\Components\FEAInterfaceComponent.cs" />
     <Compile Include="FEAInterface\Components\PointLoadComponent.cs" />
     <Compile Include="FEAInterface\Components\SPCComponentComponent.cs" />
@@ -74,7 +74,7 @@
     <Compile Include="FEAInterface\Data\SPC.cs" />
     <Compile Include="FEAInterface\Manager\FileManager.cs" />
     <Compile Include="CORE\Frame\ConformSP.cs" />
-    <Compile Include="CORE\Frame\ConformCylinder.cs" />
+    <Compile Include="CORE\Frame\BasicCylinder.cs" />
     <Compile Include="CORE\Frame\ConformSS.cs" />
     <Compile Include="CORE\Frame\ConformSA.cs" />
     <Compile Include="CORE\Frame\InputTools.cs" />
@@ -88,7 +88,7 @@
     <Compile Include="CORE\Mesh\HeterogenGradient.cs" />
     <Compile Include="CORE\Mesh\InputGradient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CORE\Mesh\ViewReport.cs" />
+    <Compile Include="CORE\Utility\MeshReport.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
