@@ -47,6 +47,7 @@ namespace IntraLattice
             pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // default is 5
             pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
+            pManager.AddNumberParameter("Tolerance", "Tol", "Smallest allowed strut length", GH_ParamAccess.item, 0.2);
         }
 
         /// <summary>
@@ -72,6 +73,7 @@ namespace IntraLattice
             double xCellSize = 0;
             double yCellSize = 0;
             double zCellSize = 0;
+            double tol = 0; // the trim tolerance (i.e. minimum strut length)
 
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref designSpace)) { return; }
@@ -79,6 +81,7 @@ namespace IntraLattice
             if (!DA.GetData(3, ref xCellSize)) { return; }
             if (!DA.GetData(4, ref yCellSize)) { return; }
             if (!DA.GetData(5, ref zCellSize)) { return; }
+            if (!DA.GetData(6, ref tol)) { return; }
 
             if (topology.Count < 2) { return; }
             if (!designSpace.IsValid) { return; }
@@ -86,7 +89,11 @@ namespace IntraLattice
             if (xCellSize == 0) { return; } 
             if (yCellSize == 0) { return; }
             if (zCellSize == 0) { return; }
-
+            if (tol>=xCellSize || tol>=yCellSize || tol>=zCellSize)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Tolerance parameter cannot be larger than the unit cell dimensions.");
+                return;
+            }
             // 2. Validate the design space
             int spaceType = FrameTools.CastDesignSpace(ref designSpace);
             if (spaceType == 0)
@@ -184,7 +191,7 @@ namespace IntraLattice
 
             // 3. Compute list of struts
             var struts = new List<Curve>();
-            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, designSpace, spaceType, N);           
+            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, designSpace, spaceType, N, tol);           
                 
             // 8. Set output
             DA.SetDataList(0, struts);
