@@ -208,12 +208,34 @@ namespace IntraLattice
                         }
                     }
                 }
+                // otherwise, we're dealing with curves, so need a bit more intricate computation
                 else
                 {
-                    // sleeves for curved struts here
+                    Vector3d normal = strut.Curve.TangentAtStart;
+
+                    // Loops: j along strut, k around strut
+                    for (int j = 0; j <= divisions; j++)
+                    {
+                        double locParameter;
+                        strut.Curve.LengthParameter(startPlate.Offset + (length * j / divisions) , out locParameter);
+                        Point3d knucklePt = strut.Curve.PointAt(locParameter);
+                        Plane plane;
+                        strut.Curve.PerpendicularFrameAt(locParameter, out plane);
+                        double R = startRadius - j / (double)divisions * (startRadius - endRadius); //variable radius
+
+                        for (int k = 0; k < sides; k++)
+                        {
+                            double angle = k * 2 * Math.PI / sides + j * Math.PI / sides;
+                            sleeveMesh.Vertices.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle))); // create vertex
+
+                            // if plate points, save them
+                            if (j == 0) startPlate.Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
+                            if (j == divisions) endPlate.Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
+                        }
+                    }
                 }
 
-                // Create sleeve faces
+                // SLEEVE FACES
                 MeshTools.SleeveStitch(ref sleeveMesh, divisions, sides);
                 outMesh.Append(sleeveMesh);
 
