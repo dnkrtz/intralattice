@@ -138,29 +138,4 @@ namespace IntraLattice
         }
     }
 
-    // The LatticePlate object
-    public class LatticePlate
-    {
-        public int NodeIndex;       // index of its parent node
-        public double Offset;       // offset value
-        public Vector3d Normal;     // direction of offset
-        public double Radius;       // radius of the plate
-        public List<Point3d> Vtc = new List<Point3d>();    // vertices (at index 0 is the centerpoint vertex)
-    }
-
-    // The LatticeNode object
-    public class LatticeNode
-    {
-        public Point3d Point3d;     // coordinates of node
-        public List<int> PlateIndices = new List<int>();    // indices of the plates associated to this node
-
-        // constructor sets coordinate
-        public LatticeNode(Point3d SetPoint3d)
-        {
-            Point3d = SetPoint3d;
-        }
-    }
-
-
-
 }
