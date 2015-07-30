@@ -35,8 +35,8 @@ namespace IntraLattice
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            //pManager.AddPointParameter("Vertices", "V", "Lattice Mesh Vertices", GH_ParamAccess.list);
             pManager.AddMeshParameter("Mesh", "M", "Lattice Mesh", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Hulls", "V", "Lattice Mesh Vertices", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -74,10 +74,14 @@ namespace IntraLattice
             Point3dList nodeLookup = new Point3dList();
             List<IndexPair> nodePairLookup = new List<IndexPair>();
 
+            
+
             // Loop over list of struts
             for (int i = 0; i < inputStruts.Count; i++ )
             {
                 Curve strut = inputStruts[i];
+                // if strut is invalid, skip it
+                if (!strut.IsValid) continue;
 
                 Point3d[] nodes = new Point3d[2] { strut.PointAtStart, strut.PointAtEnd };
                 List<int> nodeIndices = new List<int>();
@@ -103,7 +107,17 @@ namespace IntraLattice
 
                 // If strut doesn't exist, we create it
                 IndexPair nodePair = new IndexPair(nodeIndices[0], nodeIndices[1]);
-                if (nodePairLookup.Count == 0 || !nodePairLookup.Contains(nodePair))
+                bool strutExists = false;
+                foreach (IndexPair checkPair in nodePairLookup)
+                {
+                    if (checkPair.Equals(nodePair))
+                    {
+                        strutExists = true;
+                        break;
+                    }
+                }
+
+                if (nodePairLookup.Count == 0 || !strutExists)
                 {
                     // construct strut
                     lattice.Struts.Add(new Strut(strut, nodePair));
@@ -114,6 +128,7 @@ namespace IntraLattice
                     // set strut relational parameters
                     IndexPair platePair = new IndexPair(lattice.Plates.Count - 2, lattice.Plates.Count - 1);
                     lattice.Struts[strutIndex].PlatePair = platePair;
+                    nodePairLookup.Add(nodePair);
                     // set node relational parameters
                     lattice.Nodes[nodeIndices[0]].StrutIndices.Add(strutIndex);
                     lattice.Nodes[nodeIndices[1]].StrutIndices.Add(strutIndex);
@@ -121,7 +136,7 @@ namespace IntraLattice
                     lattice.Nodes[nodeIndices[1]].PlateIndices.Add(platePair.J);
                 }
 
-                // if lattice is thought to be linear, but the curve is not linear
+                // if lattice is thought to be linear, but the curve is not linear, update boolean
                 if (latticeIsLinear && !strut.IsLinear()) latticeIsLinear = false;
             }
 
@@ -134,7 +149,7 @@ namespace IntraLattice
             // Loop over nodes
             foreach (Node node in lattice.Nodes)
             {
-                node.Radius = 1;
+                node.Radius = radiusList[0];
             }
 
 
@@ -208,7 +223,7 @@ namespace IntraLattice
                         }
                     }
                 }
-                // otherwise, we're dealing with curves, so need a bit more intricate computation
+                // otherwise, we're dealing with curves, so need to travel along curve and compute tangent frames at each knuckle
                 else
                 {
                     Vector3d normal = strut.Curve.TangentAtStart;
@@ -241,9 +256,53 @@ namespace IntraLattice
 
             }
 
+            //====================================================================================
+            // STEP 5 - Construct hull meshes
+            // 
+            //====================================================================================
+
+            List<Mesh> hullMeshList = new List<Mesh>();
+
+            // HULLS - Loop over all nodes
+            for (int i = 0; i < lattice.Nodes.Count; i++)
+            {
+                Node node = lattice.Nodes[i];
+
+                int plateCount = lattice.Nodes[i].PlateIndices.Count;
+                // If node has a single plate, create an endmesh
+                if (plateCount < 2)
+                {
+                    Mesh endMesh = new Mesh();
+                    // Add all plate points to mesh vertices
+                    foreach (Point3d platePoint in lattice.Plates[node.PlateIndices[0]].Vtc)
+                        endMesh.Vertices.Add(platePoint);
+                    MeshTools.EndFaceStitch(ref endMesh, sides);
+                    outMesh.Append(endMesh);
+                }
+                // If node has more than 1 plate, create a hullmesh
+                else
+                {
+                    Mesh hullMesh = new Mesh();
+
+                    // Gather all hull points (i.e. all plate points of the node)
+                    List<Point3d> hullPoints = new List<Point3d>();
+                    foreach (int pIndex in node.PlateIndices) hullPoints.AddRange(lattice.Plates[pIndex].Vtc);
+                    MeshTools.ConvexHull(ref hullMesh, hullPoints, sides);
+
+
+                    hullMeshList.Add(hullMesh);
+                }
+            }
+
+            // POST-PROCESS FINAL MESH
+            outMesh.Vertices.CombineIdentical(true, true);
+            outMesh.FaceNormals.ComputeFaceNormals();
+            outMesh.UnifyNormals();
+            outMesh.Normals.ComputeNormals();
+
 
             DA.SetData(0, outMesh);
-
+            DA.SetDataList(1, hullMeshList);
 
         }
 

@@ -133,8 +133,8 @@ namespace IntraLattice
                         for (int w = 0; w <= N[2]; w++)
                         {
                             // these conditionals enforce the boundary, no nodes are created beyond the upper boundary
-                            if (u == N[0] && usub != 0) continue;
-                            if (v == N[1] && vsub != 0) continue;
+                            if (u == N[0]) break;
+                            if (v == N[1] && vsub != 0) break;
                             if (w == N[2] && wsub != 0) continue;
 
                             // add point to gridTree
