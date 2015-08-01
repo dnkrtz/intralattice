@@ -74,8 +74,6 @@ namespace IntraLattice
             Point3dList nodeLookup = new Point3dList();
             List<IndexPair> nodePairLookup = new List<IndexPair>();
 
-            
-
             // Loop over list of struts
             for (int i = 0; i < inputStruts.Count; i++ )
             {
@@ -83,10 +81,11 @@ namespace IntraLattice
                 // if strut is invalid, skip it
                 if (!strut.IsValid) continue;
 
+                // We must ignore duplicate nodes
                 Point3d[] nodes = new Point3d[2] { strut.PointAtStart, strut.PointAtEnd };
                 List<int> nodeIndices = new List<int>();
-
                 // Loop over end points of strut
+                // Check if node is already in nodeLookup list, if so, we use its index instead of creating a new node
                 for (int j = 0; j < 2; j++ )
                 {
                     Point3d pt = nodes[j];
@@ -105,20 +104,13 @@ namespace IntraLattice
                     }
                 }
 
-                // If strut doesn't exist, we create it
+                // We must ignore duplicate struts
                 IndexPair nodePair = new IndexPair(nodeIndices[0], nodeIndices[1]);
-                bool strutExists = false;
-                foreach (IndexPair checkPair in nodePairLookup)
+                // So we only create the strut if it doesn't exist yet (check nodePairLookup list)
+                if (nodePairLookup.Count == 0 || !nodePairLookup.Contains(nodePair))
                 {
-                    if (checkPair.Equals(nodePair))
-                    {
-                        strutExists = true;
-                        break;
-                    }
-                }
-
-                if (nodePairLookup.Count == 0 || !strutExists)
-                {
+                    // update the lookup list
+                    nodePairLookup.Add(nodePair);
                     // construct strut
                     lattice.Struts.Add(new Strut(strut, nodePair));
                     int strutIndex = lattice.Struts.Count - 1;
@@ -128,7 +120,6 @@ namespace IntraLattice
                     // set strut relational parameters
                     IndexPair platePair = new IndexPair(lattice.Plates.Count - 2, lattice.Plates.Count - 1);
                     lattice.Struts[strutIndex].PlatePair = platePair;
-                    nodePairLookup.Add(nodePair);
                     // set node relational parameters
                     lattice.Nodes[nodeIndices[0]].StrutIndices.Add(strutIndex);
                     lattice.Nodes[nodeIndices[1]].StrutIndices.Add(strutIndex);
@@ -155,7 +146,8 @@ namespace IntraLattice
 
             //====================================================================================
             // STEP 3 - Compute plate offsets
-            // Strut radius is node-based
+            // Each plate is offset from its parent node, to avoid mesh overlaps.
+            // Uses trigonometric conditions to compute the offset requried.
             //====================================================================================
 
             // Loop over nodes
@@ -186,11 +178,11 @@ namespace IntraLattice
                 Mesh sleeveMesh = new Mesh();
 
                 Strut strut = lattice.Struts[i];
-                Plate startPlate = lattice.Plates[strut.PlatePair.I];
-                Plate endPlate = lattice.Plates[strut.PlatePair.J];
-                startPlate.Vtc.Add(strut.Curve.PointAtLength(startPlate.Offset));   // centerpoint
+                Plate startPlate = lattice.Plates[strut.PlatePair.I];   // plate for the start of the strut
+                Plate endPlate = lattice.Plates[strut.PlatePair.J]; 
+                startPlate.Vtc.Add(strut.Curve.PointAtLength(startPlate.Offset));   // add centerpoint
                 endPlate.Vtc.Add(strut.Curve.PointAtLength(strut.Curve.GetLength() - endPlate.Offset));
-                double startRadius = lattice.Nodes[strut.NodePair.I].Radius;
+                double startRadius = lattice.Nodes[strut.NodePair.I].Radius;    // radius at start of strut
                 double endRadius = lattice.Nodes[strut.NodePair.J].Radius;
 
                 // compute the number of divisions
@@ -199,9 +191,10 @@ namespace IntraLattice
                 double divisions = Math.Max((Math.Round(length * 0.5 / avgRadius) * 2), 2); // Number of sleeve divisions (must be even)
 
                 // SLEEVE VERTICES
+                // 
                 // ================
-                // if linear lattice
-                if (latticeIsLinear)
+                // if linear lattice, we don't need to compute the strut tangent more than once
+                if (strut.Curve.IsLinear())
                 {
                     Vector3d normal = strut.Curve.TangentAtStart;
 
@@ -241,11 +234,12 @@ namespace IntraLattice
                         for (int k = 0; k < sides; k++)
                         {
                             double angle = k * 2 * Math.PI / sides + j * Math.PI / sides;
-                            sleeveMesh.Vertices.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle))); // create vertex
+                            Point3d newVtx = plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle));
+                            sleeveMesh.Vertices.Add(newVtx); // create vertex
 
                             // if plate points, save them
-                            if (j == 0) startPlate.Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
-                            if (j == divisions) endPlate.Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
+                            if (j == 0) startPlate.Vtc.Add(newVtx);
+                            if (j == divisions) endPlate.Vtc.Add(newVtx);
                         }
                     }
                 }
@@ -288,7 +282,6 @@ namespace IntraLattice
                     List<Point3d> hullPoints = new List<Point3d>();
                     foreach (int pIndex in node.PlateIndices) hullPoints.AddRange(lattice.Plates[pIndex].Vtc);
                     MeshTools.ConvexHull(ref hullMesh, hullPoints, sides);
-
 
                     hullMeshList.Add(hullMesh);
                 }
