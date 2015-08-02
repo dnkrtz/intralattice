@@ -82,7 +82,7 @@ namespace IntraLattice
             zx[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.YAxis);
             zx[1] = new Plane(bound.Corner(true, false, true), Plane.WorldXY.YAxis);
 
-
+            bool[] minCheck = new bool[3] {false, false, false};  // To make sure each pair of faces has a node lying onit
 
             // Loop through nodes
             foreach (Point3d node in cell.Nodes)
@@ -91,29 +91,48 @@ namespace IntraLattice
                 // First, check if node requires a mirror node, and where that mirror node should be (testPoint)
                 Point3d testPoint = Point3d.Unset;
                 
+                // XY faces
                 if (Math.Abs(xy[0].DistanceTo(node)) < tol)
+                {
                     testPoint = new Point3d(node.X, node.Y, xy[1].OriginZ);
+                    minCheck[0] = true;
+                }
                 if (Math.Abs(xy[1].DistanceTo(node)) < tol)
                     testPoint = new Point3d(node.X, node.Y, xy[0].OriginZ);
+                // YZ faces
                 if (Math.Abs(yz[0].DistanceTo(node)) < tol)
+                {
                     testPoint = new Point3d(yz[1].OriginX, node.Y, node.Z);
+                    minCheck[1] = true;
+                }
                 if (Math.Abs(yz[1].DistanceTo(node)) < tol)
                     testPoint = new Point3d(yz[0].OriginX, node.Y, node.Z);
+                // ZX faces
                 if (Math.Abs(zx[0].DistanceTo(node)) < tol)
+                {
                     testPoint = new Point3d(node.X, zx[1].OriginY, node.Z);
+                    minCheck[2] = true;
+                }
                 if (Math.Abs(zx[1].DistanceTo(node)) < tol)
                     testPoint = new Point3d(node.X, zx[0].OriginY, node.Z);
+
                 // Now, check if the mirror node exists
                 if (testPoint != Point3d.Unset)
                 {
                     int testPointIndex = cell.Nodes.ClosestIndex(testPoint);
                     if (testPoint.DistanceTo(cell.Nodes[testPointIndex]) > tol)
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your unit cell failed the validity check - opposing faces must be identical.");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - opposing faces must be identical.");
                         return;
                     }
                 }
+            }
 
+            // Finally, ensure that all faces have a node on it
+            if (minCheck[0] == false || minCheck[1] == false || minCheck[2] == false)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - each face needs at least one node lying on it.");
+                return;
             }
 
             DA.SetDataList(0, lines);
