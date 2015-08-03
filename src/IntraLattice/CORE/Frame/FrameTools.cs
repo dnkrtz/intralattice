@@ -58,8 +58,9 @@ namespace IntraLattice
                                 // No morphing
                                 if ( morphed == 0 )
                                 {
-                                    LineCurve newStrut = new LineCurve(node1, node2);
-                                    struts.Add(newStrut);
+                                    LineCurve curve = new LineCurve(node1, node2);
+                                    if (curve != null && curve.IsValid)
+                                        struts.Add(curve);
                                 }
                                 // Space morphing
                                 else if ( morphed == 1 )
@@ -129,7 +130,8 @@ namespace IntraLattice
                                     // Now create interpolated curve based on control points
                                     Curve curve = Curve.CreateInterpolatedCurve(controlPoints, 3);
 
-                                    struts.Add(curve);
+                                    if (curve != null && curve.IsValid)
+                                        struts.Add(curve);
                                 }
                                 // Bezier morphing
                                 else if ( morphed == 2 )
@@ -153,8 +155,9 @@ namespace IntraLattice
                                     controlPoints.Add(node2); // fourth control point (vertex)
                                     BezierCurve curve = new BezierCurve(controlPoints);
 
-                                    // finally, save the new strut (converted to nurbs)
-                                    struts.Add(curve.ToNurbsCurve());
+                                    if (curve != null && curve.IsValid)
+                                        // finally, save the new strut (converted to nurbs)
+                                        struts.Add(curve.ToNurbsCurve());
                                 }
                             
                             }

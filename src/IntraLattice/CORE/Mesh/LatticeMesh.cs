@@ -269,7 +269,7 @@ namespace IntraLattice
                 // 
                 // ================
                 // if linear lattice, we don't need to compute the strut tangent more than once
-                if (strut.Curve.IsLinear())
+                if (latticeIsLinear)
                 {
                     Vector3d normal = strut.Curve.TangentAtStart;
 
