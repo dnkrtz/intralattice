@@ -16,6 +16,7 @@ using Grasshopper;
 //              UniformMapping(written by Aidan)    - Generates trimmed wire lattice for a (u,v,w,i) node grid.
 //              TrimStrut (written by Aidan)        - Trims strut at an intersection point and keeps the trimmed strut that is inside a design space.
 //              CastDesignSpace (written by Aidan)  - Casts GeometryBase design space to a Brep or Mesh.
+//              
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 

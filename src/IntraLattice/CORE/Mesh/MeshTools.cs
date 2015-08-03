@@ -1,7 +1,9 @@
 ﻿using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino;
+using Rhino.Collections;
 using Rhino.Geometry;
+using Rhino.Geometry.Intersect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,12 +11,11 @@ using System.Text;
 
 // This is a set of methods & objects used by the mesh components
 // =====================================================
+// 
 // ConvexHull -> Implements a 3D convex hull algorithm that assumes all points lie on the hull (which is our case)
-// NormalizeMesh -> Adjusts orientation of face normals 
+// NormaliseMesh -> Adjusts orientation of face normals 
 // SleeveStitch -> Constructs the sleeve mesh faces (stitches the vertices)
 // EndFaceStitch -> Constructs the endface mesh faces (needed for single strut nodes)
-// LatticePlate -> *Object* representing the shared vertices between convex hulls and sleeves, based around a node
-// LatticeNode -> *Object* representing a lattice node
 
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
@@ -22,6 +23,131 @@ namespace IntraLattice
 {
     public class MeshTools
     {
+
+        public static void CleanNetwork(List<Curve> inputStruts, out Point3dList nodes, out List<IndexPair> nodePairs, out List<Curve> struts)
+        {
+            nodes = new Point3dList();
+            nodePairs = new List<IndexPair>();
+            struts = new List<Curve>();
+
+            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
+
+            // Loop over list of struts
+            for (int i = 0; i < inputStruts.Count; i++)
+            {
+                Curve strut = inputStruts[i];
+                // if strut is invalid, ignore it
+                if (strut == null || !strut.IsValid || strut.IsShort(100*tol)) continue;
+
+                // We must ignore duplicate nodes
+                Point3d[] pts = new Point3d[2] { strut.PointAtStart, strut.PointAtEnd };
+                List<int> nodeIndices = new List<int>();
+                // Loop over end points of strut
+                // Check if node is already in nodeLookup list, if so, we find its index instead of creating a new node
+                for (int j = 0; j < 2; j++)
+                {
+                    Point3d pt = pts[j];
+                    int closestIndex = nodes.ClosestIndex(pt);  // find closest node to current pt
+
+                    // If node already exists (within tolerance), set the index
+                    if (nodes.Count != 0 && pt.EpsilonEquals(nodes[closestIndex], tol))
+                        nodeIndices.Add(closestIndex);
+                    // If node doesn't exist
+                    else
+                    {
+                        // update lookup list
+                        nodes.Add(pt);
+                        nodeIndices.Add(nodes.Count - 1);
+                    }
+                }
+
+                // We must ignore duplicate struts
+                IndexPair nodePair = new IndexPair(nodeIndices[0], nodeIndices[1]);
+                // So we only create the strut if it doesn't exist yet (check nodePairLookup list)
+                if (nodePairs.Count == 0 || !nodePairs.Contains(nodePair))
+                {
+                    // update the lookup list
+                    nodePairs.Add(nodePair);
+                    strut.Domain = new Interval(0, 1);
+                    struts.Add(strut);
+                }
+            }
+        }
+
+        public static void StrutPairOffset(Node node, Lattice lattice, double tol, out double offset)
+        {
+            // the minimum offset is based on the radius at the node
+            // if equal to the radius, the convex hull is much more complex to clean, since some vertices might lie on the plane of other plates
+            // so we increase by 5% for robustness
+            double minOffset = node.Radius * 1.15;
+            offset = minOffset;
+
+            // Loop over all possible pairs of plates on the node
+            // This automatically avoids setting offsets for nodes with a single strut
+            for (int j = 0; j < node.StrutIndices.Count; j++)
+            {
+                for (int k = j + 1; k < node.StrutIndices.Count; k++)
+                {
+                    Strut strutA = lattice.Struts[node.StrutIndices[j]];
+                    Strut strutB = lattice.Struts[node.StrutIndices[k]];
+                    Plate plateA = lattice.Plates[node.PlateIndices[j]];
+                    Plate plateB = lattice.Plates[node.PlateIndices[k]];
+
+                    double maxOffset = Math.Min(strutA.Curve.GetLength(), strutB.Curve.GetLength());
+
+                    // if linear struts
+                    if (strutA.Curve.IsLinear(tol) && strutB.Curve.IsLinear(tol))
+                    {
+                        // compute the angle between the struts
+                        double theta = Vector3d.VectorAngle(plateA.Normal, plateB.Normal);
+                        // if angle is a reflex angle (angle greater than 180deg), we need to adjust it
+                        if (theta > Math.PI) theta = 2 * Math.PI - theta;
+
+                        // if angle is greater than 90deg, simple case: offset is based on radius at node
+                        if (theta > Math.PI / 2)
+                            offset = minOffset;
+                        // if angle is acute, we need some simple trig
+                        else
+                            offset = node.Radius / (Math.Sin(theta / 2.0));
+
+
+                    }
+                    // if curved struts
+                    else
+                    {
+                        // The curves we'll work with
+                        Curve curveA = strutA.Curve.DuplicateCurve();
+                        Curve curveB = strutB.Curve.DuplicateCurve();
+
+                        // May need to reverse direction
+                        if (strutA.Curve.PointAtEnd.EpsilonEquals(node.Point3d, tol))
+                            curveA.Reverse();
+                        if (strutB.Curve.PointAtEnd.EpsilonEquals(node.Point3d, tol))
+                            curveB.Reverse();
+
+                        // Now perform incremental offset
+                        for (offset = minOffset; offset < maxOffset; offset += minOffset / 5)
+                        {
+
+                            Sphere sphereA = new Sphere(curveA.PointAtLength(offset), node.Radius);
+                            Sphere sphereB = new Sphere(curveB.PointAtLength(offset), node.Radius);
+
+                            // Intersect the two planes
+                            Circle intersectLine;
+                            if (Intersection.SphereSphere(sphereA, sphereB, out intersectLine) == 0) break;
+
+                        }
+                    }
+
+                    // if offset is greater than previously set offset, adjust
+                    if (offset > plateA.Offset)
+                        plateA.Offset = offset;
+                    if (offset > plateB.Offset)
+                        plateB.Offset = offset;
+                }
+            }
+        }
+
 
         public static void CreatePlate(Plane plane, int sides, double radius, double startAngle, out List<Point3d> Vtc)
         {
