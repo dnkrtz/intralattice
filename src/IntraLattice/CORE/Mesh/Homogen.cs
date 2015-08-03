@@ -5,6 +5,7 @@ using System.Text;
 using Grasshopper.Kernel;
 using Rhino;
 using Rhino.Geometry;
+using Rhino.Collections;
 
 namespace IntraLattice
 {
@@ -19,9 +20,8 @@ namespace IntraLattice
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Lines", "L", "Wireframe to thicken", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Radius", "R", "Strut Radius", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Node Depth", "N", "Offset depth for nodes", GH_ParamAccess.item, 0);
+            pManager.AddCurveParameter("Struts", "Struts", "Wireframe to thicken", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Radius", "R", "Strut Radius", GH_ParamAccess.item);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -31,351 +31,287 @@ namespace IntraLattice
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //declare and set primary variables
+            // 0. Declare placeholder variables
+            List<Curve> inputStruts = new List<Curve>();
+            double radius = 0;
 
-            List<Curve> L = new List<Curve>();
-            List<double> R = new List<double>();
-            double ND = 0;
+            // 1. Attempt to fetch data inputs
+            if (!DA.GetDataList(0, inputStruts)) { return; }
+            if (!DA.GetData(1, ref radius)) { return; }
 
-            if (!DA.GetDataList(0, L)) { return; }
-            if (!DA.GetDataList(1, R)) { return; }
-            if (!DA.GetData(2, ref ND)) { return; }
+            // 2. Validate data
+            if (inputStruts == null || inputStruts.Count == 0) { return; }
+            if (radius <= 0) { return; }
 
-            if (L == null || L.Count == 0) { return; }
-            if (R == null || R.Count == 0 || R.Contains(0)) { return; }
-
-            //declare node and strut lists and reference lookups
-
-            double Sides = 6;
-            bool O = false;
-            List<double> Rs = new List<double>(R);
-            List<double> Re = new List<double>(R);
-
-            List<Point3d> Nodes = new List<Point3d>();
-            List<List<int>> NodeStruts = new List<List<int>>();
-            
-            List<Curve> Struts = new List<Curve>();
-            List<int> StrutNodes = new List<int>();
-            List<double> StrutRadii = new List<double>();
-
+            // 3. Set some variables
+            int sides = 6;  // Number of sides on each strut
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
-            //set the index counter for matching start and end radii from input list
-            int IdxL = 0; 
+            // 4. Initialize lattice object and output mesh
+            Lattice lattice = new Lattice();
+            Mesh outMesh = new Mesh();
 
-            //register unique nodes and struts, with reference lookups
-            //each full strut is broken into two half-struts, with the even-indexed
-            //element being the start point, and the odd-indexed element being the end point
 
-            //initialise first node
-            Nodes.Add(L[0].PointAtStart);
-            NodeStruts.Add(new List<int>());
+            //====================================================================================
+            //  PART A - Network cleanse
+            //  Clean the network of curves by:
+            //  - Removing duplicate nodes and struts
+            //  - Removing null, invalid or tiny curves
+            //  - (Future idea: Combining colinear struts)
+            //====================================================================================
 
-            Rhino.Collections.Point3dList NodeLookup = new Rhino.Collections.Point3dList(Nodes);
+            // A0. We use the following three lists to extract valid data from the input list
+            Point3dList nodeList = new Point3dList();
+            List<IndexPair> nodePairList = new List<IndexPair>();
+            List<Curve> strutList = new List<Curve>();
 
-            foreach (Curve StartL in L)
+            MeshTools.CleanNetwork(inputStruts, out nodeList, out nodePairList, out strutList);
+
+            //====================================================================================
+            // PART B - Data structure
+            // In this section, we construct the wireframe lattice
+            // Ensuring that no duplicate nodes or struts are present
+            //====================================================================================
+
+            // B0. Create nodes
+            foreach (Point3d node in nodeList)
+                lattice.Nodes.Add(new Node(node));
+
+            // B1. Create struts and plates
+            for (int i = 0; i < strutList.Count; i++)
             {
-                double StrutStartRadius = 0;
-                if (Rs.Count - 1 > IdxL) StrutStartRadius = Rs[IdxL];
-                else StrutStartRadius = Rs.Last();
+                lattice.Struts.Add(new Strut(strutList[i], nodePairList[i])); // assign
+                // construct plates
+                lattice.Plates.Add(new Plate(nodePairList[i].I, strutList[i].TangentAtStart));
+                lattice.Plates.Add(new Plate(nodePairList[i].J, -strutList[i].TangentAtEnd));
+                // set strut relational parameters
+                IndexPair platePair = new IndexPair(lattice.Plates.Count - 2, lattice.Plates.Count - 1);
+                lattice.Struts[i].PlatePair = platePair;
+                // set node relational parameters
+                lattice.Nodes[nodePairList[i].I].StrutIndices.Add(i);
+                lattice.Nodes[nodePairList[i].J].StrutIndices.Add(i);
+                lattice.Nodes[nodePairList[i].I].PlateIndices.Add(platePair.I);
+                lattice.Nodes[nodePairList[i].J].PlateIndices.Add(platePair.J);
+            }
 
-                double StrutEndRadius = 0;
-                if (Re.Count - 1 > IdxL) StrutEndRadius = Re[IdxL];
-                else StrutEndRadius = Re.Last();
 
-                Point3d StrutCenter = new Point3d((StartL.PointAtStart + StartL.PointAtEnd) / 2);
+            //====================================================================================
+            // PART C - Compute nodal radii
+            // Strut radius is node-based
+            //====================================================================================
 
-                int StartTestIdx = NodeLookup.ClosestIndex(StartL.PointAtStart);
-                if (Nodes[StartTestIdx].DistanceTo(StartL.PointAtStart) < tol)
+            // C0. Set radii
+            foreach (Node node in lattice.Nodes)
+            {
+                node.Radius = radius;
+            }
+
+
+            //====================================================================================
+            // PART D - Compute plate offsets
+            // Each plate is offset from its parent node, to avoid mesh overlaps.
+            //====================================================================================
+
+            // D0. Loop over nodes
+            for (int i = 0; i < lattice.Nodes.Count; i++)
+            {
+                // set the node being evaluated
+                Node node = lattice.Nodes[i];
+                // if node has only 1 strut, skip it
+                if (node.StrutIndices.Count < 2) continue;
+                
+                // compute the offsets required to avoid plate overlaps
+                double offset;
+                MeshTools.ComputeOffsets(node, lattice, tol, out offset);
+
+
+                // To improve the shape of the mesh at 'sharp nodes', we add an extra node plate
+                // This plate is in the direction of the negative sum of all normals
+                // We only create it if the strut set is 'sharp', meaning the struts are contained in a 180degree peripheral
+                bool isSharp = true;
+                Vector3d extraNormal = new Vector3d();  // sum of all normals
+                foreach (int plateIndex in node.PlateIndices)
+                    extraNormal += lattice.Plates[plateIndex].Normal;
+                foreach (int plateIndex in node.PlateIndices)
+                    if (Vector3d.VectorAngle(-extraNormal, lattice.Plates[plateIndex].Normal) < Math.PI / 2)
+                        isSharp = false;
+
+                //  if struts form a sharp corner, add an extra plate for a better convex hull shape
+                if (isSharp)
                 {
-                    NodeStruts[StartTestIdx].Add(Struts.Count);
-                    StrutNodes.Add(StartTestIdx);
+                    List<Point3d> Vtc;
+                    // plane offset from node slightly
+                    Plane plane = new Plane(node.Point3d - extraNormal / 6, -extraNormal);
+                    MeshTools.CreatePlate(plane, sides, node.Radius, 0, out Vtc);    // compute the vertices
+                    // add new plate and its vertices
+                    lattice.Plates.Add(new Plate(i, -extraNormal));
+                    int newPlateIndx = lattice.Plates.Count - 1;
+                    lattice.Plates[newPlateIndx].Vtc.AddRange(Vtc);
+                    node.PlateIndices.Add(newPlateIndx);
                 }
+
+            }
+
+            // IDEA : add a new loop here that adjusts radii to avoid overlapping struts
+
+
+
+            //====================================================================================
+            // PART E - Construct sleeve meshes and hull points
+            // 
+            //====================================================================================
+
+            // E0. Loop over struts
+            for (int i = 0; i < lattice.Struts.Count; i++)
+            {
+                Mesh sleeveMesh = new Mesh();
+
+                Strut strut = lattice.Struts[i];
+                Plate startPlate = lattice.Plates[strut.PlatePair.I];   // plate for the start of the strut
+                Plate endPlate = lattice.Plates[strut.PlatePair.J];
+                double startParam, endParam;
+                strut.Curve.LengthParameter(startPlate.Offset, out startParam);   // get start and end params of strut (accounting for offset)
+                strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
+                startPlate.Vtc.Add(strut.Curve.PointAt(startParam));    // set center point of star & end plates
+                endPlate.Vtc.Add(strut.Curve.PointAt(endParam));
+
+                // compute the number of divisions
+                double length = strut.Curve.GetLength(new Interval(startParam, endParam));
+                double divisions = Math.Max((Math.Round(length * 0.5 / radius) * 2), 2); // Number of sleeve divisions (must be even)
+
+                // SLEEVE VERTICES
+                // 
+                // ================
+                // if linear lattice, we don't need to compute the strut tangent more than once
+                if (strut.Curve.IsLinear())
+                {
+                    Vector3d normal = strut.Curve.TangentAtStart;
+
+                    // Loops: j along strut
+                    for (int j = 0; j <= divisions; j++)
+                    {
+                        Point3d knucklePt = startPlate.Vtc[0] + (normal * (length * j / divisions));
+                        Plane plane = new Plane(knucklePt, normal);
+                        double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
+
+                        List<Point3d> Vtc;
+                        MeshTools.CreatePlate(plane, sides, radius, startAngle, out Vtc);    // compute the vertices
+
+                        // if the vertices are hull points (plates that connect sleeves to node hulls), save them
+                        if (j == 0) startPlate.Vtc.AddRange(Vtc);
+                        if (j == divisions) endPlate.Vtc.AddRange(Vtc);
+
+                        sleeveMesh.Vertices.AddVertices(Vtc); // save vertices to sleeve mes
+                    }
+                }
+                // otherwise, we're dealing with curves, so need to travel along curve and compute tangent frames at each knuckle
                 else
                 {
-                    StrutNodes.Add(Nodes.Count);
-                    Nodes.Add(StartL.PointAtStart);
-                    NodeLookup.Add(StartL.PointAtStart);
-                    NodeStruts.Add(new List<int>());
-                    NodeStruts.Last().Add(Struts.Count());
+                    Vector3d normal = strut.Curve.TangentAtStart;
+
+                    // Loops: j along strut, k around strut
+                    for (int j = 0; j <= divisions; j++)
+                    {
+                        double locParameter = startParam + (j / divisions) * (endParam - startParam);
+
+                        Point3d knucklePt = strut.Curve.PointAt(locParameter);
+                        Plane plane;
+                        strut.Curve.PerpendicularFrameAt(locParameter, out plane);
+                        double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
+
+                        List<Point3d> Vtc;
+                        MeshTools.CreatePlate(plane, sides, radius, startAngle, out Vtc);    // compute the vertices
+
+                        // if the vertices are hull points (plates that connect sleeves to node hulls), save them
+                        if (j == 0) startPlate.Vtc.AddRange(Vtc);
+                        if (j == divisions) endPlate.Vtc.AddRange(Vtc);
+
+                        sleeveMesh.Vertices.AddVertices(Vtc); // save vertices to sleeve mesh
+
+                    }
                 }
-                Struts.Add(new LineCurve(StartL.PointAtStart, StrutCenter));
-                StrutRadii.Add(StrutStartRadius);
 
+                // SLEEVE FACES
+                MeshTools.SleeveStitch(ref sleeveMesh, divisions, sides);
+                outMesh.Append(sleeveMesh);
 
-                int EndTestIdx = NodeLookup.ClosestIndex(StartL.PointAtEnd);
-                if (Nodes[EndTestIdx].DistanceTo(StartL.PointAtEnd) < tol)
+            }
+
+            //====================================================================================
+            // STEP 5 - Construct hull meshes
+            // 
+            //====================================================================================
+
+            List<Mesh> hullMeshList = new List<Mesh>();
+
+            // HULLS - Loop over all nodes
+            for (int i = 0; i < lattice.Nodes.Count; i++)
+            {
+                Node node = lattice.Nodes[i];
+
+                int plateCount = lattice.Nodes[i].PlateIndices.Count;
+                // If node has a single plate, create an endmesh
+                if (plateCount < 2)
                 {
-                    NodeStruts[EndTestIdx].Add(Struts.Count);
-                    StrutNodes.Add(EndTestIdx);
+                    Mesh endMesh = new Mesh();
+                    // Add all plate points to mesh vertices
+                    foreach (Point3d platePoint in lattice.Plates[node.PlateIndices[0]].Vtc)
+                        endMesh.Vertices.Add(platePoint);
+                    MeshTools.EndFaceStitch(ref endMesh, sides);
+                    outMesh.Append(endMesh);
                 }
+                // If node has more than 1 plate, create a hullmesh
                 else
                 {
-                    StrutNodes.Add(Nodes.Count);
-                    Nodes.Add(StartL.PointAtEnd);
-                    NodeLookup.Add(StartL.PointAtEnd);
-                    NodeStruts.Add(new List<int>());
-                    NodeStruts.Last().Add(Struts.Count);
-                }
-                Struts.Add(new LineCurve(StartL.PointAtEnd, StrutCenter));
-                StrutRadii.Add(StrutEndRadius);
+                    Mesh hullMesh = new Mesh();
 
-                IdxL += 1;
-            }
+                    // Gather all hull points (i.e. all plate points of the node)
+                    List<Point3d> hullPoints = new List<Point3d>();
+                    foreach (int pIndex in node.PlateIndices) hullPoints.AddRange(lattice.Plates[pIndex].Vtc);
+                    MeshTools.ConvexHull(hullPoints, sides, out hullMesh);
 
-
-            Plane[] StrutPlanes = new Plane[Struts.Count]; //base plane for each strut
-            double[] PlaneOffsets = new double[Struts.Count]; //distance for each base plane to be set from node
-            Point3d[,] StrutHullVtc = new Point3d[Struts.Count, (int)Sides]; //two-dimensional array for vertices along each strut for executing hull
-            bool[] StrutSolo = new bool[Struts.Count]; //tag for struts that don't share a node with other struts (ends)
-            
-            Mesh Hulls = new Mesh(); //main output mesh
-
-            //cycle through each node to generate hulls
-            for (int NodeIdx = 0; NodeIdx < Nodes.Count; NodeIdx++)
-            {
-                List<int> StrutIndices = NodeStruts[NodeIdx];
-                double MinOffset = 0;
-                double MaxRadius = 0;
-
-                //orientation & size drivers for knuckle vertices
-                List<Vector3d> Knuckles = new List<Vector3d>();
-                double KnuckleMin = 0;
-
-                //compare all unique combinations of struts in a given node to calculate plane offsets for
-                //hulling operations and for adjusting vertices to potential non-convex hulls
-                for (int I1 = 0; I1 < StrutIndices.Count - 1; I1++)
-                {
-                    for (int I2 = I1 + 1; I2 < StrutIndices.Count; I2++)
+                    // Remove plate faces
+                    List<int> deleteFaces = new List<int>();
+                    foreach (int plateIndx in node.PlateIndices)
                     {
-                        //identify minimum offset distances for calculating hulls by comparing each outgoing strut to each other
-                        double R1 = StrutRadii[StrutIndices[I1]] / Math.Cos(Math.PI / Sides);
-                        double R2 = StrutRadii[StrutIndices[I2]] / Math.Cos(Math.PI / Sides);
-                        double Radius = Math.Max(R1, R2);
-                        double Theta = Vector3d.VectorAngle(Struts[StrutIndices[I1]].TangentAtStart, Struts[StrutIndices[I2]].TangentAtStart);
-                        double TestOffset = Radius * Math.Cos(Theta * 0.5) / Math.Sin(Theta * 0.5);
-                        if (TestOffset > MinOffset) MinOffset = TestOffset;
-                        if (MaxRadius < Radius) MaxRadius = Radius;
-                        //set offsets for shrinking hull vertices into a non-convex hull based on desired node offsets (ND) and adjacent struts
-                        double Offset1 = 0;
-                        double Offset2 = 0;
+                        List<Point3f> plateVtc;
+                        MeshTools.Point3dToPoint3f(lattice.Plates[plateIndx].Vtc, out plateVtc);
+                        // recall that strut plates have 'sides+1' vertices.
+                        // if the plate has only 'sides' vertices, it is an extra plate (for acute nodes), so we should keep it
+                        if (plateVtc.Count < sides + 1) continue;
 
-                        //calculates final offsets for potential shrinking of nodes into non-convex hull
-                        ExoTools.OffsetCalculator(Theta, R1, R2, ref Offset1, ref Offset2);
-
-                        if (PlaneOffsets[StrutIndices[I1]] < Offset1) PlaneOffsets[StrutIndices[I1]] = Math.Max(Offset1, ND);
-                        if (PlaneOffsets[StrutIndices[I2]] < Offset2) PlaneOffsets[StrutIndices[I2]] = Math.Max(Offset2, ND);
-
-                        //set offsets for knuckle to be the size of the smallest outgoing strut radius
-                        double KnuckleMinSet = Math.Min(StrutRadii[StrutIndices[I1]], StrutRadii[StrutIndices[I2]]);
-                        if (I1 == 0 || KnuckleMin > KnuckleMinSet) KnuckleMin = KnuckleMinSet;
-                    }
-                }
-
-                //ensures that if a two struts are linear to one another in a two-strut node that there is an offset for hulling 
-                if (MinOffset < RhinoDoc.ActiveDoc.ModelAbsoluteTolerance) MinOffset = MaxRadius * 0.5;
-
-                //direction for dealing with struts at ends
-                if (StrutIndices.Count == 1)
-                {
-                    PlaneOffsets[StrutIndices[0]] = 0;
-                    //PlaneOffsets[StrutIndices[0]] = ND;
-                    if (O) StrutSolo[StrutIndices[0]] = true;
-                }
-
-                //build base planes, offset them for hulling, and array hull vertices for each strut
-                for (int I1 = 0; I1 < StrutIndices.Count; I1++)
-                {
-                    //build base planes
-                    Curve Strut = Struts[StrutIndices[I1]];
-                    Plane StrutPlane;
-
-                    //sets the strut plane
-                    if (StrutIndices[I1] % 2 == 0) Strut.PerpendicularFrameAt(0, out StrutPlane);
-                    else
-                    {
-                        Curve LookupStrut = Struts[StrutIndices[I1] - 1];
-                        LookupStrut.PerpendicularFrameAt(0, out StrutPlane);
-                    }
-
-                    //offset planes for hulling
-                    StrutPlane.Origin = Strut.PointAtStart + Strut.TangentAtStart * MinOffset;
-                    double StrutRadius = StrutRadii[StrutIndices[I1]];
-
-                    //add strut tangent to list of knuckle orientation vectors
-                    Knuckles.Add(-Strut.TangentAtStart);
-
-                    //add hulling vertices
-                    for (int HV = 0; HV < Sides; HV++) StrutHullVtc[StrutIndices[I1], HV] = StrutPlane.PointAt(Math.Cos((HV / Sides) * Math.PI * 2) * StrutRadius, Math.Sin((HV / Sides) * Math.PI * 2) * StrutRadius);
-
-                    double OffsetMult = PlaneOffsets[StrutIndices[I1]];
-                    if (ND > OffsetMult) OffsetMult = ND;
-                    if (StrutIndices[I1] % 2 != 0) StrutPlane.Rotate(Math.PI, StrutPlane.YAxis, StrutPlane.Origin);
-
-                    if (StrutIndices.Count ==1) OffsetMult = 0;
-
-                    StrutPlanes[StrutIndices[I1]] = StrutPlane;
-                    StrutPlanes[StrutIndices[I1]].Origin = Strut.PointAtStart + Strut.TangentAtStart * OffsetMult;
-
-                }
-
-                //collect all of the hull points from each strut in a given node for hulling, including knuckle points
-
-                if (StrutIndices.Count > 1)
-                {
-                    List<Point3d> HullPts = new List<Point3d>();
-                    List<int> PlaneIndices = new List<int>();
-
-                    double KnuckleOffset = MinOffset * 0.5;
-
-                    for (int HV = 0; HV < Sides; HV++)
-                    {
-                        for (int I1 = 0; I1 < StrutIndices.Count; I1++)
+                        for (int j = 0; j < hullMesh.Faces.Count; j++)
                         {
-                            HullPts.Add(StrutHullVtc[StrutIndices[I1], HV]);
-                            PlaneIndices.Add(StrutIndices[I1]);
-                            if (HV == 0) 
-                            { 
-                                HullPts.Add(Nodes[NodeIdx] + (Knuckles[I1] * KnuckleOffset));
-                                PlaneIndices.Add(-1);
-                            }
-                        }
-                        double Angle = ((double)HV / Sides) * (Math.PI * 2);
-                    }
+                            Point3f ptA, ptB, ptC, ptD;
+                            hullMesh.Faces.GetFaceVertices(j, out ptA, out ptB, out ptC, out ptD);
 
-                    Rhino.Collections.Point3dList LookupPts = new Rhino.Collections.Point3dList(HullPts);
-
-                    //execute the hulling operation
-                    Mesh HullMesh = new Mesh();
-                    ExoTools.Hull(HullPts, ref HullMesh);
-                    ExoTools.NormaliseMesh(ref HullMesh);
-
-                    Point3d[] HullVertices = HullMesh.Vertices.ToPoint3dArray();
-                    List<int> FaceVertices = new List<int>();
-                    
-                    //relocate vertices to potentially non-convex configurations
-                    for (int HullVtx = 0; HullVtx < HullVertices.Length; HullVtx++)
-                    {
-                        int CloseIdx = LookupPts.ClosestIndex(HullVertices[HullVtx]);
-                        if (PlaneIndices[CloseIdx] > -1)
-                        {
-                            double OffsetMult = 0;
-                            if (ND > PlaneOffsets[PlaneIndices[CloseIdx]]) OffsetMult = ND - MinOffset;
-                            else OffsetMult = PlaneOffsets[PlaneIndices[CloseIdx]] - MinOffset;
-
-                            HullVertices[HullVtx] += StrutPlanes[PlaneIndices[CloseIdx]].ZAxis * OffsetMult;
-                            HullMesh.Vertices[HullVtx] = new Point3f((float)HullVertices[HullVtx].X, (float)HullVertices[HullVtx].Y, (float)HullVertices[HullVtx].Z);
-                            FaceVertices.Add(PlaneIndices[CloseIdx]);
-                        }
-                        else
-                        {
-                            Vector3d KnuckleVector = new Vector3d(HullVertices[HullVtx] - Nodes[NodeIdx]);
-                            KnuckleVector.Unitize();
-                            Point3d KnucklePt = Nodes[NodeIdx] + (KnuckleVector * KnuckleMin);
-                            HullMesh.Vertices[HullVtx] = new Point3f((float)KnucklePt.X, (float)KnucklePt.Y, (float)KnucklePt.Z);
-                            FaceVertices.Add(PlaneIndices[CloseIdx]);
+                            // check if the mesh face has vertices that belong to a single plate, if so we need to remove the face
+                            int matches = 0;
+                            foreach (Point3f testPt in plateVtc)
+                                if (testPt.EpsilonEquals(ptA, (float)tol) || testPt.EpsilonEquals(ptB, (float)tol) || testPt.EpsilonEquals(ptC, (float)tol))
+                                    matches++;
+                            // if matches == 3, we should remove the face
+                            if (matches == 3)
+                                deleteFaces.Add(j);
                         }
                     }
+                    deleteFaces.Reverse();
+                    foreach (int faceIndx in deleteFaces) hullMesh.Faces.RemoveAt(faceIndx);
 
-                    //delete all faces whose vertices are associated with the same plane
-                    List<int> DeleteFaces = new List<int>();
-
-                    for (int FaceIdx = 0; FaceIdx < HullMesh.Faces.Count; FaceIdx++)
-                    {
-                        if ((FaceVertices[HullMesh.Faces[FaceIdx].A] !=-1) && (FaceVertices[HullMesh.Faces[FaceIdx].A] == FaceVertices[HullMesh.Faces[FaceIdx].B]) &&
-                            (FaceVertices[HullMesh.Faces[FaceIdx].B] == FaceVertices[HullMesh.Faces[FaceIdx].C]))  DeleteFaces.Add(FaceIdx); 
-                    }
-                    HullMesh.Faces.DeleteFaces(DeleteFaces);
-                    ExoTools.NormaliseMesh(ref HullMesh);
-                    Hulls.Append(HullMesh);
-                }
-                else if (!O)
-                {
-                        Mesh EndMesh = new Mesh();
-
-                        double KnuckleOffset = ND * 0.5;
-                        EndMesh.Vertices.Add(Nodes[NodeIdx] + (Knuckles[0] * KnuckleOffset));
-
-                        for (int HullVtx = 0; HullVtx < Sides; HullVtx++)
-                        {
-                            EndMesh.Vertices.Add(StrutHullVtc[StrutIndices[0], HullVtx]);
-                            int StartVtx = HullVtx + 1;
-                            int EndVtx = HullVtx + 2;
-                            if (HullVtx == Sides - 1)  EndVtx = 1; 
-                            EndMesh.Faces.AddFace(0, StartVtx, EndVtx);
-                        }
-                        Hulls.Append(EndMesh);
+                    outMesh.Append(hullMesh);
+                    //hullMeshList.Add(hullMesh);
                 }
             }
 
-            //add stocking meshes between struts
-            Rhino.Collections.Point3dList MatchPts = new Rhino.Collections.Point3dList(Hulls.Vertices.ToPoint3dArray());
-            Mesh StrutMeshes = new Mesh();
+            // POST-PROCESS FINAL MESH
+            outMesh.Vertices.CombineIdentical(true, true);
+            outMesh.FaceNormals.ComputeFaceNormals();
+            outMesh.UnifyNormals();
+            outMesh.Normals.ComputeNormals();
 
-            //if a strut is overwhelmed by its nodes then output a sphere centered on the failing strut
-            Mesh FailStruts = new Mesh();
 
-            for (int I1 = 0; I1 <= Struts.Count; I1++)
-            {
-                if (I1 % 2 !=0)
-                {
-
-                    if (StrutPlanes[I1-1].Origin.DistanceTo(Struts[I1-1].PointAtStart) + StrutPlanes[I1].Origin.DistanceTo(Struts[I1].PointAtStart) > Struts[I1-1].GetLength()*2)
-                    {
-                        Plane FailPlane = new Plane(Struts[I1 - 1].PointAtStart, Struts[I1 - 1].TangentAtStart);
-                        Cylinder FailCylinder = new Cylinder(new Circle(FailPlane, (StrutRadii[I1] + StrutRadii[I1 - 1]) / 2), Struts[I1 - 1].GetLength()*2);
-                        FailStruts.Append(Mesh.CreateFromCylinder(FailCylinder,5,10));
-                    }
-
-                    Mesh StrutMesh = new Mesh();
-                    double StrutLength = StrutPlanes[I1 - 1].Origin.DistanceTo(StrutPlanes[I1].Origin);
-
-                    //calculate the number of segments between nodes
-                    double AvgRadius = (StrutRadii[I1] + StrutRadii[I1 - 1])/2;
-                    int Segments = (int)Math.Max((Math.Round(StrutLength * 0.5 / AvgRadius) * 2), 2);
-                    double PlnZ = StrutLength / Segments;
-
-                    bool Match = true;
-                    if (O && StrutSolo[I1 - 1]) Match = false;
-
-                    //build up vertices
-                    ExoTools.VertexAdd(ref StrutMesh, StrutPlanes[I1 - 1], Sides, StrutRadii[I1 - 1], Match, MatchPts, Hulls);
-                    double StrutIncrement = (StrutRadii[I1] - StrutRadii[I1 - 1]) / Segments;
-                    
-                    for (int PlnIdx = 1; PlnIdx <= Segments; PlnIdx++)
-                    {
-                        Plane PlnSet = new Plane(StrutPlanes[I1-1]);
-                        PlnSet.Rotate((PlnIdx % 2) * -(Math.PI / Sides), PlnSet.ZAxis);
-                        PlnSet.Origin = PlnSet.PointAt(0, 0, PlnIdx * PlnZ);
-                        bool Affix = false;
-                        if (PlnIdx == Segments && (!StrutSolo[I1] || (StrutSolo[I1] && !O))) Affix = true;
-                        ExoTools.VertexAdd(ref StrutMesh, PlnSet, Sides, StrutRadii[I1 - 1] + (StrutIncrement * PlnIdx), Affix, MatchPts, Hulls);
-                    }
-
-                    //build up faces
-                    ExoTools.StockingStitch(ref StrutMesh, Segments, (int)Sides);
-                    ExoTools.NormaliseMesh(ref StrutMesh);
-                    Hulls.Append(StrutMesh);
-                }
-            }
-
-            if (FailStruts.Vertices.Count > 0)
-            {
-                DA.SetData(0, FailStruts);
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "One or more struts is engulfed by its nodes");
-                return;
-            }
-
-            Hulls.Faces.CullDegenerateFaces();
-            Hulls.Vertices.CullUnused();
-
-            Mesh[] OutMeshes = Hulls.SplitDisjointPieces();
-            for (int SplitMesh = 0; SplitMesh < OutMeshes.Length; SplitMesh++) { ExoTools.NormaliseMesh(ref OutMeshes[SplitMesh]); }
-           
-            //ExoTools.NormaliseMesh(ref Hulls);
-    
-            DA.SetDataList(0, OutMeshes);
-            
+            DA.SetData(0, outMesh);
+            DA.SetDataList(1, hullMeshList);
         }
 
         public override GH_Exposure Exposure

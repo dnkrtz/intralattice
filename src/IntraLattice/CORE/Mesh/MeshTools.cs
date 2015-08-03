@@ -80,7 +80,17 @@ namespace IntraLattice
             }
         }
 
-        public static void StrutPairOffset(Node node, Lattice lattice, double tol, out double offset)
+
+        /// <summary>
+        /// Computes offsets required to avoid plate/mesh overlaps
+        /// For lines : Uses simple trig
+        /// For curves : Uses incremental process, that evaluates sphere intersections
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="lattice"></param>
+        /// <param name="tol"></param>
+        /// <param name="offset"></param>
+        public static void ComputeOffsets(Node node, Lattice lattice, double tol, out double offset)
         {
             // the minimum offset is based on the radius at the node
             // if equal to the radius, the convex hull is much more complex to clean, since some vertices might lie on the plane of other plates
@@ -89,7 +99,6 @@ namespace IntraLattice
             offset = minOffset;
 
             // Loop over all possible pairs of plates on the node
-            // This automatically avoids setting offsets for nodes with a single strut
             for (int j = 0; j < node.StrutIndices.Count; j++)
             {
                 for (int k = j + 1; k < node.StrutIndices.Count; k++)
