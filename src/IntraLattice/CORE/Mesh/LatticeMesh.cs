@@ -79,7 +79,7 @@ namespace IntraLattice
             {
                 Curve strut = inputStruts[i];
                 // if strut is invalid, skip it
-                if (!strut.IsValid) continue;
+                if (strut == null || !strut.IsValid) continue;
 
                 // We must ignore duplicate nodes
                 Point3d[] nodes = new Point3d[2] { strut.PointAtStart, strut.PointAtEnd };
