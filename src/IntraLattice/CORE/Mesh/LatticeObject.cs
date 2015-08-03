@@ -52,8 +52,8 @@ namespace IntraLattice
 
         // fields
         public Curve Curve { get; set; }            // the strut curve
-        public IndexPair NodePair { get; set; }     // relational data
-        public IndexPair PlatePair { get; set; }    // relational data
+        public IndexPair NodePair { get; set; }
+        public IndexPair PlatePair { get; set; }
 
        
     }
@@ -61,9 +61,10 @@ namespace IntraLattice
     public class Plate
     {
         // constructor
-        public Plate(int SetNodeIndex)
+        public Plate(int SetNodeIndex, Vector3d SetNormal)
         {
             this.NodeIndex = SetNodeIndex;
+            this.Normal = SetNormal;
             this.Vtc = new List<Point3d>();
         }
 

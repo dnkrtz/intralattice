@@ -85,20 +85,21 @@ namespace IntraLattice
                 Point3d[] nodes = new Point3d[2] { strut.PointAtStart, strut.PointAtEnd };
                 List<int> nodeIndices = new List<int>();
                 // Loop over end points of strut
-                // Check if node is already in nodeLookup list, if so, we use its index instead of creating a new node
+                // Check if node is already in nodeLookup list, if so, we find its index instead of creating a new node
                 for (int j = 0; j < 2; j++ )
                 {
                     Point3d pt = nodes[j];
                     int closestIndex = nodeLookup.ClosestIndex(pt);  // find closest node to current pt
 
-                    // If node already exists, set the index
-                    if (nodeLookup.Count != 0 && nodeLookup[closestIndex].DistanceTo(pt) < tol)
+                    // If node already exists (within tolerance), set the index
+                    if (nodeLookup.Count != 0 && pt.EpsilonEquals(nodeLookup[closestIndex], tol))
                         nodeIndices.Add(closestIndex);
                     // If node doesn't exist
                     else
                     {
-                        // construct node
+                        // update lookup list
                         nodeLookup.Add(pt);
+                        // construct node
                         lattice.Nodes.Add(new Node(pt));
                         nodeIndices.Add(nodeLookup.Count - 1);
                     }
@@ -115,8 +116,8 @@ namespace IntraLattice
                     lattice.Struts.Add(new Strut(strut, nodePair));
                     int strutIndex = lattice.Struts.Count - 1;
                     // construct plates
-                    lattice.Plates.Add(new Plate(nodeIndices[0]));
-                    lattice.Plates.Add(new Plate(nodeIndices[1]));
+                    lattice.Plates.Add(new Plate(nodeIndices[0], strut.TangentAtStart));
+                    lattice.Plates.Add(new Plate(nodeIndices[1], - strut.TangentAtEnd));
                     // set strut relational parameters
                     IndexPair platePair = new IndexPair(lattice.Plates.Count - 2, lattice.Plates.Count - 1);
                     lattice.Struts[strutIndex].PlatePair = platePair;
@@ -153,19 +154,78 @@ namespace IntraLattice
             // Loop over nodes
             for (int i = 0; i < lattice.Nodes.Count; i++)
             {
-                Node node = lattice.Nodes[i];
+                Node node = lattice.Nodes[i];   // the node being evaluated
+                bool isAcute = true;   // true if all pairs of struts form acute angles with eachother
 
-                // Loop over plates of node
-                for (int j = 0; j < node.PlateIndices.Count; j++)
+                // Loop over all possible pairs of plates on the node
+                // This automatically avoids setting offsets for nodes with a single strut
+                for (int j = 0; j < node.StrutIndices.Count; j++)
                 {
-                    int plateIndex = node.PlateIndices[j];
+                    for (int k = j + 1; k < node.StrutIndices.Count; k++)
+                    {
+                        Strut strutA = lattice.Struts[node.StrutIndices[j]];
+                        Strut strutB = lattice.Struts[node.StrutIndices[k]];
+                        Plate plateA = lattice.Plates[node.PlateIndices[j]];
+                        Plate plateB = lattice.Plates[node.PlateIndices[k]];
+                        
+                        // if linear struts
+                        if (strutA.Curve.IsLinear(tol) && strutB.Curve.IsLinear(tol))
+                        {
+                            // compute the angle
+                            double theta = Vector3d.VectorAngle(plateA.Normal, plateB.Normal);
+                            // if angle is a reflex angle (angle greater than 180deg), we need to adjust it
+                            if (theta > Math.PI) theta = 2 * Math.PI - theta;
 
-                    // Set offset
-                    double offset = 1.2;
-                    lattice.Plates[plateIndex].Offset = offset;
+                            double offset = 0;
 
+                            // if angle is greater than 90deg, offset is based on
+                            if (theta > Math.PI / 2)
+                            {
+                                offset = node.Radius;
+                                isAcute = false;
+                            }
+                            else
+                                offset = node.Radius / (Math.Sin(theta / 2.0));
+                            // if offset is greater than previously set offset, adjust
+                            if (offset > plateA.Offset)
+                                plateA.Offset = offset;
+                            if (offset > plateB.Offset)
+                                plateB.Offset = offset;
+                        }
+                        // if curved struts
+                        else
+                        {
+                            plateA.Offset = 1.2;
+                            plateB.Offset = 1.2;
+                        }
+
+                    }
                 }
+
+                //  for better mesh shape at sharp corners, add an extra plate if the strut set is acute
+                if (isAcute)
+                {
+                    Vector3d extraNormal = new Vector3d();
+                    foreach (int plateIndex in node.PlateIndices)
+                    {
+                        extraNormal += lattice.Plates[plateIndex].Normal;
+                    }
+
+                    List<Point3d> Vtc;
+                    Plane plane = new Plane(node.Point3d, -extraNormal);
+                    MeshTools.CreatePlate(plane, sides, node.Radius, 0, out Vtc);    // compute the vertices
+                    // add new plate and its vertices
+                    lattice.Plates.Add(new Plate(i, -extraNormal));
+                    int newPlateIndx = lattice.Plates.Count - 1;
+                    lattice.Plates[newPlateIndx].Vtc.AddRange(Vtc);
+                    node.PlateIndices.Add(newPlateIndx);
+                }
+
             }
+
+            // IDEA : add a new loop here that adjusts radii to avoid overlapping struts
+
+
 
             //====================================================================================
             // STEP 4 - Construct sleeve meshes
@@ -179,15 +239,18 @@ namespace IntraLattice
 
                 Strut strut = lattice.Struts[i];
                 Plate startPlate = lattice.Plates[strut.PlatePair.I];   // plate for the start of the strut
-                Plate endPlate = lattice.Plates[strut.PlatePair.J]; 
-                startPlate.Vtc.Add(strut.Curve.PointAtLength(startPlate.Offset));   // add centerpoint
-                endPlate.Vtc.Add(strut.Curve.PointAtLength(strut.Curve.GetLength() - endPlate.Offset));
-                double startRadius = lattice.Nodes[strut.NodePair.I].Radius;    // radius at start of strut
+                Plate endPlate = lattice.Plates[strut.PlatePair.J];
+                double startParam, endParam;
+                strut.Curve.LengthParameter(startPlate.Offset, out startParam);   // get start and end params of strut (accounting for offset)
+                strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
+                startPlate.Vtc.Add(strut.Curve.PointAt(startParam));    // set center point of star & end plates
+                endPlate.Vtc.Add(strut.Curve.PointAt(endParam));
+                double startRadius = lattice.Nodes[strut.NodePair.I].Radius;    // set radius at start & end
                 double endRadius = lattice.Nodes[strut.NodePair.J].Radius;
 
                 // compute the number of divisions
                 double avgRadius = (startRadius + endRadius) / 2;
-                double length = startPlate.Vtc[0].DistanceTo(endPlate.Vtc[0]);
+                double length = strut.Curve.GetLength(new Interval(startParam, endParam));
                 double divisions = Math.Max((Math.Round(length * 0.5 / avgRadius) * 2), 2); // Number of sleeve divisions (must be even)
 
                 // SLEEVE VERTICES
@@ -198,22 +261,22 @@ namespace IntraLattice
                 {
                     Vector3d normal = strut.Curve.TangentAtStart;
 
-                    // Loops: j along strut, k around strut
+                    // Loops: j along strut
                     for (int j = 0; j <= divisions; j++)
                     {              
                         Point3d knucklePt = startPlate.Vtc[0] + (normal * (length * j / divisions));
                         Plane plane = new Plane(knucklePt, normal);
                         double R = startRadius - j / (double)divisions * (startRadius - endRadius); //variable radius
+                        double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
+                        
+                        List<Point3d> Vtc;
+                        MeshTools.CreatePlate(plane, sides, R, startAngle, out Vtc);    // compute the vertices
 
-                        for (int k = 0; k < sides; k++)
-                        {
-                            double angle = k * 2 * Math.PI / sides + j * Math.PI / sides;
-                            sleeveMesh.Vertices.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle))); // create vertex
+                        // if the vertices are hull points (plates that connect sleeves to node hulls), save them
+                        if (j == 0) startPlate.Vtc.AddRange(Vtc);
+                        if (j == divisions) endPlate.Vtc.AddRange(Vtc);
 
-                            // if plate points, save them
-                            if (j == 0) startPlate.Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
-                            if (j == divisions) endPlate.Vtc.Add(plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle)));
-                        }
+                        sleeveMesh.Vertices.AddVertices(Vtc); // save vertices to sleeve mes
                     }
                 }
                 // otherwise, we're dealing with curves, so need to travel along curve and compute tangent frames at each knuckle
@@ -230,17 +293,18 @@ namespace IntraLattice
                         Plane plane;
                         strut.Curve.PerpendicularFrameAt(locParameter, out plane);
                         double R = startRadius - j / (double)divisions * (startRadius - endRadius); //variable radius
+                        double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
 
-                        for (int k = 0; k < sides; k++)
-                        {
-                            double angle = k * 2 * Math.PI / sides + j * Math.PI / sides;
-                            Point3d newVtx = plane.PointAt(R * Math.Cos(angle), R * Math.Sin(angle));
-                            sleeveMesh.Vertices.Add(newVtx); // create vertex
+                        List<Point3d> Vtc;
+                        MeshTools.CreatePlate(plane, sides, R, startAngle, out Vtc);    // compute the vertices
 
-                            // if plate points, save them
-                            if (j == 0) startPlate.Vtc.Add(newVtx);
-                            if (j == divisions) endPlate.Vtc.Add(newVtx);
-                        }
+                        // if the vertices are hull points (plates that connect sleeves to node hulls), save them
+                        if (j == 0) startPlate.Vtc.AddRange(Vtc);
+                        if (j == divisions) endPlate.Vtc.AddRange(Vtc);
+
+                        sleeveMesh.Vertices.AddVertices(Vtc); // save vertices to sleeve mesh
+
+                        
                     }
                 }
 

@@ -62,8 +62,8 @@
   <ItemGroup>
     <Compile Include="CORE\Cell\CellTools.cs" />
     <Compile Include="CORE\Cell\CustomCell.cs" />
-    <Compile Include="CORE\Cell\TopologySymmetryCheck.cs" />
     <Compile Include="CORE\Frame\BasicBox.cs" />
+    <Compile Include="CORE\Frame\ConformFV.cs" />
     <Compile Include="CORE\Mesh\LatticeMesh.cs" />
     <Compile Include="CORE\Mesh\LatticeObject.cs" />
     <Compile Include="CORE\Mesh\MeshTools.cs" />

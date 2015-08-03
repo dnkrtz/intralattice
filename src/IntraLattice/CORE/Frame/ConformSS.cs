@@ -33,6 +33,7 @@ namespace IntraLattice
             pManager.AddSurfaceParameter("Surface 1", "S1", "First bounding surface", GH_ParamAccess.item);
             pManager.AddSurfaceParameter("Surface 2", "S2", "Second bounding surface", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Flip UV", "FlipUV", "Flip the UV parameters (for alignment purposes)", GH_ParamAccess.item, false); // default value is false
+            pManager.AddIntegerParameter("Reverse UV", "RevUV", "0 : Keep as is\n1 : Reverse U-direction of s1\n2 : Reverse V-direction of s1\n", GH_ParamAccess.item, 0);
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
@@ -54,6 +55,7 @@ namespace IntraLattice
             Surface s1 = null;
             Surface s2 = null;
             bool flipUV = false;
+            int reverseUV = 0;
             int nU = 0;
             int nV = 0;
             int nW = 0;
@@ -64,11 +66,12 @@ namespace IntraLattice
             if (!DA.GetData(1, ref s1)) { return; }
             if (!DA.GetData(2, ref s2)) { return; }
             if (!DA.GetData(3, ref flipUV)) { return; }
-            if (!DA.GetData(4, ref nU)) { return; }
-            if (!DA.GetData(5, ref nV)) { return; }
-            if (!DA.GetData(6, ref nW)) { return; }
-            if (!DA.GetData(7, ref morphed)) { return; }
-            if (!DA.GetData(8, ref morphFactor)) { return; }
+            if (!DA.GetData(4, ref reverseUV)) { return; }
+            if (!DA.GetData(5, ref nU)) { return; }
+            if (!DA.GetData(6, ref nV)) { return; }
+            if (!DA.GetData(7, ref nW)) { return; }
+            if (!DA.GetData(8, ref morphed)) { return; }
+            if (!DA.GetData(9, ref morphFactor)) { return; }
 
             if (topology.Count < 2) { return; }
             if (!s1.IsValid) { return; }
@@ -82,9 +85,11 @@ namespace IntraLattice
             var derivTree = new DataTree<Vector3d>();                               // will contain derivatives (du,dv) in a parallel tree
             var spaceTree = new DataTree<GeometryBase>();                           // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
 
-            // 3. Flip the UV parameters a surface if specified
+            // 3. Modify the UV parameters of surface1 if specified
             if (flipUV) s1 = s1.Transpose();
-            
+            if (reverseUV == 1 || reverseUV == 3) s1.Reverse(0, true);
+            if (reverseUV == 2 || reverseUV == 3) s1.Reverse(1, true);           
+
             // 4. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
 

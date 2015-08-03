@@ -23,6 +23,31 @@ namespace IntraLattice
     public class MeshTools
     {
 
+        public static void CreatePlate(Plane plane, int sides, double radius, double startAngle, out List<Point3d> Vtc)
+        {
+            Vtc = new List<Point3d>();
+
+            // this loop rotates around the strut, creating vertices
+            for (int k = 0; k < sides; k++)
+            {
+                double angle = k * 2 * Math.PI / sides + startAngle;
+                Vtc.Add(plane.PointAt(radius * Math.Cos(angle), radius * Math.Sin(angle))); // create vertex
+            }
+        }
+
+        public static double LineAngle(Line strutA, Line strutB, Point3d sharedNode)
+        {
+            // make sure lines are correctly oriented
+            if (strutA.From.EpsilonEquals(sharedNode, RhinoMath.SqrtEpsilon)) strutA.Flip();
+            if (strutB.From.EpsilonEquals(sharedNode, RhinoMath.SqrtEpsilon)) strutB.Flip();
+            // get the angle
+            double angle = Vector3d.VectorAngle(strutA.Direction, strutB.Direction);
+            // if angle is a reflex angle (angle greater than 180deg), we need to adjust it 
+            if (angle > Math.PI) angle = 2 * Math.PI - angle;
+
+            return angle;
+        }
+
         /// <summary>
         /// Incremental 3D convex hull algorithm
         /// </summary>
@@ -49,7 +74,7 @@ namespace IntraLattice
             // Remove points already checked
             pts.RemoveAt(sides + 1);
             pts.RemoveRange(0, 3);
-            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 0.1;
+            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
 
             // Loop through the remaining points
