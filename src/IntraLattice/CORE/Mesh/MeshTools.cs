@@ -12,7 +12,7 @@ using System.Text;
 // This is a set of methods & objects used by the mesh components
 // =====================================================
 // 
-// ConvexHull -> Implements a 3D convex hull algorithm that assumes all points lie on the hull (which is our case)
+// ConvexHull -> Implements a 3D convex hull algorithm that makes certain assumptions
 // NormaliseMesh -> Adjusts orientation of face normals 
 // SleeveStitch -> Constructs the sleeve mesh faces (stitches the vertices)
 // EndFaceStitch -> Constructs the endface mesh faces (needed for single strut nodes)
@@ -23,7 +23,13 @@ namespace IntraLattice
 {
     public class MeshTools
     {
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="inputStruts"></param>
+        /// <param name="nodes"></param>
+        /// <param name="nodePairs"></param>
+        /// <param name="struts"></param>
         public static void CleanNetwork(List<Curve> inputStruts, out Point3dList nodes, out List<IndexPair> nodePairs, out List<Curve> struts)
         {
             nodes = new Point3dList();
