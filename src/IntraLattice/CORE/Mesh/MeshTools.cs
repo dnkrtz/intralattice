@@ -90,7 +90,7 @@ namespace IntraLattice
         /// <param name="lattice"></param>
         /// <param name="tol"></param>
         /// <param name="offset"></param>
-        public static void ComputeOffsets(Node node, Lattice lattice, double tol, out double offset)
+        public static bool ComputeOffsets(Node node, Lattice lattice, double tol, out double offset)
         {
             // the minimum offset is based on the radius at the node
             // if equal to the radius, the convex hull is much more complex to clean, since some vertices might lie on the plane of other plates
@@ -155,12 +155,16 @@ namespace IntraLattice
                     }
 
                     // if offset is greater than previously set offset, adjust
+                    if (offset > maxOffset)
+                        return false;   // if offset greater than length of strut, it is engulfed
                     if (offset > plateA.Offset)
                         plateA.Offset = offset;
                     if (offset > plateB.Offset)
                         plateB.Offset = offset;
                 }
             }
+
+            return true;
         }
 
 

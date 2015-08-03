@@ -137,7 +137,7 @@ namespace IntraLattice
 
                 // Compute the offset required
                 double offset;
-                MeshTools.StrutPairOffset(node, lattice, tol, out offset);
+                MeshTools.ComputeOffsets(node, lattice, tol, out offset);
 
                 // Determine if the struts at the node form a 'sharp' corner
                 bool isAcute = true;

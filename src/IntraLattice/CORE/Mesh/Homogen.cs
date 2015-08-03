@@ -21,7 +21,7 @@ namespace IntraLattice
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Wireframe to thicken", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Radius", "R", "Strut Radius", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Radius", "Radius", "Strut Radius", GH_ParamAccess.item);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -54,9 +54,9 @@ namespace IntraLattice
 
             //====================================================================================
             //  PART A - Network cleanse
-            //  Clean the network of curves by:
-            //  - Removing duplicate nodes and struts
-            //  - Removing null, invalid or tiny curves
+            //  Clean the network of curves
+            //  - Remove duplicate nodes and struts
+            //  - Remove null, invalid or tiny curves
             //  - (Future idea: Combining colinear struts)
             //====================================================================================
 
@@ -123,7 +123,6 @@ namespace IntraLattice
                 // compute the offsets required to avoid plate overlaps
                 double offset;
                 MeshTools.ComputeOffsets(node, lattice, tol, out offset);
-
 
                 // To improve the shape of the mesh at 'sharp nodes', we add an extra node plate
                 // This plate is in the direction of the negative sum of all normals
@@ -311,7 +310,6 @@ namespace IntraLattice
 
 
             DA.SetData(0, outMesh);
-            DA.SetDataList(1, hullMeshList);
         }
 
         public override GH_Exposure Exposure
