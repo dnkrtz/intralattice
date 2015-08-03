@@ -7,6 +7,7 @@ using Grasshopper.Kernel.Types;
 using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
+using Rhino.Geometry.Intersect;
 
 // This component converts the wireframe lattice into a solid mesh.
 // ================================================================
@@ -63,22 +64,24 @@ namespace IntraLattice
             // Initialize output mesh
             Mesh outMesh = new Mesh();
 
-            //====================================================================================
-            // STEP 1 - Data structure
-            // In this section, we construct the wireframe lattice
-            // Ensuring that no duplicate nodes or struts are present
-            //====================================================================================
 
-            // These two lookup lists are used to determine if the nodes or pairs of nodes are already defined
+            //====================================================================================
+            // STEP 1 - Network cleanse
+            // Clean the network of curves by:
+            // - Removing duplicate nodes and struts
+            // - Combining colinear struts
+            //====================================================================================
+            // These lookup lists are used to determine if the nodes or pairs of nodes are already defined
             // Such that we avoid duplicates
             Point3dList nodeLookup = new Point3dList();
             List<IndexPair> nodePairLookup = new List<IndexPair>();
+            List<Curve> strutLookup = new List<Curve>();
 
             // Loop over list of struts
             for (int i = 0; i < inputStruts.Count; i++ )
             {
                 Curve strut = inputStruts[i];
-                // if strut is invalid, skip it
+                // if strut is invalid, ignore it
                 if (strut == null || !strut.IsValid) continue;
 
                 // We must ignore duplicate nodes
@@ -99,8 +102,6 @@ namespace IntraLattice
                     {
                         // update lookup list
                         nodeLookup.Add(pt);
-                        // construct node
-                        lattice.Nodes.Add(new Node(pt));
                         nodeIndices.Add(nodeLookup.Count - 1);
                     }
                 }
@@ -112,24 +113,42 @@ namespace IntraLattice
                 {
                     // update the lookup list
                     nodePairLookup.Add(nodePair);
-                    // construct strut
-                    lattice.Struts.Add(new Strut(strut, nodePair));
-                    int strutIndex = lattice.Struts.Count - 1;
-                    // construct plates
-                    lattice.Plates.Add(new Plate(nodeIndices[0], strut.TangentAtStart));
-                    lattice.Plates.Add(new Plate(nodeIndices[1], - strut.TangentAtEnd));
-                    // set strut relational parameters
-                    IndexPair platePair = new IndexPair(lattice.Plates.Count - 2, lattice.Plates.Count - 1);
-                    lattice.Struts[strutIndex].PlatePair = platePair;
-                    // set node relational parameters
-                    lattice.Nodes[nodeIndices[0]].StrutIndices.Add(strutIndex);
-                    lattice.Nodes[nodeIndices[1]].StrutIndices.Add(strutIndex);
-                    lattice.Nodes[nodeIndices[0]].PlateIndices.Add(platePair.I);
-                    lattice.Nodes[nodeIndices[1]].PlateIndices.Add(platePair.J);
+                    strut.Domain = new Interval(0, 1);
+                    strutLookup.Add(strut);
                 }
 
                 // if lattice is thought to be linear, but the curve is not linear, update boolean
                 if (latticeIsLinear && !strut.IsLinear()) latticeIsLinear = false;
+            }
+
+
+            //====================================================================================
+            // STEP 1 - Data structure
+            // In this section, we construct the wireframe lattice
+            // Ensuring that no duplicate nodes or struts are present
+            //====================================================================================
+
+
+            // Create nodes
+            foreach (Point3d node in nodeLookup)
+                lattice.Nodes.Add(new Node(node));
+
+            // Create struts and plates
+            for (int i = 0; i < strutLookup.Count; i++ )
+            {
+                lattice.Struts.Add(new Strut(strutLookup[i], nodePairLookup[i])); // assign
+                // construct plates
+                lattice.Plates.Add(new Plate(nodePairLookup[i].I, strutLookup[i].TangentAtStart));
+                lattice.Plates.Add(new Plate(nodePairLookup[i].J, - strutLookup[i].TangentAtEnd));
+                // set strut relational parameters
+                IndexPair platePair = new IndexPair(lattice.Plates.Count - 2, lattice.Plates.Count - 1);
+                lattice.Struts[i].PlatePair = platePair;
+                // set node relational parameters
+                lattice.Nodes[nodePairLookup[i].I].StrutIndices.Add(i);
+                lattice.Nodes[nodePairLookup[i].J].StrutIndices.Add(i);
+                lattice.Nodes[nodePairLookup[i].I].PlateIndices.Add(platePair.I);
+                lattice.Nodes[nodePairLookup[i].J].PlateIndices.Add(platePair.J);
+                
             }
 
 
@@ -155,7 +174,11 @@ namespace IntraLattice
             for (int i = 0; i < lattice.Nodes.Count; i++)
             {
                 Node node = lattice.Nodes[i];   // the node being evaluated
-                bool isAcute = true;   // true if all pairs of struts form acute angles with eachother
+                // the minimum offset is based on the radius at the node
+                // if equal to the radius, the convex hull is much more complex to clean, since some vertices might lie on the plane of other plates
+                // so we increase by 5% for robustness
+                double minOffset = node.Radius * 1.15;
+                double offset = minOffset;
 
                 if (node.StrutIndices.Count < 2) continue;
 
@@ -169,8 +192,10 @@ namespace IntraLattice
                         Strut strutB = lattice.Struts[node.StrutIndices[k]];
                         Plate plateA = lattice.Plates[node.PlateIndices[j]];
                         Plate plateB = lattice.Plates[node.PlateIndices[k]];
+
+                        double maxOffset = Math.Min(strutA.Curve.GetLength(), strutB.Curve.GetLength());
                         
-                        // if linear struts
+                    // if linear struts
                         if (strutA.Curve.IsLinear(tol) && strutB.Curve.IsLinear(tol))
                         {
                             // compute the angle between the struts
@@ -178,45 +203,61 @@ namespace IntraLattice
                             // if angle is a reflex angle (angle greater than 180deg), we need to adjust it
                             if (theta > Math.PI) theta = 2 * Math.PI - theta;
 
-                            double offset = 0;
-
                             // if angle is greater than 90deg, simple case: offset is based on radius at node
                             if (theta > Math.PI / 2)
                             {
-                                // if we set it equal exactly to the node radius
-                                // the convex hull is much more complex to clean, since some vertices might lie on the plane of other plates
-                                // so we increase by 5% for robustness
-                                offset = node.Radius * 1.05;
+                                offset = minOffset;
                             }
                             // if angle is acute, we need some simple trig
                             else
                                 offset = node.Radius / (Math.Sin(theta / 2.0));
 
-                            // if offset is greater than previously set offset, adjust
-                            if (offset > plateA.Offset)
-                                plateA.Offset = offset;
-                            if (offset > plateB.Offset)
-                                plateB.Offset = offset;
+                            
                         }
-                        // if curved struts
+                    // if curved struts
                         else
                         {
-                            plateA.Offset = 1.1;
-                            plateB.Offset = 1.1;
+                            // The curves we'll work with
+                            Curve curveA = strutA.Curve.DuplicateCurve();
+                            Curve curveB = strutB.Curve.DuplicateCurve();
+
+                            // May need to reverse direction
+                            if (strutA.Curve.PointAtEnd.EpsilonEquals(node.Point3d, tol))
+                                curveA.Reverse();
+                            if (strutB.Curve.PointAtEnd.EpsilonEquals(node.Point3d, tol))
+                                curveB.Reverse();
+
+                            // Now perform incremental offset
+                            for (offset = minOffset; offset < maxOffset; offset+=minOffset/5 )
+                            {
+
+                                Sphere sphereA = new Sphere(curveA.PointAtLength(offset), node.Radius);
+                                Sphere sphereB = new Sphere(curveB.PointAtLength(offset), node.Radius);
+
+                                // Intersect the two planes
+                                Circle intersectLine;
+                                if (Intersection.SphereSphere(sphereA, sphereB, out intersectLine) == 0) break;
+
+                            }
                         }
+
+                        // if offset is greater than previously set offset, adjust
+                        if (offset > plateA.Offset)
+                            plateA.Offset = offset;
+                        if (offset > plateB.Offset)
+                            plateB.Offset = offset;
 
                     }
                 }
 
+
+                bool isAcute = true;   // if true, the struts at the node form a 'sharp' corner
                 Vector3d extraNormal = new Vector3d();
                 foreach (int plateIndex in node.PlateIndices)
-                {
                     extraNormal += lattice.Plates[plateIndex].Normal;
-                }
                 foreach (int plateIndex in node.PlateIndices)
-                {
-                    if (Vector3d.VectorAngle(-extraNormal, lattice.Plates[plateIndex].Normal) < Math.PI/2) isAcute = false;
-                }
+                    if (Vector3d.VectorAngle(-extraNormal, lattice.Plates[plateIndex].Normal) < Math.PI/2)
+                        isAcute = false;
 
                 //  for better mesh shape at sharp corners, add an extra plate if the strut set is acute
                 if (isAcute)
@@ -252,7 +293,6 @@ namespace IntraLattice
                 Plate startPlate = lattice.Plates[strut.PlatePair.I];   // plate for the start of the strut
                 Plate endPlate = lattice.Plates[strut.PlatePair.J];
                 double startParam, endParam;
-                strut.Curve.Domain = new Interval(0, 1);
                 strut.Curve.LengthParameter(startPlate.Offset, out startParam);   // get start and end params of strut (accounting for offset)
                 strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
                 startPlate.Vtc.Add(strut.Curve.PointAt(startParam));    // set center point of star & end plates
