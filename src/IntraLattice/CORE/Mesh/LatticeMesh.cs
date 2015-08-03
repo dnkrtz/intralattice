@@ -148,7 +148,7 @@ namespace IntraLattice
             //====================================================================================
             // STEP 3 - Compute plate offsets
             // Each plate is offset from its parent node, to avoid mesh overlaps.
-            // Uses trigonometric conditions to compute the offset requried.
+            // Uses simple trig to compute the offset requried.
             //====================================================================================
 
             // Loop over nodes
@@ -156,6 +156,8 @@ namespace IntraLattice
             {
                 Node node = lattice.Nodes[i];   // the node being evaluated
                 bool isAcute = true;   // true if all pairs of struts form acute angles with eachother
+
+                if (node.StrutIndices.Count < 2) continue;
 
                 // Loop over all possible pairs of plates on the node
                 // This automatically avoids setting offsets for nodes with a single strut
@@ -171,21 +173,25 @@ namespace IntraLattice
                         // if linear struts
                         if (strutA.Curve.IsLinear(tol) && strutB.Curve.IsLinear(tol))
                         {
-                            // compute the angle
+                            // compute the angle between the struts
                             double theta = Vector3d.VectorAngle(plateA.Normal, plateB.Normal);
                             // if angle is a reflex angle (angle greater than 180deg), we need to adjust it
                             if (theta > Math.PI) theta = 2 * Math.PI - theta;
 
                             double offset = 0;
 
-                            // if angle is greater than 90deg, offset is based on
+                            // if angle is greater than 90deg, simple case: offset is based on radius at node
                             if (theta > Math.PI / 2)
                             {
-                                offset = node.Radius;
-                                isAcute = false;
+                                // if we set it equal exactly to the node radius
+                                // the convex hull is much more complex to clean, since some vertices might lie on the plane of other plates
+                                // so we increase by 5% for robustness
+                                offset = node.Radius * 1.05;
                             }
+                            // if angle is acute, we need some simple trig
                             else
                                 offset = node.Radius / (Math.Sin(theta / 2.0));
+
                             // if offset is greater than previously set offset, adjust
                             if (offset > plateA.Offset)
                                 plateA.Offset = offset;
@@ -195,24 +201,29 @@ namespace IntraLattice
                         // if curved struts
                         else
                         {
-                            plateA.Offset = 1.2;
-                            plateB.Offset = 1.2;
+                            plateA.Offset = 1.1;
+                            plateB.Offset = 1.1;
                         }
 
                     }
                 }
 
+                Vector3d extraNormal = new Vector3d();
+                foreach (int plateIndex in node.PlateIndices)
+                {
+                    extraNormal += lattice.Plates[plateIndex].Normal;
+                }
+                foreach (int plateIndex in node.PlateIndices)
+                {
+                    if (Vector3d.VectorAngle(-extraNormal, lattice.Plates[plateIndex].Normal) < Math.PI/2) isAcute = false;
+                }
+
                 //  for better mesh shape at sharp corners, add an extra plate if the strut set is acute
                 if (isAcute)
                 {
-                    Vector3d extraNormal = new Vector3d();
-                    foreach (int plateIndex in node.PlateIndices)
-                    {
-                        extraNormal += lattice.Plates[plateIndex].Normal;
-                    }
 
                     List<Point3d> Vtc;
-                    Plane plane = new Plane(node.Point3d, -extraNormal);
+                    Plane plane = new Plane(node.Point3d - extraNormal/6, -extraNormal);
                     MeshTools.CreatePlate(plane, sides, node.Radius, 0, out Vtc);    // compute the vertices
                     // add new plate and its vertices
                     lattice.Plates.Add(new Plate(i, -extraNormal));
@@ -228,7 +239,7 @@ namespace IntraLattice
 
 
             //====================================================================================
-            // STEP 4 - Construct sleeve meshes
+            // STEP 4 - Construct sleeve meshes and hull points
             // 
             //====================================================================================
 
@@ -241,6 +252,7 @@ namespace IntraLattice
                 Plate startPlate = lattice.Plates[strut.PlatePair.I];   // plate for the start of the strut
                 Plate endPlate = lattice.Plates[strut.PlatePair.J];
                 double startParam, endParam;
+                strut.Curve.Domain = new Interval(0, 1);
                 strut.Curve.LengthParameter(startPlate.Offset, out startParam);   // get start and end params of strut (accounting for offset)
                 strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
                 startPlate.Vtc.Add(strut.Curve.PointAt(startParam));    // set center point of star & end plates
@@ -287,8 +299,8 @@ namespace IntraLattice
                     // Loops: j along strut, k around strut
                     for (int j = 0; j <= divisions; j++)
                     {
-                        double locParameter;
-                        strut.Curve.LengthParameter(startPlate.Offset + (length * j / divisions) , out locParameter);
+                        double locParameter = startParam + (j / divisions)*(endParam-startParam);
+
                         Point3d knucklePt = strut.Curve.PointAt(locParameter);
                         Plane plane;
                         strut.Curve.PerpendicularFrameAt(locParameter, out plane);
@@ -304,7 +316,6 @@ namespace IntraLattice
 
                         sleeveMesh.Vertices.AddVertices(Vtc); // save vertices to sleeve mesh
 
-                        
                     }
                 }
 
@@ -345,9 +356,56 @@ namespace IntraLattice
                     // Gather all hull points (i.e. all plate points of the node)
                     List<Point3d> hullPoints = new List<Point3d>();
                     foreach (int pIndex in node.PlateIndices) hullPoints.AddRange(lattice.Plates[pIndex].Vtc);
-                    MeshTools.ConvexHull(ref hullMesh, hullPoints, sides);
+                    MeshTools.ConvexHull(hullPoints, sides, out hullMesh);
+                    
+                    // Remove plate faces
+                    List<int> deleteFaces = new List<int>();
+                    foreach (int plateIndx in node.PlateIndices)
+                    //{
+                    //    // recall that strut plates have 'sides+1' vertices.
+                    //    // if the plate has only 'sides' vertices, it is an extra plate (for acute nodes), so we should keep it
+                    //    if (lattice.Plates[plateIndx].Vtc.Count < sides + 1) continue;
 
-                    hullMeshList.Add(hullMesh);
+                    //    // now, set the plate normals
+                    //    Vector3d pNormal = lattice.Plates[plateIndx].Normal;
+                    //    Vector3f plateNormal = new Vector3f((float)pNormal.X, (float)pNormal.Y, (float)pNormal.Z);
+                    //    // we remove any face that has the same face normal as a plate
+                    //    for (int j = 0; j < hullMesh.Faces.Count; j++)
+                    //    {
+                    //        if (hullMesh.FaceNormals[j].EpsilonEquals(plateNormal, (float)tol))
+                    //            deleteFaces.Add(j);
+                    //    }
+                    //}
+                    {
+                        List<Point3f> plateVtc;
+                        MeshTools.Point3dToPoint3f(lattice.Plates[plateIndx].Vtc, out plateVtc);
+
+                        if (plateVtc.Count < sides + 1) continue;
+
+                        for (int j = 0; j < hullMesh.Faces.Count; j++)
+                        {
+                            Point3f ptA, ptB, ptC, ptD;
+                            hullMesh.Faces.GetFaceVertices(j, out ptA, out ptB, out ptC, out ptD);
+                            
+                            int matches = 0; // if equal to 3, meshface vtc are all plate vtc, and we should remove the face
+
+                            foreach (Point3f testPt in plateVtc)
+                            {
+                                if (testPt.EpsilonEquals(ptA, (float)tol) || testPt.EpsilonEquals(ptB, (float)tol) || testPt.EpsilonEquals(ptC, (float)tol)) 
+                                    matches++;
+                            }
+
+                            if (matches == 3)
+                                deleteFaces.Add(j);
+                        }
+
+                        
+                    }
+                    deleteFaces.Reverse();
+                    foreach (int faceIndx in deleteFaces) hullMesh.Faces.RemoveAt(faceIndx);
+
+                    outMesh.Append(hullMesh);
+                    //hullMeshList.Add(hullMesh);
                 }
             }
 

@@ -35,24 +35,22 @@ namespace IntraLattice
             }
         }
 
-        public static double LineAngle(Line strutA, Line strutB, Point3d sharedNode)
+        public static void Point3dToPoint3f(List<Point3d> in3d, out List<Point3f> out3f)
         {
-            // make sure lines are correctly oriented
-            if (strutA.From.EpsilonEquals(sharedNode, RhinoMath.SqrtEpsilon)) strutA.Flip();
-            if (strutB.From.EpsilonEquals(sharedNode, RhinoMath.SqrtEpsilon)) strutB.Flip();
-            // get the angle
-            double angle = Vector3d.VectorAngle(strutA.Direction, strutB.Direction);
-            // if angle is a reflex angle (angle greater than 180deg), we need to adjust it 
-            if (angle > Math.PI) angle = 2 * Math.PI - angle;
+            out3f = new List<Point3f>();
 
-            return angle;
+            foreach (Point3d pt3d in in3d)
+            {
+                out3f.Add(new Point3f((float)pt3d.X, (float)pt3d.Y, (float)pt3d.Z));
+            }
         }
 
         /// <summary>
         /// Incremental 3D convex hull algorithm
         /// </summary>
-        public static void ConvexHull(ref Mesh hullMesh, List<Point3d> pts, int sides)
+        public static void ConvexHull(List<Point3d> pts, int sides, out Mesh hullMesh)
         {
+            hullMesh = new Mesh();
             int totalPts = pts.Count;
 
             // 1. Create initial tetrahedron.
@@ -63,7 +61,7 @@ namespace IntraLattice
             Plane PlaneStart = new Plane(pts[0], pts[1], pts[2]);
             // Form tetrahedron with a 4th point which does not lie on the same plane
             // Point S+1 is the centerpoint of another plate, therefore it is surely on a different plane.
-            hullMesh.Vertices.Add(pts[sides + 1]);
+            hullMesh.Vertices.Add(pts[sides + 2]);
             // Stitch faces of tetrahedron
             hullMesh.Faces.AddFace(0, 2, 1);
             hullMesh.Faces.AddFace(0, 3, 2);
@@ -89,7 +87,7 @@ namespace IntraLattice
                     Vector3d testVect = pts[i] - hullMesh.Faces.GetFaceCenter(faceIndex);
                     double angle = Vector3d.VectorAngle(hullMesh.FaceNormals[faceIndex], testVect);
                     Plane planeTest = new Plane(hullMesh.Faces.GetFaceCenter(faceIndex), hullMesh.FaceNormals[faceIndex]);
-                    if (angle < Math.PI * 0.5 || Math.Abs(planeTest.DistanceTo(pts[i])) < tol) { seenFaces.Add(faceIndex); }
+                    if (angle < Math.PI * 0.5 || Math.Abs(planeTest.DistanceTo(pts[i])) < tol/100) { seenFaces.Add(faceIndex); }
                 }
 
                 // Remove visible faces
@@ -113,10 +111,6 @@ namespace IntraLattice
             }
 
             NormaliseMesh(ref hullMesh);
-
-            // 3. Remove plate faces
-            List<int> deleteFaces = new List<int>();
-
 
         }
 
