@@ -7,7 +7,7 @@ using Rhino;
 using Rhino.Geometry;
 using Rhino.Collections;
 
-namespace IntraLattice
+namespace IntraLattice.CORE.Mesh
 {
     public class Homogen : GH_Component
     {
@@ -48,7 +48,7 @@ namespace IntraLattice
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
             // 4. Initialize lattice object and output mesh
-            Lattice lattice = new Lattice();
+            LatticeMesh lattice = new LatticeMesh();
             Mesh outMesh = new Mesh();
 
 
@@ -61,9 +61,9 @@ namespace IntraLattice
             //====================================================================================
 
             // A0. We use the following three lists to extract valid data from the input list
-            Point3dList nodeList = new Point3dList();
-            List<IndexPair> nodePairList = new List<IndexPair>();
-            List<Curve> strutList = new List<Curve>();
+            var nodeList = new Point3dList();               // List of unique nodes
+            var nodePairList = new List<IndexPair>();   // List of struts, as node index pairs
+            var strutList = new List<Curve>();              // List of struts, as curves (parallel to nodePairList)
 
             MeshTools.CleanNetwork(inputStruts, out nodeList, out nodePairList, out strutList);
 

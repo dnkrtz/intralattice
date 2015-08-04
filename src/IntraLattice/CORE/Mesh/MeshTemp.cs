@@ -16,12 +16,12 @@ using Rhino.Geometry.Intersect;
 
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.Mesh
 {
-    public class LatticeMesh : GH_Component
+    public class MeshTemp : GH_Component
     {
 
-        public LatticeMesh()
+        public MeshTemp()
             : base("LatticeMesh", "LatticeMesh",
                 "Generates solid mesh of lattice wireframe.",
                 "IntraLattice2", "Mesh")
@@ -60,7 +60,7 @@ namespace IntraLattice
             bool latticeIsLinear = true;    // will become false if a non-linear curve is found in the strut list
 
             // Initialize lattice object
-            Lattice lattice = new Lattice();
+            LatticeMesh lattice = new LatticeMesh();
             // Initialize output mesh
             Mesh outMesh = new Mesh();
 

@@ -12,7 +12,7 @@ using Grasshopper.Kernel.Expressions;
 // ===============================================================
 // Checks that the mesh represents a solid
 
-namespace IntraLattice
+namespace IntraLattice.CORE.Mesh
 {
     public class InputGradient : GH_Component
     {

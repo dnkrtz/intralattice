@@ -15,7 +15,7 @@ using Grasshopper;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice.FRAME
+namespace IntraLattice.CORE.Frame
 {
     public class ConformSP : GH_Component
     {

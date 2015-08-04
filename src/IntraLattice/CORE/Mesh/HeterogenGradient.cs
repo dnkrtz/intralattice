@@ -7,7 +7,7 @@ using Rhino;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Expressions;
 
-namespace IntraLattice
+namespace IntraLattice.CORE.Mesh
 {
     public class HeterogenGradient : GH_Component
     {

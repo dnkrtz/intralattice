@@ -16,7 +16,7 @@ using Grasshopper;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.Frame
 {
     public class BasicBox : GH_Component
     {

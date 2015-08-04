@@ -19,7 +19,7 @@ using System.Text;
 
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.Mesh
 {
     public class MeshTools
     {
@@ -90,7 +90,7 @@ namespace IntraLattice
         /// <param name="lattice"></param>
         /// <param name="tol"></param>
         /// <param name="offset"></param>
-        public static bool ComputeOffsets(Node node, Lattice lattice, double tol, out double offset)
+        public static bool ComputeOffsets(Node node, LatticeMesh lattice, double tol, out double offset)
         {
             // the minimum offset is based on the radius at the node
             // if equal to the radius, the convex hull is much more complex to clean, since some vertices might lie on the plane of other plates

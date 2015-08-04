@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace IntraLattice
+namespace IntraLattice.CORE.Frame
 {
     public class ConformFV : GH_Component
     {

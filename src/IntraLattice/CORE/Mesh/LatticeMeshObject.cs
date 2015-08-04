@@ -4,12 +4,12 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Rhino;
 
-namespace IntraLattice
+namespace IntraLattice.CORE.Mesh
 {
-    public class Lattice
+    public class LatticeMesh
     {
         // constructor
-        public Lattice()
+        public LatticeMesh()
         {
             this.Nodes = new List<Node>();
             this.Struts = new List<Strut>();
