@@ -314,8 +314,8 @@ namespace IntraLattice
                     deleteFaces.Reverse();
                     foreach (int faceIndx in deleteFaces) hullMesh.Faces.RemoveAt(faceIndx);
 
-                    outMesh.Append(hullMesh);
-                    //hullMeshList.Add(hullMesh);
+                    //outMesh.Append(hullMesh);
+                    hullMeshList.Add(hullMesh);
                 }
             }
 
