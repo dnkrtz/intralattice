@@ -4,7 +4,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Rhino;
 
-namespace IntraLattice.CORE.Mesh
+namespace IntraLattice.CORE.MeshModule
 {
     public class LatticeMesh
     {

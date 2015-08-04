@@ -6,7 +6,7 @@ using Grasshopper.Kernel;
 using Rhino;
 using Rhino.Geometry;
 
-namespace IntraLattice.CORE.Mesh
+namespace IntraLattice.CORE.MeshModule
 {
     public class ExoTools
     {

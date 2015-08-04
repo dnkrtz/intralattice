@@ -19,7 +19,7 @@ using System.Text;
 
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice.CORE.Mesh
+namespace IntraLattice.CORE.MeshModule
 {
     public class MeshTools
     {

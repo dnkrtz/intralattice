@@ -1,146 +1,158 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Grasshopper.Kernel;
-using Rhino;
 using Rhino.Geometry;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 using Rhino.Collections;
+using Rhino;
+using IntraLattice.Properties;
+using Rhino.Geometry.Intersect;
 
-namespace IntraLattice.CORE.Mesh
+// This component converts the wireframe lattice into a solid mesh.
+// ================================================================
+// Based on Exoskeleton by David Stasiuk.
+// It takes as input a list of lines and two radius lists (start-end).
+
+// Written by Aidan Kurtz (http://aidankurtz.com)
+
+namespace IntraLattice.CORE.MeshModule
 {
-    public class Homogen : GH_Component
+    public class MeshTemp : GH_Component
     {
-        public Homogen()
-            : base("Homogen","Homogen",
-                "Homogeneous solidification of lattice wireframe",
+
+        public MeshTemp()
+            : base("LatticeMesh", "LatticeMesh",
+                "Generates solid mesh of lattice wireframe.",
                 "IntraLattice2", "Mesh")
         {
         }
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Struts", "Struts", "Wireframe to thicken", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Radius", "Radius", "Strut Radius", GH_ParamAccess.item);
+            pManager.AddCurveParameter("Struts", "Struts", "Curve network", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Radius (start)", "Rs", "List of radii for start of struts", GH_ParamAccess.list, 0.6);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Thickened wireframe", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "M", "Lattice Mesh", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Hulls", "V", "Lattice Mesh Vertices", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // 0. Declare placeholder variables
+            // Declare placeholder variables
             List<Curve> inputStruts = new List<Curve>();
-            double radius = 0;
+            List<double> radiusList = new List<double>();
 
-            // 1. Attempt to fetch data inputs
+            // Attempt to fetch data inputs
             if (!DA.GetDataList(0, inputStruts)) { return; }
-            if (!DA.GetData(1, ref radius)) { return; }
+            if (!DA.GetDataList(1, radiusList)) { return; }
 
-            // 2. Validate data
+            // Validate data
             if (inputStruts == null || inputStruts.Count == 0) { return; }
-            if (radius <= 0) { return; }
+            if (radiusList == null || radiusList.Count == 0 || radiusList.Contains(0)) { return; }
 
-            // 3. Set some variables
+            // Set some variables
             int sides = 6;  // Number of sides on each strut
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
+            bool latticeIsLinear = true;    // will become false if a non-linear curve is found in the strut list
 
-            // 4. Initialize lattice object and output mesh
+            // Initialize lattice object
             LatticeMesh lattice = new LatticeMesh();
+            // Initialize output mesh
             Mesh outMesh = new Mesh();
 
 
             //====================================================================================
-            //  PART A - Network cleanse
-            //  Clean the network of curves
-            //  - Remove duplicate nodes and struts
-            //  - Remove null, invalid or tiny curves
-            //  - (Future idea: Combining colinear struts)
+            // STEP 1 - Network cleanse
+            // Clean the network of curves by:
+            // - Removing duplicate nodes and struts
+            // - Combining colinear struts
             //====================================================================================
+            
+            // These lookup lists are used to determine if the nodes or pairs of nodes are already defined
+            // Such that we avoid duplicates
+            Point3dList nodeLookup = new Point3dList();
+            List<IndexPair> nodePairLookup = new List<IndexPair>();
+            List<Curve> strutLookup = new List<Curve>();
 
-            // A0. We use the following three lists to extract valid data from the input list
-            var nodeList = new Point3dList();               // List of unique nodes
-            var nodePairList = new List<IndexPair>();   // List of struts, as node index pairs
-            var strutList = new List<Curve>();              // List of struts, as curves (parallel to nodePairList)
-
-            MeshTools.CleanNetwork(inputStruts, out nodeList, out nodePairList, out strutList);
+            MeshTools.CleanNetwork(inputStruts, out nodeLookup, out nodePairLookup, out strutLookup);
 
             //====================================================================================
-            // PART B - Data structure
+            // STEP 1 - Data structure
             // In this section, we construct the wireframe lattice
             // Ensuring that no duplicate nodes or struts are present
             //====================================================================================
 
-            // B0. Create nodes
-            foreach (Point3d node in nodeList)
+
+            // Create nodes
+            foreach (Point3d node in nodeLookup)
                 lattice.Nodes.Add(new Node(node));
 
-            // B1. Create struts and plates
-            for (int i = 0; i < strutList.Count; i++)
+            // Create struts and plates
+            for (int i = 0; i < strutLookup.Count; i++ )
             {
-                lattice.Struts.Add(new Strut(strutList[i], nodePairList[i])); // assign
+                lattice.Struts.Add(new Strut(strutLookup[i], nodePairLookup[i])); // assign
                 // construct plates
-                lattice.Plates.Add(new Plate(nodePairList[i].I, strutList[i].TangentAtStart));
-                lattice.Plates.Add(new Plate(nodePairList[i].J, -strutList[i].TangentAtEnd));
+                lattice.Plates.Add(new Plate(nodePairLookup[i].I, strutLookup[i].TangentAtStart));
+                lattice.Plates.Add(new Plate(nodePairLookup[i].J, - strutLookup[i].TangentAtEnd));
                 // set strut relational parameters
                 IndexPair platePair = new IndexPair(lattice.Plates.Count - 2, lattice.Plates.Count - 1);
                 lattice.Struts[i].PlatePair = platePair;
                 // set node relational parameters
-                lattice.Nodes[nodePairList[i].I].StrutIndices.Add(i);
-                lattice.Nodes[nodePairList[i].J].StrutIndices.Add(i);
-                lattice.Nodes[nodePairList[i].I].PlateIndices.Add(platePair.I);
-                lattice.Nodes[nodePairList[i].J].PlateIndices.Add(platePair.J);
+                lattice.Nodes[nodePairLookup[i].I].StrutIndices.Add(i);
+                lattice.Nodes[nodePairLookup[i].J].StrutIndices.Add(i);
+                lattice.Nodes[nodePairLookup[i].I].PlateIndices.Add(platePair.I);
+                lattice.Nodes[nodePairLookup[i].J].PlateIndices.Add(platePair.J);
+                
             }
 
 
             //====================================================================================
-            // PART C - Compute nodal radii
+            // STEP 2 - Compute nodal radii
             // Strut radius is node-based
             //====================================================================================
 
-            // C0. Set radii
+            // Loop over nodes
             foreach (Node node in lattice.Nodes)
             {
-                node.Radius = radius;
+                node.Radius = radiusList[0];
             }
 
 
             //====================================================================================
-            // PART D - Compute plate offsets
+            // STEP 3 - Compute plate offsets
             // Each plate is offset from its parent node, to avoid mesh overlaps.
+            // Uses simple trig to compute the offset requried.
             //====================================================================================
 
-            // D0. Loop over nodes
+            // Loop over nodes
             for (int i = 0; i < lattice.Nodes.Count; i++)
             {
-                // set the node being evaluated
-                Node node = lattice.Nodes[i];
-                // if node has only 1 strut, skip it
-                if (node.StrutIndices.Count < 2) continue;
+                Node node = lattice.Nodes[i];   // the node being evaluated
                 
-                // compute the offsets required to avoid plate overlaps
+                if (node.StrutIndices.Count < 2) continue;
+
+                // Compute the offset required
                 double offset;
                 MeshTools.ComputeOffsets(node, lattice, tol, out offset);
 
-                // To improve the shape of the mesh at 'sharp nodes', we add an extra node plate
-                // This plate is in the direction of the negative sum of all normals
-                // We only create it if the strut set is 'sharp', meaning the struts are contained in a 180degree peripheral
-                bool isSharp = true;
-                Vector3d extraNormal = new Vector3d();  // sum of all normals
+                // Determine if the struts at the node form a 'sharp' corner
+                bool isAcute = true;
+                Vector3d extraNormal = new Vector3d();
                 foreach (int plateIndex in node.PlateIndices)
                     extraNormal += lattice.Plates[plateIndex].Normal;
                 foreach (int plateIndex in node.PlateIndices)
-                    if (Vector3d.VectorAngle(-extraNormal, lattice.Plates[plateIndex].Normal) < Math.PI / 2)
-                        isSharp = false;
+                    if (Vector3d.VectorAngle(-extraNormal, lattice.Plates[plateIndex].Normal) < Math.PI/2)
+                        isAcute = false;
 
-                //  if struts form a sharp corner, add an extra plate for a better convex hull shape
-                if (isSharp)
+                //  If struts form a sharp corner, add an extra plate for a better convex hull shape
+                if (isAcute)
                 {
                     List<Point3d> Vtc;
-                    // plane offset from node slightly
-                    Plane plane = new Plane(node.Point3d - extraNormal / 6, -extraNormal);
+                    Plane plane = new Plane(node.Point3d - extraNormal/6, -extraNormal);
                     MeshTools.CreatePlate(plane, sides, node.Radius, 0, out Vtc);    // compute the vertices
                     // add new plate and its vertices
                     lattice.Plates.Add(new Plate(i, -extraNormal));
@@ -156,11 +168,11 @@ namespace IntraLattice.CORE.Mesh
 
 
             //====================================================================================
-            // PART E - Construct sleeve meshes and hull points
+            // STEP 4 - Construct sleeve meshes and hull points
             // 
             //====================================================================================
 
-            // E0. Loop over struts
+            // Loop over struts
             for (int i = 0; i < lattice.Struts.Count; i++)
             {
                 Mesh sleeveMesh = new Mesh();
@@ -173,10 +185,13 @@ namespace IntraLattice.CORE.Mesh
                 strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
                 startPlate.Vtc.Add(strut.Curve.PointAt(startParam));    // set center point of star & end plates
                 endPlate.Vtc.Add(strut.Curve.PointAt(endParam));
+                double startRadius = lattice.Nodes[strut.NodePair.I].Radius;    // set radius at start & end
+                double endRadius = lattice.Nodes[strut.NodePair.J].Radius;
 
                 // compute the number of divisions
+                double avgRadius = (startRadius + endRadius) / 2;
                 double length = strut.Curve.GetLength(new Interval(startParam, endParam));
-                double divisions = Math.Max((Math.Round(length * 0.5 / radius) * 2), 2); // Number of sleeve divisions (must be even)
+                double divisions = Math.Max((Math.Round(length * 0.5 / avgRadius) * 2), 2); // Number of sleeve divisions (must be even)
 
                 // SLEEVE VERTICES
                 // 
@@ -188,13 +203,14 @@ namespace IntraLattice.CORE.Mesh
 
                     // Loops: j along strut
                     for (int j = 0; j <= divisions; j++)
-                    {
+                    {              
                         Point3d knucklePt = startPlate.Vtc[0] + (normal * (length * j / divisions));
                         Plane plane = new Plane(knucklePt, normal);
+                        double R = startRadius - j / (double)divisions * (startRadius - endRadius); //variable radius
                         double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
-
+                        
                         List<Point3d> Vtc;
-                        MeshTools.CreatePlate(plane, sides, radius, startAngle, out Vtc);    // compute the vertices
+                        MeshTools.CreatePlate(plane, sides, R, startAngle, out Vtc);    // compute the vertices
 
                         // if the vertices are hull points (plates that connect sleeves to node hulls), save them
                         if (j == 0) startPlate.Vtc.AddRange(Vtc);
@@ -211,15 +227,16 @@ namespace IntraLattice.CORE.Mesh
                     // Loops: j along strut, k around strut
                     for (int j = 0; j <= divisions; j++)
                     {
-                        double locParameter = startParam + (j / divisions) * (endParam - startParam);
+                        double locParameter = startParam + (j / divisions)*(endParam-startParam);
 
                         Point3d knucklePt = strut.Curve.PointAt(locParameter);
                         Plane plane;
                         strut.Curve.PerpendicularFrameAt(locParameter, out plane);
+                        double R = startRadius - j / (double)divisions * (startRadius - endRadius); //variable radius
                         double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
 
                         List<Point3d> Vtc;
-                        MeshTools.CreatePlate(plane, sides, radius, startAngle, out Vtc);    // compute the vertices
+                        MeshTools.CreatePlate(plane, sides, R, startAngle, out Vtc);    // compute the vertices
 
                         // if the vertices are hull points (plates that connect sleeves to node hulls), save them
                         if (j == 0) startPlate.Vtc.AddRange(Vtc);
@@ -268,7 +285,7 @@ namespace IntraLattice.CORE.Mesh
                     List<Point3d> hullPoints = new List<Point3d>();
                     foreach (int pIndex in node.PlateIndices) hullPoints.AddRange(lattice.Plates[pIndex].Vtc);
                     MeshTools.ConvexHull(hullPoints, sides, out hullMesh);
-
+                    
                     // Remove plate faces
                     List<int> deleteFaces = new List<int>();
                     foreach (int plateIndx in node.PlateIndices)
@@ -285,9 +302,9 @@ namespace IntraLattice.CORE.Mesh
                             hullMesh.Faces.GetFaceVertices(j, out ptA, out ptB, out ptC, out ptD);
 
                             // check if the mesh face has vertices that belong to a single plate, if so we need to remove the face
-                            int matches = 0;
+                            int matches = 0; 
                             foreach (Point3f testPt in plateVtc)
-                                if (testPt.EpsilonEquals(ptA, (float)tol) || testPt.EpsilonEquals(ptB, (float)tol) || testPt.EpsilonEquals(ptC, (float)tol))
+                                if (testPt.EpsilonEquals(ptA, (float)tol) || testPt.EpsilonEquals(ptB, (float)tol) || testPt.EpsilonEquals(ptC, (float)tol)) 
                                     matches++;
                             // if matches == 3, we should remove the face
                             if (matches == 3)
@@ -297,8 +314,8 @@ namespace IntraLattice.CORE.Mesh
                     deleteFaces.Reverse();
                     foreach (int faceIndx in deleteFaces) hullMesh.Faces.RemoveAt(faceIndx);
 
-                    outMesh.Append(hullMesh);
-                    //hullMeshList.Add(hullMesh);
+                    //outMesh.Append(hullMesh);
+                    hullMeshList.Add(hullMesh);
                 }
             }
 
@@ -310,6 +327,8 @@ namespace IntraLattice.CORE.Mesh
 
 
             DA.SetData(0, outMesh);
+            DA.SetDataList(1, hullMeshList);
+
         }
 
         public override GH_Exposure Exposure
@@ -324,19 +343,15 @@ namespace IntraLattice.CORE.Mesh
         {
             get
             {
-                //return Exoskeleton.Properties.Resources.exoskel;
+                // You can add image files to your project resources and access them like this:
+                //return Resources.PresetCell;
                 return null;
             }
         }
 
         public override Guid ComponentGuid
         {
-            get { return new Guid("{a51ac688-3afc-48a5-b121-48cecf687eb5}"); }
+            get { return new Guid("{dee24b08-fcb2-46f9-b772-9bece0903d9a}"); }
         }
-        
     }
 }
-
-
-
-

@@ -14,7 +14,7 @@ using System.Drawing;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice.CORE.Frame
+namespace IntraLattice.CORE.FrameModule
 {
     public class InputTools
     {

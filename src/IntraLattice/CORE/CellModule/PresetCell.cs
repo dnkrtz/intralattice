@@ -14,7 +14,7 @@ using IntraLattice.Properties;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice.CORE.Cell
+namespace IntraLattice.CORE.CellModule
 {
     public class PresetCell : GH_Component
     {

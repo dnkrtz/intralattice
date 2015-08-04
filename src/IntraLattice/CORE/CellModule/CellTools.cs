@@ -18,7 +18,7 @@ using Rhino.Geometry.Intersect;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.CellModule
 {
     public class CellTools
     {

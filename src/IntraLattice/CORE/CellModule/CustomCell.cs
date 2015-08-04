@@ -13,7 +13,7 @@ using Rhino;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice.CORE.Cell
+namespace IntraLattice.CORE.CellModule
 {
     public class CustomCell : GH_Component
     {

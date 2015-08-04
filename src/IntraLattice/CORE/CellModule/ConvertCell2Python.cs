@@ -17,7 +17,7 @@ using Rhino.Geometry;
 // Written by Marc Wang (marc.wang@mail.mcgill.ca)
 
 
-namespace IntraLattice.CORE.Cell
+namespace IntraLattice.CORE.CellModule
 {
     public class ConvertCell2Python : GH_Component
     {

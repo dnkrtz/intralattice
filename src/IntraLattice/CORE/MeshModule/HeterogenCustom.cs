@@ -5,15 +5,14 @@ using System.Text;
 using Grasshopper.Kernel;
 using Rhino;
 using Rhino.Geometry;
-using Grasshopper.Kernel.Expressions;
 
-namespace IntraLattice.CORE.Mesh
+namespace IntraLattice.CORE.MeshModule
 {
-    public class HeterogenGradient : GH_Component
+    public class HeterogenCustom : GH_Component
     {
-        public HeterogenGradient()
-            : base("Heterogen Gradient", "HeterogenGradient",
-                "Heterogeneous solidification (thickness gradient) of lattice wireframe",
+        public HeterogenCustom()
+            : base("Heterogen Custom", "HeterogenCustom",
+                "Heterogeneous solidification of lattice wireframe",
                 "IntraLattice2", "Mesh")
         {
         }
@@ -21,9 +20,8 @@ namespace IntraLattice.CORE.Mesh
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddCurveParameter("Lines", "L", "Wireframe to thicken", GH_ParamAccess.list);
-            pManager.AddTextParameter("Gradient String", "Grad", "The spatial gradient as an expression string", GH_ParamAccess.item, "1");
-            pManager.AddNumberParameter("Maximum Radius", "Rmax", "Maximum radius in gradient", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Minimum Radius", "Rmin", "Minimum radius in gradient", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Start Radius", "Rs", "Radius at the start of each line", GH_ParamAccess.list);
+            pManager.AddNumberParameter("End Radius", "Re", "Radius at the end of each line", GH_ParamAccess.list);
             pManager.AddNumberParameter("Node Depth", "N", "Offset depth for nodes", GH_ParamAccess.item, 0);
         }
 
@@ -37,22 +35,18 @@ namespace IntraLattice.CORE.Mesh
             //declare and set primary variables
 
             List<Curve> L = new List<Curve>();
-            string gradientString = null;
-            double RMax = 0;
-            double RMin = 0;            
+            List<double> Rs = new List<double>();
+            List<double> Re = new List<double>();
             double ND = 0;
 
             if (!DA.GetDataList(0, L)) { return; }
-            if (!DA.GetData(1, ref gradientString)) { return; }
-            if (!DA.GetData(2, ref RMax)) { return; }
-            if (!DA.GetData(3, ref RMin)) { return; }
-            if (!DA.GetData(4, ref ND)) { return; }
+            if (!DA.GetDataList(1, Rs)) { return; }
+            if (!DA.GetDataList(2, Re)) { return; }
+            if (!DA.GetData(3, ref ND)) { return; }
 
             if (L == null || L.Count == 0) { return; }
-            // Should include some checks of the gradient expression here
-            if (RMax <= 0) { return; }
-            if (RMin <= 0) { return; }
-            if (ND < 0) { return; }
+            if (Rs == null || Rs.Count == 0 || Rs.Contains(0)) { return; }
+            if (Re == null || Re.Count == 0 || Rs.Contains(0)) { return; }
 
             //declare node and strut lists and reference lookups
 
@@ -79,34 +73,17 @@ namespace IntraLattice.CORE.Mesh
             Nodes.Add(L[0].PointAtStart);
             NodeStruts.Add(new List<int>());
 
-            // Prepare bounding box domain for normalized gradient string
-            BoundingBox fullBox = new BoundingBox();
-            foreach (Curve strut in L)
-            {
-                var partBox = strut.GetBoundingBox(Plane.WorldXY);
-                fullBox.Union(partBox);
-            }
-            double boxSizeX = fullBox.Max.X - fullBox.Min.X;
-            double boxSizeY = fullBox.Max.Y - fullBox.Min.Y;
-            double boxSizeZ = fullBox.Max.Z - fullBox.Min.Z;
-
             Rhino.Collections.Point3dList NodeLookup = new Rhino.Collections.Point3dList(Nodes);
-
-            gradientString = GH_ExpressionSyntaxWriter.RewriteForEvaluator(gradientString);
 
             foreach (Curve StartL in L)
             {
-                // Compute radii based on the gradientString expression
-                var parser = new Grasshopper.Kernel.Expressions.GH_ExpressionParser();
-                parser.AddVariable("x", (StartL.PointAtStart.X - fullBox.Min.X)/boxSizeX);
-                parser.AddVariable("y", (StartL.PointAtStart.Y - fullBox.Min.Y)/boxSizeY);
-                parser.AddVariable("z", (StartL.PointAtStart.Z - fullBox.Min.Z)/boxSizeZ);
-                double StrutStartRadius = RMin + (parser.Evaluate(gradientString)._Double)*(RMax-RMin);
-                parser.ClearVariables();
-                parser.AddVariable("x", (StartL.PointAtEnd.X - fullBox.Min.X) / boxSizeX);
-                parser.AddVariable("y", (StartL.PointAtEnd.Y - fullBox.Min.Y) / boxSizeY);
-                parser.AddVariable("z", (StartL.PointAtEnd.Z - fullBox.Min.Z) / boxSizeZ);
-                double StrutEndRadius = RMin + (parser.Evaluate(gradientString)._Double)*(RMax-RMin);
+                double StrutStartRadius = 0;
+                if (Rs.Count - 1 > IdxL) StrutStartRadius = Rs[IdxL];
+                else StrutStartRadius = Rs.Last();
+
+                double StrutEndRadius = 0;
+                if (Re.Count - 1 > IdxL) StrutEndRadius = Re[IdxL];
+                else StrutEndRadius = Re.Last();
 
                 Point3d StrutCenter = new Point3d((StartL.PointAtStart + StartL.PointAtEnd) / 2);
 
@@ -422,10 +399,8 @@ namespace IntraLattice.CORE.Mesh
 
         public override Guid ComponentGuid
         {
-            get { return new Guid("{a5e48dd2-8467-4991-95b1-15d29524de3e}"); }
+            get { return new Guid("{5fa648cd-af7e-41e5-ac9c-f81bc19466bb}"); }
         }
 
     }
 }
-
-
