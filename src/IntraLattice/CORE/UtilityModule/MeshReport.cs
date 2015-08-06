@@ -14,7 +14,7 @@ using System.Drawing;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.UtilityModule
 {
     public class MeshReport : GH_Component
     {

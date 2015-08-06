@@ -10,6 +10,8 @@ using Rhino.Collections;
 using Rhino.Geometry.Intersect;
 using IntraLattice.Properties;
 using Grasshopper;
+using IntraLattice.CORE.CellModule;
+using IntraLattice.CORE.FrameModule.Data;
 
 // Summary:     This component generates a uniform lattice trimmed to the shape of design space
 // ===============================================================================

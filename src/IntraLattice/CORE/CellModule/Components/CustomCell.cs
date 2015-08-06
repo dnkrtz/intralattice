@@ -4,6 +4,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using System.Drawing;
 using Rhino;
+using IntraLattice.CORE.FrameModule.Data;
 
 // Summary:     This component processes/verifies user-defined unit cells, and outputs a valid Topo unit cell
 // ===============================================================================

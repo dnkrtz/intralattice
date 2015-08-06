@@ -9,6 +9,8 @@ using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
 using Grasshopper;
+using IntraLattice.CORE.CellModule;
+using IntraLattice.CORE.FrameModule.Data;
 
 // Summary:     This component generates a (u,v,w) lattice grid between a surface and an axis
 // ===============================================================================

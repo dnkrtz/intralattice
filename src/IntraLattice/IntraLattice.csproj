@@ -60,13 +60,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CORE\Cell\CellTools.cs" />
-    <Compile Include="CORE\Cell\CustomCell.cs" />
-    <Compile Include="CORE\Frame\BasicBox.cs" />
-    <Compile Include="CORE\Frame\ConformFV.cs" />
-    <Compile Include="CORE\Mesh\LatticeMesh.cs" />
-    <Compile Include="CORE\Mesh\LatticeObject.cs" />
-    <Compile Include="CORE\Mesh\MeshTools.cs" />
+    <Compile Include="CORE\CellModule\CellTools.cs" />
+    <Compile Include="CORE\CellModule\Components\CustomCell.cs" />
+    <Compile Include="CORE\FrameModule\Components\BasicBox.cs" />
+    <Compile Include="CORE\FrameModule\Components\ConformFV.cs" />
+    <Compile Include="CORE\FrameModule\Data\UnitCell.cs" />
+    <Compile Include="CORE\MeshModule\Data\Node.cs" />
+    <Compile Include="CORE\MeshModule\Data\Plate.cs" />
+    <Compile Include="CORE\MeshModule\Data\Strut.cs" />
+    <Compile Include="CORE\MeshModule\Data\LatticeMesh.cs" />
+    <Compile Include="CORE\MeshModule\MeshTools.cs" />
     <Compile Include="FEAInterface\Components\FEAInterfaceComponent.cs" />
     <Compile Include="FEAInterface\Components\PointLoadComponent.cs" />
     <Compile Include="FEAInterface\Components\SPCComponentComponent.cs" />
@@ -76,22 +79,21 @@
     <Compile Include="FEAInterface\Data\MAT1.cs" />
     <Compile Include="FEAInterface\Data\SPC.cs" />
     <Compile Include="FEAInterface\Manager\FileManager.cs" />
-    <Compile Include="CORE\Frame\ConformSP.cs" />
-    <Compile Include="CORE\Frame\BasicCylinder.cs" />
-    <Compile Include="CORE\Frame\ConformSS.cs" />
-    <Compile Include="CORE\Frame\ConformSA.cs" />
-    <Compile Include="CORE\Frame\InputTools.cs" />
-    <Compile Include="CORE\Frame\FrameTools.cs" />
-    <Compile Include="CORE\Cell\PresetCell.cs" />
+    <Compile Include="CORE\FrameModule\Components\ConformSP.cs" />
+    <Compile Include="CORE\FrameModule\Components\BasicCylinder.cs" />
+    <Compile Include="CORE\FrameModule\Components\ConformSS.cs" />
+    <Compile Include="CORE\FrameModule\Components\ConformSA.cs" />
+    <Compile Include="CORE\FrameModule\InputTools.cs" />
+    <Compile Include="CORE\FrameModule\FrameTools.cs" />
+    <Compile Include="CORE\CellModule\Components\PresetCell.cs" />
     <Compile Include="IntraLatticeInfo.cs" />
-    <Compile Include="CORE\Frame\UniformDS.cs" />
-    <Compile Include="CORE\Mesh\ExoTools.cs" />
-    <Compile Include="CORE\Mesh\HeterogenCustom.cs" />
-    <Compile Include="CORE\Mesh\Homogen.cs" />
-    <Compile Include="CORE\Mesh\HeterogenGradient.cs" />
-    <Compile Include="CORE\Mesh\InputGradient.cs" />
+    <Compile Include="CORE\FrameModule\Components\UniformDS.cs" />
+    <Compile Include="CORE\MeshModule\Components\HeterogenCustom.cs" />
+    <Compile Include="CORE\MeshModule\Components\Homogen.cs" />
+    <Compile Include="CORE\MeshModule\Components\HeterogenGradient.cs" />
+    <Compile Include="CORE\MeshModule\InputGradient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CORE\Utility\MeshReport.cs" />
+    <Compile Include="CORE\UtilityModule\MeshReport.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -99,6 +101,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram1.cd" />
     <None Include="Resources\viral24.png" />
     <None Include="Resources\cellpreset.png" />
     <None Include="Resources\biology24.png" />
@@ -120,6 +123,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="CORE\CellModule\Data\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

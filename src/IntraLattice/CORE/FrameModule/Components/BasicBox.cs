@@ -8,6 +8,9 @@ using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
 using Grasshopper;
+using IntraLattice.CORE.CellModule;
+using IntraLattice.CORE.FrameModule.Data;
+
 
 
 // Summary:     This component generates a simple cartesian 3D lattice.

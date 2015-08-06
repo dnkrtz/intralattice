@@ -7,6 +7,7 @@ using Rhino.DocObjects;
 using IntraLattice.Properties;
 using System.Drawing;
 using Grasshopper.Kernel.Expressions;
+using IntraLattice.CORE.FrameModule;
 
 // This component is a post-processing tool used to inspect a mesh
 // ===============================================================

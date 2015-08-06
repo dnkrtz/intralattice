@@ -8,6 +8,7 @@ using Rhino;
 using Rhino.Collections;
 using Grasshopper.Kernel.Types.Transforms;
 using Rhino.Geometry.Intersect;
+using IntraLattice.CORE.FrameModule.Data;
 
 // Summary:     This class contains a set of methods used to verify/format unit cells
 // ===============================================================================
@@ -200,15 +201,6 @@ namespace IntraLattice.CORE.CellModule
 
         }
 
-    }
-
-    // The UnitCell object
-    public class UnitCell
-    {
-        public Point3dList Nodes = new Point3dList();   // List of unique nodes (as Point3d)
-        public List<int[]> NodePaths = new List<int[]>();   // List of relative paths in tree (parallel to Nodes list)
-        public List<List<int>> NodeNeighbours = new List<List<int>>();  // List of node adjacency lists (parallel to Nodes list)
-        public List<IndexPair> NodePairs = new List<IndexPair>();  // List of struts as node index pairs
     }
 
 }
