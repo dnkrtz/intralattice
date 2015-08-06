@@ -10,6 +10,7 @@ using Rhino.Geometry.Intersect;
 using Grasshopper;
 using IntraLattice.CORE.CellModule;
 using IntraLattice.CORE.FrameModule.Data;
+using Rhino.Collections;
 
 
 // Summary:     This class contains a set of methods used by the frame components
@@ -18,7 +19,6 @@ using IntraLattice.CORE.FrameModule.Data;
 //              UniformMapping(written by Aidan)    - Generates trimmed wire lattice for a (u,v,w,i) node grid.
 //              TrimStrut (written by Aidan)        - Trims strut at an intersection point and keeps the trimmed strut that is inside a design space.
 //              CastDesignSpace (written by Aidan)  - Casts GeometryBase design space to a Brep or Mesh.
-//              
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -26,6 +26,91 @@ namespace IntraLattice.CORE.FrameModule
 {
     public class FrameTools
     {
+
+        /// <summary>
+        /// Removes duplicate/invalid/tiny curves.
+        /// </summary>
+        /// <param name="inputStruts"></param>
+        public static List<Curve> CleanNetwork(List<Curve> inputStruts)
+        {
+            var nodes = new Point3dList();
+            var nodePairs = new List<IndexPair>();
+
+            return CleanNetwork(inputStruts, out nodes, out nodePairs);
+        }
+        public static List<Curve> CleanNetwork(List<Curve> inputStruts, out Point3dList nodes)
+        {
+            nodes = new Point3dList();
+            var nodePairs = new List<IndexPair>();
+
+            return CleanNetwork(inputStruts, out nodes, out nodePairs);
+        }
+        public static List<Curve> CleanNetwork(List<Curve> inputStruts, out Point3dList nodes, out List<IndexPair> nodePairs)
+        {
+            nodes = new Point3dList();
+            nodePairs = new List<IndexPair>();
+
+            var struts = new List<Curve>();
+
+            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
+
+            // Loop over list of struts
+            for (int i = 0; i < inputStruts.Count; i++)
+            {
+                Curve strut = inputStruts[i];
+                strut.Domain = new Interval(0, 1); // unitize domain
+                // if strut is invalid, ignore it
+                if (strut == null || !strut.IsValid || strut.IsShort(100*tol)) continue;
+
+                Point3d[] pts = new Point3d[2] { strut.PointAtStart, strut.PointAtEnd };
+                List<int> nodeIndices = new List<int>();
+                // Loop over end points of strut
+                // Check if node is already in nodes list, if so, we find its index instead of creating a new node
+                for (int j = 0; j < 2; j++)
+                {
+                    Point3d pt = pts[j];
+                    int closestIndex = nodes.ClosestIndex(pt);  // find closest node to current pt
+
+                    // If node already exists (within tolerance), set the index
+                    if (nodes.Count != 0 && pt.EpsilonEquals(nodes[closestIndex], tol))
+                        nodeIndices.Add(closestIndex);
+                    // If node doesn't exist
+                    else
+                    {
+                        // update lookup list
+                        nodes.Add(pt);
+                        nodeIndices.Add(nodes.Count - 1);
+                    }
+                }
+
+                // We must ignore duplicate struts
+                bool isDuplicate = false;
+                IndexPair nodePair = new IndexPair(nodeIndices[0], nodeIndices[1]);
+
+                int dupIndex = nodePairs.IndexOf(nodePair);
+                // dupIndex equals -1 if nodePair not found, i.e. if it doesn't equal -1, a match was found
+                if (nodePairs.Count != 0 && dupIndex != -1)
+                {
+                    // Check the curve midpoint to make sure it's a duplicate
+                    Curve testStrut = struts[dupIndex];
+                    Point3d ptA = strut.PointAt(0.5);
+                    Point3d ptB = testStrut.PointAt(0.5);
+                    if (ptA.EpsilonEquals(ptB, tol)) isDuplicate = true;
+                }
+
+                // So we only create the strut if it doesn't exist yet (check nodePairLookup list)
+                if (!isDuplicate)
+                {
+                    // update the lookup list
+                    nodePairs.Add(nodePair);
+                    strut.Domain = new Interval(0, 1);
+                    struts.Add(strut);
+                }
+            }
+
+            return struts;
+        }
+
         /// <summary>
         /// Maps cell topology to the node grid created by one of the conform components, with 3 morphing options
         /// ============================================================================
@@ -34,8 +119,10 @@ namespace IntraLattice.CORE.FrameModule
         /// 2) Bezier morphing (uses interpolated directional surface derivatives to morph the struts as Bezier curves)
         /// ============================================================================                    
         /// </summary>
-        public static void ConformMapping(ref List<Curve> struts, ref DataTree<Point3d> nodeTree, ref DataTree<Vector3d> derivTree, ref DataTree<GeometryBase> spaceTree, ref UnitCell cell, float[] N, int morphed, double morphTol = 0)
+        public static List<Curve> ConformMapping(DataTree<Point3d> nodeTree, DataTree<Vector3d> derivTree, DataTree<GeometryBase> spaceTree, UnitCell cell, float[] N, int morphed, double morphTol = 0)
         {
+            var struts = new List<Curve>();
+
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
@@ -168,6 +255,8 @@ namespace IntraLattice.CORE.FrameModule
                     }
                 }
             }
+
+            return struts;
         }
 
         /// <summary>
@@ -178,8 +267,10 @@ namespace IntraLattice.CORE.FrameModule
         /// - We remove the external nodes (the intersection nodes will replace them, since they are appended to the path in the trimStrut method)
         /// =================================================================
         /// </summary>
-        public static void UniformMapping(ref List<Curve> struts, ref DataTree<Point3d> nodeTree, ref DataTree<Boolean> stateTree, ref UnitCell cell, GeometryBase designSpace, int spaceType, float[] N, double tol)
+        public static List<Curve> UniformMapping(DataTree<Point3d> nodeTree, DataTree<Boolean> stateTree, UnitCell cell, GeometryBase designSpace, int spaceType, float[] N, double tol)
         {
+            var struts = new List<Curve>();
+
             // nodes that must be removed from the data structure
             var nodesToRemove = new List<GH_Path>();
 
@@ -290,6 +381,7 @@ namespace IntraLattice.CORE.FrameModule
                 }
             }
 
+            return struts;
         }
 
         /// <summary>
@@ -352,7 +444,6 @@ namespace IntraLattice.CORE.FrameModule
 
             return type;
         }
-
 
     }
 }

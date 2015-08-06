@@ -43,7 +43,7 @@ namespace IntraLattice.CORE.FrameModule
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
             pManager.HideParameter(1);  // Do not display the 'Nodes' output points
         }
 
@@ -97,10 +97,9 @@ namespace IntraLattice.CORE.FrameModule
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
-            CellTools.FixIntersections(ref topology);
-            CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
-            CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
+            cell.ExtractTopology(topology); // fixes intersections, and formats lines to the UnitCell object
+            cell.NormaliseTopology();       // normalizes the unit cell (scaled to unit size and moved to origin)
+            cell.FormatTopology();          // sets up paths for inter-cell nodes
 
             // 7. Create grid of points (as data tree)
             //    u-direction is along the cylinder
@@ -176,11 +175,13 @@ namespace IntraLattice.CORE.FrameModule
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref spaceTree, ref cell, N, morphed, morphFactor);
+            var nodes = new Point3dList();
+            struts = FrameTools.ConformMapping(nodeTree, derivTree, spaceTree, cell, N, morphed, morphFactor);
+            struts = FrameTools.CleanNetwork(struts, out nodes);
 
             // 8. Set output
             DA.SetDataList(0, struts);
-            DA.SetDataTree(1, nodeTree);
+            DA.SetDataList(1, nodes);
             
         }
 

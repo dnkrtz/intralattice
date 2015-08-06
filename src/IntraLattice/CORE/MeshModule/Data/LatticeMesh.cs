@@ -68,10 +68,10 @@ namespace IntraLattice.CORE.MeshModule
             //  If struts form a sharp corner, add an extra plate for a better convex hull shape
             if (isSharp)
             {
-                List<Point3d> Vtc;
+                
                 // plane offset from node slightly
                 Plane plane = new Plane(node.Point3d - extraNormal * node.Radius / 3, -extraNormal);
-                MeshTools.CreateKnuckle(plane, sides, node.Radius, 0, out Vtc);    // compute the vertices
+                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, node.Radius, 0);    // compute the vertices
                 // add new plate and its vertices
                 this.Plates.Add(new Plate(nodeIndex, -extraNormal));
                 int newPlateIndx = this.Plates.Count - 1;
@@ -155,7 +155,7 @@ namespace IntraLattice.CORE.MeshModule
                         return false;
                     // if offset is greater than previously set offset, but not almost equal, adjust
                     double offset;
-                    bool offsetFound = MeshTools.FilterOffset(testOffset, offsets, tol*100, out offset);
+                    bool offsetFound = MeshTools.FilterOffset(testOffset, offsets, tol*100*node.Radius, out offset);
                     if (!offsetFound)
                         offsets.Add(offset);
                     if (offset > plateA.Offset)
@@ -191,12 +191,14 @@ namespace IntraLattice.CORE.MeshModule
             double startParam, endParam;
             strut.Curve.LengthParameter(startPlate.Offset, out startParam);   // get start and end params of strut (accounting for offset)
             strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
-            startPlate.Vtc.Add(strut.Curve.PointAt(startParam));    // set center point of start & end plates
-            endPlate.Vtc.Add(strut.Curve.PointAt(endParam));
             double startRadius = this.Nodes[strut.NodePair.I].Radius;    // set radius at start & end
             double endRadius = this.Nodes[strut.NodePair.J].Radius;
 
-            // compute the number of divisions
+            // set center point of start & end plates
+            startPlate.Vtc.Add(strut.Curve.PointAt(startParam));
+            endPlate.Vtc.Add(strut.Curve.PointAt(endParam));
+
+            // compute the number of sleeve divisions
             double avgRadius = (startRadius + endRadius) / 2;
             double length = strut.Curve.GetLength(new Interval(startParam, endParam));
             double divisions = Math.Max((Math.Round(length * 0.5 / avgRadius) * 2), 2); // Number of sleeve divisions (must be even)
@@ -223,8 +225,7 @@ namespace IntraLattice.CORE.MeshModule
                 double R = startRadius - j / (double)divisions * (startRadius - endRadius); //variable radius
                 double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
 
-                List<Point3d> Vtc;
-                MeshTools.CreateKnuckle(plane, sides, R, startAngle, out Vtc);    // compute the vertices
+                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, R, startAngle);    // compute the vertices
 
                 // if the vertices are hull points (plates that connect sleeves to node hulls), save them
                 if (j == 0) startPlate.Vtc.AddRange(Vtc);
