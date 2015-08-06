@@ -316,16 +316,16 @@ namespace IntraLattice.CORE.FrameModule
                                 {
                                     // We are going to find the intersection point with the design space
                                     Point3d[] intersectionPts = null;
+                                    Curve[] overlapCurves = null;
                                     LineCurve strutToTrim = null;
 
                                     switch (spaceType)
                                     {
                                         // Brep design space
                                         case 1: 
-                                            Curve[] overlapCurves = null;   // dummy variable for CurveBrep call
                                             strutToTrim = new LineCurve(node1, node2);
                                             // find intersection point
-                                            Intersection.CurveBrep(strutToTrim, (Brep)designSpace, Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
+                                            Intersection.CurveBrep(strutToTrim, (Brep)designSpace, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, out overlapCurves, out intersectionPts);
                                             break;
                                         // Mesh design space
                                         case 2:
@@ -339,7 +339,7 @@ namespace IntraLattice.CORE.FrameModule
                                             overlapCurves = null;   // dummy variable for CurveBrep call
                                             strutToTrim = new LineCurve(node1, node2);
                                             // find intersection point
-                                            Intersection.CurveBrep(strutToTrim, ((Surface)designSpace).ToBrep(), Rhino.RhinoMath.SqrtEpsilon, out overlapCurves, out intersectionPts);
+                                            Intersection.CurveBrep(strutToTrim, ((Surface)designSpace).ToBrep(), RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, out overlapCurves, out intersectionPts);
                                             break;
                                     }
 
@@ -350,6 +350,10 @@ namespace IntraLattice.CORE.FrameModule
                                         testLine = FrameTools.TrimStrut(ref nodeTree, ref stateTree, ref nodesToRemove, IPath, JPath, intersectionPts[0], isInside, tol);
                                         // if the strut was succesfully trimmed, add it to the list
                                         if (testLine != null) struts.Add(testLine);
+                                    }
+                                    else if ( overlapCurves != null && overlapCurves.Length > 0)
+                                    {
+                                        struts.Add(overlapCurves[0]);
                                     }
 
                                 }

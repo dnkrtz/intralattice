@@ -169,13 +169,13 @@ namespace IntraLattice.CORE.FrameModule
                             switch (spaceType)
                             {
                                 case 1: // Brep design space
-                                    isInside = ((Brep)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    isInside = ((Brep)designSpace).IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
                                     break;
                                 case 2: // Mesh design space
-                                    isInside = ((Mesh)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    isInside = ((Mesh)designSpace).IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
                                     break;
                                 case 3: // Solid surface design space (must be converted to brep)
-                                    isInside = ((Surface)designSpace).ToBrep().IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    isInside = ((Surface)designSpace).ToBrep().IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
                                     break;
                             }
 

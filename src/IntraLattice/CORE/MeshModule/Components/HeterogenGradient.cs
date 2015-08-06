@@ -37,19 +37,19 @@ namespace IntraLattice.CORE.MeshModule
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 0. Declare placeholder variables
-            List<Curve> inputStruts = new List<Curve>();
+            List<Curve> strutList = new List<Curve>();
             string gradientString = null;
             double maxRadius = 0;
             double minRadius = 0;
 
             // 1. Attempt to fetch data inputs
-            if (!DA.GetDataList(0, inputStruts)) { return; }
+            if (!DA.GetDataList(0, strutList)) { return; }
             if (!DA.GetData(1, ref gradientString)) { return; }
             if (!DA.GetData(2, ref maxRadius)) { return; }
             if (!DA.GetData(3, ref minRadius)) { return; }
 
             // 2. Validate data
-            if (inputStruts == null || inputStruts.Count == 0) { return; }
+            if (strutList == null || strutList.Count == 0) { return; }
             if (maxRadius <= 0 || minRadius <= 0) { return; }
 
             // 3. Set some variables
@@ -71,7 +71,7 @@ namespace IntraLattice.CORE.MeshModule
             var nodeList = new Point3dList();               // List of unique nodes
             var nodePairList = new List<IndexPair>();       // List of struts, as node index pairs
             
-            var strutList = FrameTools.CleanNetwork(inputStruts, out nodeList, out nodePairList);
+            strutList = FrameTools.CleanNetwork(strutList, out nodeList, out nodePairList);
 
             //====================================================================================
             // PART B - Data structure

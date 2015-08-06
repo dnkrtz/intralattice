@@ -70,7 +70,6 @@
     <Compile Include="CORE\MeshModule\Data\Strut.cs" />
     <Compile Include="CORE\MeshModule\Data\LatticeMesh.cs" />
     <Compile Include="CORE\MeshModule\MeshTools.cs" />
-    <Compile Include="CORE\UtilityModule\LatticeCleanse.cs" />
     <Compile Include="FEAInterface\Components\FEAInterfaceComponent.cs" />
     <Compile Include="FEAInterface\Components\PointLoadComponent.cs" />
     <Compile Include="FEAInterface\Components\SPCComponentComponent.cs" />
