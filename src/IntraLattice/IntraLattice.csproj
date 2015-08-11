@@ -70,6 +70,7 @@
     <Compile Include="CORE\MeshModule\Data\Strut.cs" />
     <Compile Include="CORE\MeshModule\Data\LatticeMesh.cs" />
     <Compile Include="CORE\MeshModule\MeshTools.cs" />
+    <Compile Include="CORE\UtilityModule\MeshReport.cs" />
     <Compile Include="FEAInterface\Components\FEAInterfaceComponent.cs" />
     <Compile Include="FEAInterface\Components\PointLoadComponent.cs" />
     <Compile Include="FEAInterface\Components\SPCComponentComponent.cs" />
@@ -93,7 +94,7 @@
     <Compile Include="CORE\MeshModule\Components\HeterogenGradient.cs" />
     <Compile Include="CORE\MeshModule\InputGradient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CORE\UtilityModule\MeshReport.cs" />
+    <Compile Include="CORE\UtilityModule\MeshPreview.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

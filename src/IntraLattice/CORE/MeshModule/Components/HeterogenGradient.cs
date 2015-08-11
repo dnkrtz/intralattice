@@ -23,7 +23,7 @@ namespace IntraLattice.CORE.MeshModule
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Lines", "L", "Wireframe to thicken", GH_ParamAccess.list);
+            pManager.AddCurveParameter("Struts", "Struts", "Wireframe to thicken", GH_ParamAccess.list);
             pManager.AddTextParameter("Gradient String", "Grad", "The spatial gradient as an expression string", GH_ParamAccess.item, "1");
             pManager.AddNumberParameter("Maximum Radius", "Rmax", "Maximum radius in gradient", GH_ParamAccess.item, 0.5);
             pManager.AddNumberParameter("Minimum Radius", "Rmin", "Minimum radius in gradient", GH_ParamAccess.item, 0.2);

@@ -22,7 +22,7 @@ namespace IntraLattice.CORE.MeshModule
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Lines", "L", "Wireframe to thicken", GH_ParamAccess.list);
+            pManager.AddCurveParameter("Struts", "Struts", "Wireframe to thicken", GH_ParamAccess.list);
             pManager.AddNumberParameter("Node Radii", "Radii", "Radius at the start of each line", GH_ParamAccess.list);
         }
 

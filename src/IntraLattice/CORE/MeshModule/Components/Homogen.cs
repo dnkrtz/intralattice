@@ -28,7 +28,9 @@ namespace IntraLattice.CORE.MeshModule
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddMeshParameter("Mesh", "M", "Thickened wireframe", GH_ParamAccess.item);
             pManager.AddMeshParameter("Mesh", "M", "Thickened wireframe", GH_ParamAccess.list);
+            pManager.AddCircleParameter("Mesh", "M", "Thickened wireframe", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -137,13 +139,14 @@ namespace IntraLattice.CORE.MeshModule
                 Mesh sleeveMesh = lattice.MakeSleeve(i, sides);
                 // append the new sleeve mesh to the full lattice mesh
                 lattice.Mesh.Append(sleeveMesh);
-
             }
 
             //====================================================================================
             // STEP 5 - Construct hull meshes
             // 
             //====================================================================================
+
+            var hullMeshList = new List<Mesh>();
 
             // HULLS - Loop over all nodes
             for (int i = 0; i < lattice.Nodes.Count; i++)
@@ -161,9 +164,19 @@ namespace IntraLattice.CORE.MeshModule
                 else
                 {
                     Mesh hullMesh = lattice.MakeConvexHull(i, sides, tol, true);
+                    hullMeshList.Add(hullMesh);
                     lattice.Mesh.Append(hullMesh);
                 }
             }
+
+            
+            List<Circle> plateCircles = new List<Circle>();
+
+            foreach (Plate plate in lattice.Plates)
+                {
+                    plateCircles.Add(new Circle(plate.Vtc[1], plate.Vtc[2], plate.Vtc[3]));
+                }
+
 
             // POST-PROCESS FINAL MESH
             lattice.Mesh.Vertices.CombineIdentical(true, true);
@@ -173,6 +186,8 @@ namespace IntraLattice.CORE.MeshModule
 
 
             DA.SetData(0, lattice.Mesh);
+            DA.SetDataList(1, hullMeshList);
+            DA.SetDataList(2, plateCircles);
         }
 
         public override GH_Exposure Exposure
