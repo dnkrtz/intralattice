@@ -47,39 +47,6 @@ namespace IntraLattice.CORE.MeshModule
         // Pre-processsing methods
         //
         /// <summary>
-        /// Adds a plate to the node if it is a 'sharp' node, to improve convex hull shape.
-        /// </summary>
-        /// <param name="nodeIndex"> Index of the node we want to check/fix. </param>
-        /// <param name="sides"> Number of sides on the sleeve meshes. </param>
-        public void FixSharpNodes(int nodeIndex, int sides)
-        {
-            Node node = this.Nodes[nodeIndex];
-
-            // The extra plate is in the direction of the negative sum of all normals
-            // We use the new plate normal to check if the node struts are contained within a 180deg peripheral (i.e. the node is 'sharp')
-            bool isSharp = true;
-            Vector3d extraNormal = new Vector3d();  // sum of all normals
-            foreach (int plateIndex in node.PlateIndices)
-                extraNormal += this.Plates[plateIndex].Normal;
-            foreach (int plateIndex in node.PlateIndices)
-                if (Vector3d.VectorAngle(-extraNormal, this.Plates[plateIndex].Normal) < Math.PI / 2)
-                    isSharp = false;
-
-            //  If struts form a sharp corner, add an extra plate for a better convex hull shape
-            if (isSharp)
-            {
-                
-                // plane offset from node slightly
-                Plane plane = new Plane(node.Point3d - extraNormal * node.Radius / 3, -extraNormal);
-                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, node.Radius, 0);    // compute the vertices
-                // add new plate and its vertices
-                this.Plates.Add(new Plate(nodeIndex, -extraNormal));
-                int newPlateIndx = this.Plates.Count - 1;
-                this.Plates[newPlateIndx].Vtc.AddRange(Vtc);
-                node.PlateIndices.Add(newPlateIndx);
-            }
-        }
-        /// <summary>
         /// Computes plate offsets required to avoid mesh overlaps.
         /// For linear struts, this is done with simple trig.
         /// For curved struts, sphere intersections are used.
@@ -115,8 +82,9 @@ namespace IntraLattice.CORE.MeshModule
             bool convexFound = false;
             bool[] travel;
             int iteration = 0;
+            double paramIncrement = offsets[0] / 10;
             // Iterate until a suitable plate layout is found (i.e. ensures the convex hull won't engulf any plate points)
-            while (!convexFound && iteration<100)
+            while (!convexFound && iteration<500)
             {
                 // Prepare list of circles
                 List<Circle> circles = new List<Circle>();
@@ -151,7 +119,7 @@ namespace IntraLattice.CORE.MeshModule
                 {
                     if (travel[i])
                     {
-                        offsets[i] += 0.05;
+                        offsets[i] += paramIncrement;
                         convexFound = false;
                     }
                 }
@@ -166,6 +134,39 @@ namespace IntraLattice.CORE.MeshModule
             }
 
             return true;
+        }
+        /// <summary>
+        /// Adds a plate to the node if it is a 'sharp' node, to improve convex hull shape.
+        /// </summary>
+        /// <param name="nodeIndex"> Index of the node we want to check/fix. </param>
+        /// <param name="sides"> Number of sides on the sleeve meshes. </param>
+        public void FixSharpNodes(int nodeIndex, int sides)
+        {
+            Node node = this.Nodes[nodeIndex];
+
+            // The extra plate is in the direction of the negative sum of all normals
+            // We use the new plate normal to check if the node struts are contained within a 180deg peripheral (i.e. the node is 'sharp')
+            bool isSharp = true;
+            Vector3d extraNormal = new Vector3d();  // sum of all normals
+            foreach (int plateIndex in node.PlateIndices)
+                extraNormal += this.Plates[plateIndex].Normal;
+            foreach (int plateIndex in node.PlateIndices)
+                if (Vector3d.VectorAngle(-extraNormal, this.Plates[plateIndex].Normal) < Math.PI / 2)
+                    isSharp = false;
+
+            //  If struts form a sharp corner, add an extra plate for a better convex hull shape
+            if (isSharp)
+            {
+
+                // plane offset from node slightly
+                Plane plane = new Plane(node.Point3d - extraNormal * node.Radius / 3, -extraNormal);
+                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, node.Radius, 0);    // compute the vertices
+                // add new plate and its vertices
+                this.Plates.Add(new Plate(nodeIndex, -extraNormal));
+                int newPlateIndx = this.Plates.Count - 1;
+                this.Plates[newPlateIndx].Vtc.AddRange(Vtc);
+                node.PlateIndices.Add(newPlateIndx);
+            }
         }
 
         // Meshing methods

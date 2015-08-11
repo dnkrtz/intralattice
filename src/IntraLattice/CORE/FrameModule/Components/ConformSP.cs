@@ -43,8 +43,7 @@ namespace IntraLattice.CORE.FrameModule
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("Morph", "Morph", "If true, struts will morph to the design space (as bezier curves)", GH_ParamAccess.item, 0);
-            pManager.AddNumberParameter("Morph Factor", "MF", "Contraction factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
+            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts are morphed to the space as curves.", GH_ParamAccess.item, false);
         }
 
         /// <summary>
@@ -70,8 +69,7 @@ namespace IntraLattice.CORE.FrameModule
             int nU = 0;
             int nV = 0;
             int nW = 0;
-            int morphed = 0;
-            double morphFactor = 0;
+            bool morphed = false;
 
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref surface)) { return; }
@@ -80,7 +78,6 @@ namespace IntraLattice.CORE.FrameModule
             if (!DA.GetData(4, ref nV)) { return; }
             if (!DA.GetData(5, ref nW)) { return; }
             if (!DA.GetData(6, ref morphed)) { return; }
-            if (!DA.GetData(7, ref morphFactor)) { return; }
 
             if (topology.Count < 2) { return; }
             if (!surface.IsValid) { return; }
@@ -91,7 +88,6 @@ namespace IntraLattice.CORE.FrameModule
 
             // 2. Initialize the node tree, derivative tree and morphed space tree
             var nodeTree = new DataTree<Point3d>();                                 // will contain lattice nodes
-            var derivTree = new DataTree<Vector3d>();                               // will contain derivatives (du,dv) in a parallel tree
             var spaceTree = new DataTree<GeometryBase>();                           // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)  
 
             // 3. Package the number of cells in each direction into an array
@@ -150,15 +146,6 @@ namespace IntraLattice.CORE.FrameModule
                             Point3d newPt = pt1 + wVect * (w + wsub) / N[2];
                             nodeTree.Add(newPt, treePath);
 
-                            // for each of the 2 directional directives (du and dv)
-                            for (int derivIndex = 0; derivIndex < 2; derivIndex++)
-                            {
-                                // decrease the amplitude of the derivative vector as we approach the point
-                                Vector3d deriv = derivatives[derivIndex] * (w + wsub) / N[2];
-                                // this division scales the derivatives (gives better control of the bezier curves)
-                                deriv = deriv / (morphFactor * N[derivIndex]);
-                                derivTree.Add(deriv, treePath);
-                            }
                         }
                     }
 
@@ -182,7 +169,7 @@ namespace IntraLattice.CORE.FrameModule
             //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
             var nodes = new Point3dList();
-            struts = FrameTools.ConformMapping(nodeTree, derivTree, spaceTree, cell, N, morphed, morphFactor);
+            struts = FrameTools.ConformMapping(nodeTree, spaceTree, cell, N, morphed);
             struts = FrameTools.CleanNetwork(struts, out nodes);
 
             // 8. Set output
