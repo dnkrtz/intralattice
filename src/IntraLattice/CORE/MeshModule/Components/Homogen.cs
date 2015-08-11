@@ -119,7 +119,7 @@ namespace IntraLattice.CORE.MeshModule
                 // if node has only 1 strut, skip it
                 if (lattice.Nodes[i].StrutIndices.Count < 2) continue;
                 // compute the offsets required to avoid plate overlaps
-                lattice.ComputeOffsets(i, tol);
+                bool success = lattice.ComputeOffsets(i, tol);
                 // To improve convex hull shape at 'sharp' nodes, we add an extra plate
                 lattice.FixSharpNodes(i, sides);
             }

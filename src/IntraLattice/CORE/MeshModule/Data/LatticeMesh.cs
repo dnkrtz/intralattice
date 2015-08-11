@@ -90,85 +90,79 @@ namespace IntraLattice.CORE.MeshModule
         public bool ComputeOffsets(int nodeIndex, double tol)
         {
             Node node = this.Nodes[nodeIndex];
-            // the minimum offset is based on the radius at the node
-            // if equal to the radius, the convex hull is much more complex to clean, since some vertices might lie on the plane of other plates
-            // so we increase by 5% for robustness
-            double minOffset = node.Radius * 1.05;
-            double testOffset = minOffset;
-            List<double> offsets = new List<double>() {testOffset};
+            double minOffset = node.Radius; // the minimum offset is based on the radius at the node
 
-            // Loop over all possible pairs of plates on the node
-            for (int j = 0; j < node.StrutIndices.Count; j++)
+            List<Curve> paths = new List<Curve>();
+            List<double> offsets = new List<double>();  // parameter offset (path domains are unitized)
+
+            // Prepare all struts and initialize offsets
+            foreach (int strutIndex in node.StrutIndices)
             {
-                for (int k = j + 1; k < node.StrutIndices.Count; k++)
+                Curve curve = this.Struts[strutIndex].Curve.DuplicateCurve();
+                if (curve.PointAtEnd.EpsilonEquals(node.Point3d, 100 * tol))
                 {
-                    Strut strutA = this.Struts[node.StrutIndices[j]];
-                    Strut strutB = this.Struts[node.StrutIndices[k]];
-                    Plate plateA = this.Plates[node.PlateIndices[j]];
-                    Plate plateB = this.Plates[node.PlateIndices[k]];
-
-                    double maxOffset = Math.Min(strutA.Curve.GetLength(), strutB.Curve.GetLength());
-
-                    // if linear struts
-                    if (strutA.Curve.IsLinear(tol) && strutB.Curve.IsLinear(tol))
-                    {
-                        // compute the angle between the struts
-                        double theta = Vector3d.VectorAngle(plateA.Normal, plateB.Normal);
-                        // if angle is a reflex angle (angle greater than 180deg), we need to adjust it
-                        if (theta > Math.PI) theta = 2 * Math.PI - theta;
-
-                        // if angle is greater than 90deg, simple case: offset is based on radius at node
-                        if (theta > Math.PI / 2)
-                            testOffset = minOffset;
-                        // if angle is acute, we need some simple trig
-                        else
-                            testOffset = node.Radius*1.05 / (Math.Sin(theta / 2.0));
-                    }
-                    // if curved struts
-                    else
-                    {
-                        // The curves we'll work with
-                        Curve curveA = strutA.Curve.DuplicateCurve();
-                        Curve curveB = strutB.Curve.DuplicateCurve();
-
-                        // May need to reverse direction
-                        if (curveA.PointAtEnd.EpsilonEquals(node.Point3d, tol))
-                            curveA.Reverse();
-                        if (curveB.PointAtEnd.EpsilonEquals(node.Point3d, tol))
-                            curveB.Reverse();
-
-                        // Now perform incremental offset
-                        for (testOffset = minOffset; testOffset < maxOffset; testOffset += minOffset / 5)
-                        {
-                            Sphere sphereA = new Sphere(curveA.PointAtLength(testOffset), node.Radius);
-                            Sphere sphereB = new Sphere(curveB.PointAtLength(testOffset), node.Radius);
-
-                            // Check for intersection of the two spheres. If none found, we're good to go.
-                            Circle intersectLine;
-                            if (Intersection.SphereSphere(sphereA, sphereB, out intersectLine) == 0) break;
-                        }
-                        testOffset += minOffset / 5;
-                    }
-
-                    // if offset greater than length of strut, it is engulfed
-                    if (testOffset > maxOffset)
-                        return false;
-                    // if offset is greater than previously set offset, but not almost equal, adjust
-                    double offset;
-                    bool offsetFound = MeshTools.FilterOffset(testOffset, offsets, tol*100*node.Radius, out offset);
-                    if (!offsetFound)
-                        offsets.Add(offset);
-                    if (offset > plateA.Offset)
-                        plateA.Offset = offset;
-                    if (offset > plateB.Offset)
-                        plateB.Offset = offset;
-                        
+                    curve.Reverse(); // reverse direction of curve to start at this node
+                    curve.Domain = new Interval(0, 1);
                 }
+                    
+                paths.Add(curve);
+                
+                double offsetParam;
+                curve.LengthParameter(minOffset, out offsetParam);
+                offsets.Add(offsetParam);
             }
 
-            foreach (int plateIndx in node.PlateIndices)
+            bool convexFound = false;
+            bool[] travel;
+            int iteration = 0;
+            // Iterate until a suitable plate layout is found (i.e. ensures the convex hull won't engulf any plate points)
+            while (!convexFound && iteration<100)
             {
+                // Prepare list of circles
+                List<Circle> circles = new List<Circle>();
+                for (int i=0; i<paths.Count; i++)
+                {
+                    Plane plane;
+                    paths[i].PerpendicularFrameAt(offsets[i], out plane);
+                    circles.Add(new Circle(plane, node.Radius));
+                }
+                    
+                // Do stuff here...
 
+                // Loop over all pairs of struts
+                travel = new bool[paths.Count];
+                for (int a = 0; a < paths.Count; a++)
+                {
+                    for (int b = a + 1; b < paths.Count; b++)
+                    {
+                        double p1, p2;
+                        var intAB = Intersection.PlaneCircle(circles[a].Plane, circles[b], out p1, out p2);
+                        var intBA = Intersection.PlaneCircle(circles[b].Plane, circles[a], out p1, out p2);
+                        if (intAB == PlaneCircleIntersection.Secant || intAB == PlaneCircleIntersection.Tangent)
+                            travel[a] = true;
+                        if (intBA == PlaneCircleIntersection.Secant || intBA == PlaneCircleIntersection.Tangent)
+                            travel[b] = true;
+                    }
+                }
+
+                // Increase offset of plates that intersected, if no intersections, we have a suitable convex layout
+                convexFound = true;
+                for (int i=0; i < paths.Count; i++)
+                {
+                    if (travel[i])
+                    {
+                        offsets[i] += 0.05;
+                        convexFound = false;
+                    }
+                }
+
+                iteration++;
+            }
+
+            for (int i = 0; i < paths.Count; i++)
+            {
+                int plateIndex = node.PlateIndices[i];
+                this.Plates[plateIndex].Offset = 1.05 * offsets[i];
             }
 
             return true;
@@ -189,8 +183,10 @@ namespace IntraLattice.CORE.MeshModule
             Plate startPlate = this.Plates[strut.PlatePair.I];   // plate for the start of the strut
             Plate endPlate = this.Plates[strut.PlatePair.J];
             double startParam, endParam;
-            strut.Curve.LengthParameter(startPlate.Offset, out startParam);   // get start and end params of strut (accounting for offset)
-            strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
+            startParam = startPlate.Offset;
+            endParam = 1 - endPlate.Offset;
+            //strut.Curve.LengthParameter(startPlate.Offset, out startParam);   // get start and end params of strut (accounting for offset)
+            //strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
             double startRadius = this.Nodes[strut.NodePair.I].Radius;    // set radius at start & end
             double endRadius = this.Nodes[strut.NodePair.J].Radius;
 
