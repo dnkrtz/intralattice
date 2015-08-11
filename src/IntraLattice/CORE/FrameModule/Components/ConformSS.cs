@@ -9,6 +9,8 @@ using Rhino.Collections;
 using Rhino;
 using Grasshopper;
 using IntraLattice.Properties;
+using IntraLattice.CORE.CellModule;
+using IntraLattice.CORE.FrameModule.Data;
 
 // Summary:     This component generates a (u,v,w) lattice between two surfaces
 // ===============================================================================
@@ -16,7 +18,7 @@ using IntraLattice.Properties;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.FrameModule
 {
     public class GridConformSS : GH_Component
     {
@@ -33,17 +35,17 @@ namespace IntraLattice
             pManager.AddSurfaceParameter("Surface 1", "S1", "First bounding surface", GH_ParamAccess.item);
             pManager.AddSurfaceParameter("Surface 2", "S2", "Second bounding surface", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Flip UV", "FlipUV", "Flip the UV parameters (for alignment purposes)", GH_ParamAccess.item, false); // default value is false
+            pManager.AddIntegerParameter("Reverse UV", "RevUV", "0 : Keep as is\n1 : Reverse U-direction of s1\n2 : Reverse V-direction of s1\n", GH_ParamAccess.item, 0);
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("Morph", "Morph", "0: No Morph\n1: Space Morph\n2: Bezier Morph", GH_ParamAccess.item, 0);
-            pManager.AddNumberParameter("Morph Factor", "MF", "Contraction factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
+            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts are morphed to the space as curves.", GH_ParamAccess.item, false);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
             pManager.HideParameter(1); // Do not display the 'Nodes' output points
         }
 
@@ -54,21 +56,21 @@ namespace IntraLattice
             Surface s1 = null;
             Surface s2 = null;
             bool flipUV = false;
+            int reverseUV = 0;
             int nU = 0;
             int nV = 0;
             int nW = 0;
-            int morphed = 0;
-            double morphFactor = 0;
+            bool morphed = false;
 
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref s1)) { return; }
             if (!DA.GetData(2, ref s2)) { return; }
             if (!DA.GetData(3, ref flipUV)) { return; }
-            if (!DA.GetData(4, ref nU)) { return; }
-            if (!DA.GetData(5, ref nV)) { return; }
-            if (!DA.GetData(6, ref nW)) { return; }
-            if (!DA.GetData(7, ref morphed)) { return; }
-            if (!DA.GetData(8, ref morphFactor)) { return; }
+            if (!DA.GetData(4, ref reverseUV)) { return; }
+            if (!DA.GetData(5, ref nU)) { return; }
+            if (!DA.GetData(6, ref nV)) { return; }
+            if (!DA.GetData(7, ref nW)) { return; }
+            if (!DA.GetData(8, ref morphed)) { return; }
 
             if (topology.Count < 2) { return; }
             if (!s1.IsValid) { return; }
@@ -79,12 +81,13 @@ namespace IntraLattice
 
             // 2. Initialize the node tree, derivative tree and morphed space tree
             var nodeTree = new DataTree<Point3d>();                                 // will contain lattice nodes
-            var derivTree = new DataTree<Vector3d>();                               // will contain derivatives (du,dv) in a parallel tree
             var spaceTree = new DataTree<GeometryBase>();                           // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
 
-            // 3. Flip the UV parameters a surface if specified
+            // 3. Modify the UV parameters of surface1 if specified
             if (flipUV) s1 = s1.Transpose();
-            
+            if (reverseUV == 1 || reverseUV == 3) s1.Reverse(0, true);
+            if (reverseUV == 2 || reverseUV == 3) s1.Reverse(1, true);           
+
             // 4. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
 
@@ -97,10 +100,9 @@ namespace IntraLattice
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
-            CellTools.FixIntersections(ref topology);
-            CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into a node indexpair list format
-            CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
-            CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up relative path references (for nodes)
+            cell.ExtractTopology(topology); // fixes intersections, and formats lines to the UnitCell object
+            cell.NormaliseTopology();       // normalizes the unit cell (scaled to unit size and moved to origin)
+            cell.FormatTopology();          // sets up paths for inter-cell nodes
 
             // 7. Map nodes to design space
             //    Loop through the uvw cell grid
@@ -142,17 +144,6 @@ namespace IntraLattice
                             Point3d newPt = pt1 + wVect * (w + wsub) / N[2];
                             nodeTree.Add(newPt, treePath);
 
-                            // for each of the 2 directional directives (du and dv)
-                            for (int derivIndex = 0; derivIndex < 2; derivIndex++)
-                            {
-                                // compute the interpolated derivative (need interpolation for in-between surfaces)
-                                double interpolationFactor = (w + wsub) / N[2];
-                                Vector3d deriv = derivatives1[derivIndex] + interpolationFactor * (derivatives2[derivIndex] - derivatives1[derivIndex]);
-                                // this division scales the derivatives (gives better control of the bezier curves)
-                                deriv = deriv / (morphFactor * N[derivIndex]);
-                                derivTree.Add(deriv, treePath);
-                            }
-
                         }
                     }
 
@@ -177,11 +168,13 @@ namespace IntraLattice
             // 8. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref spaceTree, ref cell, N, morphed, morphFactor);
+            var nodes = new Point3dList();
+            struts = FrameTools.ConformMapping(nodeTree, spaceTree, cell, N, morphed);
+            struts = FrameTools.CleanNetwork(struts, out nodes);
 
             // 9. Set output
             DA.SetDataList(0, struts);
-            DA.SetDataTree(1, nodeTree);
+            DA.SetDataList(1, nodes);
 
         }
 

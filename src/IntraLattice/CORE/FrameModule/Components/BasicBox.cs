@@ -8,6 +8,9 @@ using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
 using Grasshopper;
+using IntraLattice.CORE.CellModule;
+using IntraLattice.CORE.FrameModule.Data;
+
 
 
 // Summary:     This component generates a simple cartesian 3D lattice.
@@ -16,7 +19,7 @@ using Grasshopper;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.FrameModule
 {
     public class BasicBox : GH_Component
     {
@@ -55,8 +58,8 @@ namespace IntraLattice
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
-            pManager.HideParameter(1);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
+            pManager.HideParameter(1);   // Do not display the 'Nodes' output points
         }
 
         /// <summary>
@@ -98,12 +101,11 @@ namespace IntraLattice
             var nodeTree = new DataTree<Point3d>();
             var stateTree = new DataTree<Boolean>();
 
-            // 5. Prepare normalized unit cell topology
+            // 5. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
-            CellTools.FixIntersections(ref topology);
-            CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
-            CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
+            cell.ExtractTopology(topology); // fixes intersections, and formats lines to the UnitCell object
+            cell.NormaliseTopology();       // normalizes the unit cell (scaled to unit size and moved to origin)
+            cell.FormatTopology();          // sets up paths for inter-cell nodes
             
             // 6. Define BasePlane and directional iteration vectors
             Plane basePlane = Plane.WorldXY;
@@ -152,11 +154,13 @@ namespace IntraLattice
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, null, 0, N);
+            var nodes = new Point3dList();
+            struts = FrameTools.UniformMapping(nodeTree, stateTree, cell, null, 0, N, 0);
+            struts = FrameTools.CleanNetwork(struts, out nodes);
 
             // 8. Set output
             DA.SetDataList(0, struts);
-            DA.SetDataTree(1, nodeTree);
+            DA.SetDataList(1, nodes);
             
         }
         

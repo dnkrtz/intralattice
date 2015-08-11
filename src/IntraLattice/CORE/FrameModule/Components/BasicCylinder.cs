@@ -8,6 +8,8 @@ using Rhino.Collections;
 using Rhino;
 using IntraLattice.Properties;
 using Grasshopper;
+using IntraLattice.CORE.CellModule;
+using IntraLattice.CORE.FrameModule.Data;
 
 // Summary:     This component generates a simple cylindrical lattice.
 // ===============================================================================
@@ -15,7 +17,7 @@ using Grasshopper;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.FrameModule
 {
     public class BasicCylinder : GH_Component
     {
@@ -34,14 +36,13 @@ namespace IntraLattice
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (theta)", GH_ParamAccess.item, 15);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (radial)", GH_ParamAccess.item, 4);
-            pManager.AddIntegerParameter("Morph", "Morph", "0: No Morph\n1: Space Morph\n2: Bezier Morph", GH_ParamAccess.item, 0);
-            pManager.AddNumberParameter("Morph Factor", "MF", "Contraction factor for bezier vectors (recommended: 2.0-3.0)", GH_ParamAccess.item, 3);
+            pManager.AddBooleanParameter("Morph", "Morph", "If true, struts are morphed to the space as curves.", GH_ParamAccess.item, false);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
             pManager.HideParameter(1);  // Do not display the 'Nodes' output points
         }
 
@@ -54,8 +55,7 @@ namespace IntraLattice
             int nU = 0;
             int nV = 0;
             int nW = 0;
-            int morphed = 0;
-            double morphFactor = 0;
+            bool morphed = false;
 
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref radius)) { return; }
@@ -64,7 +64,6 @@ namespace IntraLattice
             if (!DA.GetData(4, ref nV)) { return; }
             if (!DA.GetData(5, ref nW)) { return; }
             if (!DA.GetData(6, ref morphed)) { return; }
-            if (!DA.GetData(7, ref morphFactor)) { return; }
 
             if (topology.Count < 2) { return; }
             if (radius == 0) { return; }
@@ -75,7 +74,6 @@ namespace IntraLattice
 
             // 2. Initialize the node tree, derivative tree and morphed space tree
             var nodeTree = new DataTree<Point3d>();                                 // will contain lattice nodes
-            var derivTree = new DataTree<Vector3d>();                               // will contain derivatives (du,dv) in a parallel tree
             var spaceTree = new DataTree<GeometryBase>();                           // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
             
             // 3. Define cylinder
@@ -95,10 +93,9 @@ namespace IntraLattice
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
-            CellTools.FixIntersections(ref topology);
-            CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
-            CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
+            cell.ExtractTopology(topology); // fixes intersections, and formats lines to the UnitCell object
+            cell.NormaliseTopology();       // normalizes the unit cell (scaled to unit size and moved to origin)
+            cell.FormatTopology();          // sets up paths for inter-cell nodes
 
             // 7. Create grid of points (as data tree)
             //    u-direction is along the cylinder
@@ -107,6 +104,7 @@ namespace IntraLattice
                 // v-direction travels around the cylinder axis (about axis)
                 for (int v = 0; v <= N[1]; v++)
                 {
+                    
                     // this loop maps each node index in the cell onto the UV-surface maps
                     for (int i = 0; i < cell.Nodes.Count; i++)
                     {
@@ -141,16 +139,6 @@ namespace IntraLattice
                             Point3d newPt = pt1 + wVect * (w+wsub)/N[2];
                             GH_Path treePath = new GH_Path(u, v, w, i);
                             nodeTree.Add(newPt, treePath);
-
-                            // for each of the 2 directional directives (du and dv)
-                            for (int derivIndex = 0; derivIndex < 2; derivIndex++)
-                            {
-                                // decrease the amplitude of the derivative vector as we approach the axis
-                                Vector3d deriv = derivatives[derivIndex] * (w + wsub) / N[2];
-                                // this division scales the derivatives (gives better control of the bezier curves)
-                                deriv = deriv / (morphFactor * N[derivIndex]);
-                                derivTree.Add(deriv, treePath);
-                            }
                         }
                     }
 
@@ -174,11 +162,13 @@ namespace IntraLattice
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            FrameTools.ConformMapping(ref struts, ref nodeTree, ref derivTree, ref spaceTree, ref cell, N, morphed, morphFactor);
+            var nodes = new Point3dList();
+            struts = FrameTools.ConformMapping(nodeTree, spaceTree, cell, N, morphed);
+            struts = FrameTools.CleanNetwork(struts, out nodes);
 
             // 8. Set output
             DA.SetDataList(0, struts);
-            DA.SetDataTree(1, nodeTree);
+            DA.SetDataList(1, nodes);
             
         }
 

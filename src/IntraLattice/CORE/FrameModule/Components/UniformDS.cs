@@ -10,6 +10,8 @@ using Rhino.Collections;
 using Rhino.Geometry.Intersect;
 using IntraLattice.Properties;
 using Grasshopper;
+using IntraLattice.CORE.CellModule;
+using IntraLattice.CORE.FrameModule.Data;
 
 // Summary:     This component generates a uniform lattice trimmed to the shape of design space
 // ===============================================================================
@@ -22,7 +24,7 @@ using Grasshopper;
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 
-namespace IntraLattice
+namespace IntraLattice.CORE.FrameModule
 {
     public class GridUniform : GH_Component
     {
@@ -56,7 +58,7 @@ namespace IntraLattice
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
             pManager.HideParameter(1); // Do not display the 'Nodes' output points
         }
 
@@ -122,19 +124,18 @@ namespace IntraLattice
             var nodeTree = new DataTree<Point3d>();     // will contain the lattice nodes
             var stateTree = new DataTree<Boolean>();    // will contain the node states in a parallel tree (true if node is inside design space)
 
-            // 7. Prepare normalized unit cell topology
+            // 6. Prepare normalized/formatted unit cell topology
             var cell = new UnitCell();
-            CellTools.FixIntersections(ref topology);
-            CellTools.ExtractTopology(ref topology, ref cell);  // converts list of lines into an adjacency list format (cellNodes and cellStruts)
-            CellTools.NormaliseTopology(ref cell); // normalizes the unit cell (scaled to unit size and moved to origin)
-            CellTools.FormatTopology(ref cell); // removes all duplicate struts and sets up reference for inter-cell nodes
+            cell.ExtractTopology(topology); // fixes intersections, and formats lines to the UnitCell object
+            cell.NormaliseTopology();       // normalizes the unit cell (scaled to unit size and moved to origin)
+            cell.FormatTopology();          // sets up paths for inter-cell nodes
 
-            // 6. Define iteration vectors in each direction (accounting for Cell Size)
+            // 7. Define iteration vectors in each direction (accounting for Cell Size)
             Vector3d vectorU = xCellSize * basePlane.XAxis;
             Vector3d vectorV = yCellSize * basePlane.YAxis;
             Vector3d vectorW = zCellSize * basePlane.ZAxis;
 
-            // 7. Create grid of nodes (as data tree)
+            // 8. Create grid of nodes (as data tree)
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
@@ -168,13 +169,13 @@ namespace IntraLattice
                             switch (spaceType)
                             {
                                 case 1: // Brep design space
-                                    isInside = ((Brep)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    isInside = ((Brep)designSpace).IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
                                     break;
                                 case 2: // Mesh design space
-                                    isInside = ((Mesh)designSpace).IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    isInside = ((Mesh)designSpace).IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
                                     break;
                                 case 3: // Solid surface design space (must be converted to brep)
-                                    isInside = ((Surface)designSpace).ToBrep().IsPointInside(currentPt, RhinoMath.SqrtEpsilon, false);
+                                    isInside = ((Surface)designSpace).ToBrep().IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
                                     break;
                             }
 
@@ -189,13 +190,15 @@ namespace IntraLattice
                 }
             }
 
-            // 3. Compute list of struts
+            // 9. Compute list of struts
             var struts = new List<Curve>();
-            FrameTools.UniformMapping(ref struts, ref nodeTree, ref stateTree, ref cell, designSpace, spaceType, N, tol);           
+            var nodes = new Point3dList();
+            struts = FrameTools.UniformMapping(nodeTree, stateTree, cell, designSpace, spaceType, N, tol);
+            struts = FrameTools.CleanNetwork(struts, out nodes);
                 
-            // 8. Set output
+            // 10. Set output
             DA.SetDataList(0, struts);
-            DA.SetDataTree(1, nodeTree);
+            DA.SetDataList(1, nodes);
         }
 
         /// <summary>

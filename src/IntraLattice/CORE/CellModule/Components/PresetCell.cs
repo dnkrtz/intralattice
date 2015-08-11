@@ -6,6 +6,7 @@ using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Data;
 using Rhino;
 using IntraLattice.Properties;
+using IntraLattice.CORE.FrameModule;
 
 // Summary:     This component can generate a selection of pre-defined unit cell topologies
 // ===============================================================================
@@ -14,7 +15,7 @@ using IntraLattice.Properties;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.CellModule
 {
     public class PresetCell : GH_Component
     {

@@ -4,6 +4,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using System.Drawing;
 using Rhino;
+using IntraLattice.CORE.FrameModule.Data;
 
 // Summary:     This component processes/verifies user-defined unit cells, and outputs a valid Topo unit cell
 // ===============================================================================
@@ -13,7 +14,7 @@ using Rhino;
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice
+namespace IntraLattice.CORE.CellModule
 {
     public class CustomCell : GH_Component
     {
@@ -52,68 +53,25 @@ namespace IntraLattice
                 }
                 // Convert curve to line
                 lines.Add(new Line(curve.PointAtStart, curve.PointAtEnd));
-                
             }
+    
+            UnitCell cell = new UnitCell();
+            cell.ExtractTopology(lines);
+            cell.NormaliseTopology();
+            
+            int validity = cell.CheckValidity();
 
-            // Set tolerance
-            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
-
-            // Explode lines at intersections
-            CellTools.FixIntersections(ref lines);
-
-            // Set bounding box
-            BoundingBox bound = new BoundingBox();
-            foreach (Line line in lines)
-                bound.Union(line.BoundingBox); // combine bounding box to full cell box
-
-            // Extract unique nodes and nodePairs (stored in the UnitCell object)
-            var cell = new UnitCell();
-            CellTools.ExtractTopology(ref lines, ref cell);
-
-            // The check - Opposing faces must be identical
-            // Set up the face planes
-            Plane[] xy = new Plane[2];
-            xy[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.ZAxis);
-            xy[1] = new Plane(bound.Corner(true, true, false), Plane.WorldXY.ZAxis);
-            Plane[] yz = new Plane[2];
-            yz[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.XAxis);
-            yz[1] = new Plane(bound.Corner(false, true, true), Plane.WorldXY.XAxis);
-            Plane[] zx = new Plane[2];
-            zx[0] = new Plane(bound.Corner(true, true, true), Plane.WorldXY.YAxis);
-            zx[1] = new Plane(bound.Corner(true, false, true), Plane.WorldXY.YAxis);
-
-
-
-            // Loop through nodes
-            foreach (Point3d node in cell.Nodes)
+            switch (validity)
             {
-                // Essentially, for every node, we must find it's mirror node on the opposite face
-                // First, check if node requires a mirror node, and where that mirror node should be (testPoint)
-                Point3d testPoint = Point3d.Unset;
-                
-                if (Math.Abs(xy[0].DistanceTo(node)) < tol)
-                    testPoint = new Point3d(node.X, node.Y, xy[1].OriginZ);
-                if (Math.Abs(xy[1].DistanceTo(node)) < tol)
-                    testPoint = new Point3d(node.X, node.Y, xy[0].OriginZ);
-                if (Math.Abs(yz[0].DistanceTo(node)) < tol)
-                    testPoint = new Point3d(yz[1].OriginX, node.Y, node.Z);
-                if (Math.Abs(yz[1].DistanceTo(node)) < tol)
-                    testPoint = new Point3d(yz[0].OriginX, node.Y, node.Z);
-                if (Math.Abs(zx[0].DistanceTo(node)) < tol)
-                    testPoint = new Point3d(node.X, zx[1].OriginY, node.Z);
-                if (Math.Abs(zx[1].DistanceTo(node)) < tol)
-                    testPoint = new Point3d(node.X, zx[0].OriginY, node.Z);
-                // Now, check if the mirror node exists
-                if (testPoint != Point3d.Unset)
-                {
-                    int testPointIndex = cell.Nodes.ClosestIndex(testPoint);
-                    if (testPoint.DistanceTo(cell.Nodes[testPointIndex]) > tol)
-                    {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Your unit cell failed the validity check - opposing faces must be identical.");
-                        return;
-                    }
-                }
-
+                case -1:
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - opposing faces must be identical.");
+                    return;
+                case 0:
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - each face needs at least one node lying on it.");
+                    return;
+                case 1:
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Blank, "Your cell is valid!");
+                    break;
             }
 
             DA.SetDataList(0, lines);
