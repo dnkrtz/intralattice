@@ -39,6 +39,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="GH_IO">
@@ -60,41 +61,43 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CORE\CellModule\CellTools.cs" />
-    <Compile Include="CORE\CellModule\Components\CustomCell.cs" />
-    <Compile Include="CORE\FrameModule\Components\BasicBox.cs" />
-    <Compile Include="CORE\FrameModule\Components\ConformFV.cs" />
-    <Compile Include="CORE\FrameModule\Data\UnitCell.cs" />
-    <Compile Include="CORE\MeshModule\Data\Node.cs" />
-    <Compile Include="CORE\MeshModule\Data\Plate.cs" />
-    <Compile Include="CORE\MeshModule\Data\Strut.cs" />
-    <Compile Include="CORE\MeshModule\Data\LatticeMesh.cs" />
-    <Compile Include="CORE\MeshModule\MeshTools.cs" />
-    <Compile Include="CORE\UtilityModule\MeshReport.cs" />
-    <Compile Include="FEAInterface\Components\FEAInterfaceComponent.cs" />
-    <Compile Include="FEAInterface\Components\PointLoadComponent.cs" />
-    <Compile Include="FEAInterface\Components\SPCComponentComponent.cs" />
-    <Compile Include="FEAInterface\Data\BeamCrossection.cs" />
-    <Compile Include="FEAInterface\Data\BeamElement.cs" />
-    <Compile Include="FEAInterface\Data\Load.cs" />
-    <Compile Include="FEAInterface\Data\MAT1.cs" />
-    <Compile Include="FEAInterface\Data\SPC.cs" />
-    <Compile Include="FEAInterface\Manager\FileManager.cs" />
-    <Compile Include="CORE\FrameModule\Components\ConformSP.cs" />
-    <Compile Include="CORE\FrameModule\Components\BasicCylinder.cs" />
-    <Compile Include="CORE\FrameModule\Components\ConformSS.cs" />
-    <Compile Include="CORE\FrameModule\Components\ConformSA.cs" />
-    <Compile Include="CORE\FrameModule\InputTools.cs" />
-    <Compile Include="CORE\FrameModule\FrameTools.cs" />
-    <Compile Include="CORE\CellModule\Components\PresetCell.cs" />
+    <Compile Include="CORE\Data\new\Lattice.cs" />
+    <Compile Include="CORE\Data\new\CellTopology.cs" />
+    <Compile Include="CORE\Helpers\CellTools.cs" />
+    <Compile Include="CORE\Components\Cell\CustomCell.cs" />
+    <Compile Include="CORE\Components\Frame\BasicBox.cs" />
+    <Compile Include="CORE\Components\Frame\ConformFV.cs" />
+    <Compile Include="CORE\Data\UnitCell.cs" />
+    <Compile Include="CORE\Data\Node.cs" />
+    <Compile Include="CORE\Data\Plate.cs" />
+    <Compile Include="CORE\Data\Strut.cs" />
+    <Compile Include="CORE\Data\LatticeMesh.cs" />
+    <Compile Include="CORE\Helpers\MeshTools.cs" />
+    <Compile Include="CORE\Components\Utility\MeshReport.cs" />
+    <Compile Include="FEA\Components\FEAInterfaceComponent.cs" />
+    <Compile Include="FEA\Components\PointLoadComponent.cs" />
+    <Compile Include="FEA\Components\SPCComponentComponent.cs" />
+    <Compile Include="FEA\Data\BeamCrossection.cs" />
+    <Compile Include="FEA\Data\BeamElement.cs" />
+    <Compile Include="FEA\Data\Load.cs" />
+    <Compile Include="FEA\Data\MAT1.cs" />
+    <Compile Include="FEA\Data\SPC.cs" />
+    <Compile Include="FEA\Manager\FileManager.cs" />
+    <Compile Include="CORE\Components\Frame\ConformSP.cs" />
+    <Compile Include="CORE\Components\Frame\BasicCylinder.cs" />
+    <Compile Include="CORE\Components\Frame\ConformSS.cs" />
+    <Compile Include="CORE\Components\Frame\ConformSA.cs" />
+    <Compile Include="CORE\Helpers\InputTools.cs" />
+    <Compile Include="CORE\Helpers\FrameTools.cs" />
+    <Compile Include="CORE\Components\Cell\PresetCell.cs" />
     <Compile Include="IntraLatticeInfo.cs" />
-    <Compile Include="CORE\FrameModule\Components\UniformDS.cs" />
-    <Compile Include="CORE\MeshModule\Components\HeterogenCustom.cs" />
-    <Compile Include="CORE\MeshModule\Components\Homogen.cs" />
-    <Compile Include="CORE\MeshModule\Components\HeterogenGradient.cs" />
-    <Compile Include="CORE\MeshModule\InputGradient.cs" />
+    <Compile Include="CORE\Components\Frame\UniformDS.cs" />
+    <Compile Include="CORE\Components\Mesh\HeterogenCustom.cs" />
+    <Compile Include="CORE\Components\Mesh\Homogen.cs" />
+    <Compile Include="CORE\Components\Mesh\HeterogenGradient.cs" />
+    <Compile Include="CORE\Helpers\InputGradient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CORE\UtilityModule\MeshPreview.cs" />
+    <Compile Include="CORE\Components\Utility\MeshPreview.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -103,30 +106,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram1.cd" />
-    <None Include="Resources\viral24.png" />
-    <None Include="Resources\cellpreset.png" />
-    <None Include="Resources\biology24.png" />
-    <None Include="Resources\Icon1.ico" />
-    <None Include="Resources\Icon2.ico" />
-    <None Include="Resources\atom1124.png" />
-    <None Include="Resources\cells24.png" />
-    <None Include="Resources\checked824.png" />
-    <None Include="Resources\circle5424.png" />
-    <None Include="Resources\circular13124.png" />
-    <None Include="Resources\circular13524.png" />
-    <None Include="Resources\circular14424.png" />
-    <None Include="Resources\pie3024.png" />
-    <None Include="Resources\electronic4624.png" />
-    <Content Include="Resources\presetcell.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="CORE\CellModule\Data\" />
+    <Folder Include="Resources\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -145,6 +134,7 @@ Erase "$(TargetPath)"</PostBuildEvent>
     </StartArguments>
     <StartAction>Program</StartAction>
     <StartProgram>C:\Program Files (x86)\Rhinoceros 5\System\Rhino4.exe</StartProgram>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup>
     <FallbackCulture>en-US</FallbackCulture>
@@ -154,5 +144,6 @@ Erase "$(TargetPath)"</PostBuildEvent>
     <StartArguments>
     </StartArguments>
     <StartAction>Program</StartAction>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 </Project>

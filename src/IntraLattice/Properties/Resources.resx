@@ -117,38 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="atom" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\atom1124.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="cells" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\cells24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="CustomCell" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\biology24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="PresetCell" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\viral24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="checkd" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\checked824.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="circle1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\circle5424.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="circle2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\circular13124.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="circle3" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\circular13524.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="circle4" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\circular14424.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="circle5" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\pie3024.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="elec" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\electronic4624.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
 </root>
