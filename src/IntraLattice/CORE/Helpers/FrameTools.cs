@@ -9,6 +9,7 @@ using Grasshopper.Kernel.Types;
 using Rhino.Geometry.Intersect;
 using Grasshopper;
 using Rhino.Collections;
+using IntraLattice.CORE.Data;
 
 
 // Summary:     This class contains a set of methods used by the frame components

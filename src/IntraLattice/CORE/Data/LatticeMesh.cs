@@ -5,6 +5,7 @@ using Rhino.Geometry;
 using Rhino;
 using Rhino.Geometry.Intersect;
 using IntraLattice.CORE.Data;
+using IntraLattice.CORE.Helpers;
 
 namespace IntraLattice.CORE.Data
 {

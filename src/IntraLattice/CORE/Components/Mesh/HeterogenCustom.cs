@@ -8,6 +8,7 @@ using Rhino.Geometry;
 using Rhino.Collections;
 using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
+using IntraLattice.CORE.Helpers;
 
 namespace IntraLattice.CORE.MeshModule
 {

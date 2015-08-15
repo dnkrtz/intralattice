@@ -1,4 +1,5 @@
-﻿using Rhino;
+﻿using IntraLattice.CORE.Helpers;
+using Rhino;
 using Rhino.Collections;
 using Rhino.Geometry;
 using System;

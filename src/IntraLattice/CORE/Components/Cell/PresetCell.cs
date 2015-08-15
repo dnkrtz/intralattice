@@ -7,6 +7,7 @@ using Grasshopper.Kernel.Data;
 using Rhino;
 using IntraLattice.Properties;
 using IntraLattice.CORE.Components;
+using IntraLattice.CORE.Helpers;
 
 // Summary:     This component can generate a selection of pre-defined unit cell topologies
 // ===============================================================================

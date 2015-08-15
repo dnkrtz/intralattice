@@ -12,6 +12,7 @@ using IntraLattice.Properties;
 using Grasshopper;
 using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
+using IntraLattice.CORE.Helpers;
 
 // Summary:     This component generates a uniform lattice trimmed to the shape of design space
 // ===============================================================================

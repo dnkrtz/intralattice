@@ -11,6 +11,7 @@ using Grasshopper;
 using IntraLattice.Properties;
 using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
+using IntraLattice.CORE.Helpers;
 
 // Summary:     This component generates a (u,v,w) lattice between two surfaces
 // ===============================================================================

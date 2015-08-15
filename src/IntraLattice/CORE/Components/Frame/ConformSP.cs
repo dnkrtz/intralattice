@@ -9,6 +9,7 @@ using IntraLattice.Properties;
 using Grasshopper;
 using IntraLattice.CORE.Data;
 using Rhino.Collections;
+using IntraLattice.CORE.Helpers;
 
 // Summary:     This component generates a (u,v,w) lattice between a surface and a point
 // ===============================================================================
