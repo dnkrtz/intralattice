@@ -14,10 +14,10 @@ using IntraLattice.CORE.Data;
 
 // Summary:     This class contains a set of methods used by the frame components
 // ===============================================================================
-// Methods:     ConformMapping (written by Aidan)   - Generates conforming wire lattice for a (u,v,w,i) node grid.
-//              UniformMapping(written by Aidan)    - Generates trimmed wire lattice for a (u,v,w,i) node grid.
-//              TrimStrut (written by Aidan)        - Trims strut at an intersection point and keeps the trimmed strut that is inside a design space.
-//              CastDesignSpace (written by Aidan)  - Casts GeometryBase design space to a Brep or Mesh.
+// Methods:     ConformMapping (Aidan)   - Generates conforming wire lattice for a (u,v,w,i) node grid.
+//              UniformMapping (Aidan)    - Generates trimmed wire lattice for a (u,v,w,i) node grid.
+//              TrimStrut (Aidan)        - Trims strut at an intersection point and keeps the trimmed strut that is inside a design space.
+//              CastDesignSpace (Aidan)  - Casts GeometryBase design space to a Brep or Mesh.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -118,7 +118,7 @@ namespace IntraLattice.CORE.Helpers
         /// 2) Bezier morphing (uses interpolated directional surface derivatives to morph the struts as Bezier curves)
         /// ============================================================================                    
         /// </summary>
-        public static List<Curve> ConformMapping(DataTree<Point3d> nodeTree, DataTree<GeometryBase> spaceTree, UnitCell cell, float[] N, bool morphed)
+        public static List<Curve> ConformMapping(DataTree<Point3d> nodeTree, DataTree<GeometryBase> spaceTree, LatticeCell cell, float[] N, bool morphed)
         {
             var struts = new List<Curve>();
 
@@ -240,7 +240,7 @@ namespace IntraLattice.CORE.Helpers
         /// - We remove the external nodes (the intersection nodes will replace them, since they are appended to the path in the trimStrut method)
         /// =================================================================
         /// </summary>
-        public static List<Curve> UniformMapping(DataTree<Point3d> nodeTree, DataTree<Boolean> stateTree, UnitCell cell, GeometryBase designSpace, int spaceType, float[] N, double tol)
+        public static List<Curve> UniformMapping(DataTree<Point3d> nodeTree, DataTree<Boolean> stateTree, LatticeCell cell, GeometryBase designSpace, int spaceType, float[] N, double tol)
         {
             var struts = new List<Curve>();
 

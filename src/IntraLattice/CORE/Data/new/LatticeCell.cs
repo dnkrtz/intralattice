@@ -9,46 +9,104 @@ using System.Text;
 
 namespace IntraLattice.CORE.Data
 {
-    // The UnitCell object
-    public class UnitCell
+    // The LatticeCell object represents 
+    public class LatticeCell
     {
-        /// <summary>
-        /// Default constructor
-        /// </summary>
-        public UnitCell()
-        {
-            this.Nodes = new Point3dList();
-            this.NodePaths = new List<int[]>();
-            this.NodeNeighbours = new List<List<int>>();
-            this.NodePairs = new List<IndexPair>();
-        }
 
-        // Properties
-        //
+        #region Class fields
+        private Point3dList m_nodes;
+        private List<IndexPair> m_nodePairs;
+        private List<List<int>> m_nodeNeighbours;
+        private List<int[]> m_nodePaths;
+        #endregion
+
+        #region Class constructors
+        public LatticeCell()
+        {
+            m_nodes = new Point3dList();
+            m_nodePairs = new List<IndexPair>();
+            m_nodeNeighbours = new List<List<int>>();
+            m_nodePaths = new List<int[]>();
+        }
+        public LatticeCell(List<Line> rawCell)
+        {
+            m_nodes = new Point3dList();
+            m_nodePairs = new List<IndexPair>();
+            m_nodeNeighbours = new List<List<int>>();
+            m_nodePaths = new List<int[]>();
+
+            ExtractTopology(rawCell);
+            NormaliseTopology();
+        }
+        public LatticeCell Duplicate()
+        {
+            LatticeCell dup = new LatticeCell();
+            // this is not proper duplication, might still be passing Point3d and IndexPair values by reference, not sure
+            dup.m_nodes = Nodes;
+            dup.m_nodePairs = NodePairs;
+            dup.m_nodeNeighbours = NodeNeighbours;
+            dup.m_nodePaths = NodePaths;
+            return dup;
+        }
+        #endregion
+
+        #region Class properties
         /// <summary>
         /// List of unique nodes
         /// </summary>
-        public Point3dList Nodes { get; set; }
-        /// <summary>
-        /// List of relative paths in tree (parallel to Nodes list)
-        /// </summary>
-        public List<int[]> NodePaths { get; set; }
-        /// <summary>
-        /// List of node adjacency lists (parallel to Nodes list)
-        /// </summary>
-        public List<List<int>> NodeNeighbours { get; set; }
+        public Point3dList Nodes
+        {
+            get { return m_nodes; }
+            set { m_nodes = value; }
+        }
         /// <summary>
         /// List of struts as node index pairs
         /// </summary>
-        public List<IndexPair> NodePairs { get; set; }
+        public List<IndexPair> NodePairs
+        {
+            get { return m_nodePairs; }
+            set { m_nodePairs = value; }
+        }
+        /// <summary>
+        /// List of node adjacency lists (parallel to Nodes list)
+        /// </summary>
+        public List<List<int>> NodeNeighbours
+        {
+            get { return m_nodeNeighbours; }
+            set { m_nodeNeighbours = value; }
+        }
+        /// <summary>
+        /// List of relative paths in tree (parallel to Nodes list)
+        /// </summary>
+        public List<int[]> NodePaths
+        {
+            get { return m_nodePaths; }
+            set { m_nodePaths = value; }
+        }
+        /// <summary>
+        /// Verifies validity of unit cell.
+        /// </summary>
+        public bool isValid
+        {
+            get
+            {
+                int flag = this.CheckValidity();
+                if (flag == 1)
+                    return true;
+                else
+                    return false;
+            }
+        }
 
-        // Methods
-        //
+
+        #endregion
+
+        #region Class methods
         /// <summary>
         /// Formats the line input into the UnitCell object.
         /// </summary>
         /// <param name="lines"></param>
-        public void ExtractTopology(List<Line> lines)
+        private void ExtractTopology(List<Line> lines)
         {
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
@@ -62,16 +120,16 @@ namespace IntraLattice.CORE.Data
                 List<int> nodeIndices = new List<int>();
                 
                 // Loop over end points, being sure to not create the same node twice
-                foreach (Point3d endPt in pts)
+                foreach (Point3d pt in pts)
                 {
-                    int closestIndex = this.Nodes.ClosestIndex(endPt);  // find closest node to current pt
+                    int closestIndex = this.Nodes.ClosestIndex(pt);  // find closest node to current pt
                     // If node already exists
-                    if (this.Nodes.Count != 0 && this.Nodes[closestIndex].EpsilonEquals(endPt, tol))
+                    if (this.Nodes.Count != 0 && this.Nodes[closestIndex].EpsilonEquals(pt, tol))
                         nodeIndices.Add(closestIndex);
                     // If it doesn't exist, add it
                     else
                     {
-                        this.Nodes.Add(endPt);
+                        this.Nodes.Add(pt);
                         nodeIndices.Add(this.Nodes.Count - 1);
                         this.NodeNeighbours.Add(new List<int>());
                     }
@@ -91,7 +149,7 @@ namespace IntraLattice.CORE.Data
         /// <summary>
         /// Scales the unit cell down to unit size (1x1x1) and moves it to the origin
         /// </summary>
-        public void NormaliseTopology()
+        private void NormaliseTopology()
         {
             // We'll build the bounding box as well
             var xRange = new Interval();
@@ -200,7 +258,7 @@ namespace IntraLattice.CORE.Data
             Plane yz = Plane.WorldYZ; yz.Translate(new Vector3d(1, 0, 0));
             Plane zx = Plane.WorldZX; zx.Translate(new Vector3d(0, 1, 0));
 
-            // Define node paths in the tree (as mentioned, nodes on the 3 boundary planes belong to other cells in the tree)
+            // Create the relative tree paths (_,_,_,i), refer to dev docs for better understanding
             foreach (Point3d node in this.Nodes)
             {
                 // check top plane first
@@ -251,7 +309,7 @@ namespace IntraLattice.CORE.Data
             foreach (int strutToRemove in strutsToRemove) this.NodePairs.RemoveAt(strutToRemove);
 
         }
-
+        #endregion
 
     }
 }

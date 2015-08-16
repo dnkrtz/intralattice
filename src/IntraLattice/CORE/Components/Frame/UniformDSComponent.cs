@@ -126,9 +126,7 @@ namespace IntraLattice.CORE.Components
             var stateTree = new DataTree<Boolean>();    // will contain the node states in a parallel tree (true if node is inside design space)
 
             // 6. Prepare normalized/formatted unit cell topology
-            var cell = new UnitCell();
-            cell.ExtractTopology(topology); // fixes intersections, and formats lines to the UnitCell object
-            cell.NormaliseTopology();       // normalizes the unit cell (scaled to unit size and moved to origin)
+            var cell = new LatticeCell(topology);
             cell.FormatTopology();          // sets up paths for inter-cell nodes
 
             // 7. Define iteration vectors in each direction (accounting for Cell Size)

@@ -55,9 +55,7 @@ namespace IntraLattice.CORE.Components
                 lines.Add(new Line(curve.PointAtStart, curve.PointAtEnd));
             }
     
-            UnitCell cell = new UnitCell();
-            cell.ExtractTopology(lines);
-            cell.NormaliseTopology();
+            LatticeCell cell = new LatticeCell();
             
             int validity = cell.CheckValidity();
 

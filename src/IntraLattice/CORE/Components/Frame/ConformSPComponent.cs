@@ -99,9 +99,7 @@ namespace IntraLattice.CORE.Components
             surface.SetDomain(1, normalDomain); // surface v-direction
 
             // 5. Prepare normalized/formatted unit cell topology
-            var cell = new UnitCell();
-            cell.ExtractTopology(topology); // fixes intersections, and formats lines to the UnitCell object
-            cell.NormaliseTopology();       // normalizes the unit cell (scaled to unit size and moved to origin)
+            var cell = new LatticeCell(topology);
             cell.FormatTopology();          // sets up paths for inter-cell nodes
 
             // 6. Let's create the actual lattice nodes now
