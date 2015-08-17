@@ -61,6 +61,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CORE\Data\GH_Goo\LatticeCellGooComponent.cs" />
     <Compile Include="CORE\Data\new\Lattice.cs" />
     <Compile Include="CORE\Data\new\CellTopology.cs" />
     <Compile Include="CORE\Helpers\CellTools.cs" />

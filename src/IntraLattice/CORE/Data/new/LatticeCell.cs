@@ -6,11 +6,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace IntraLattice.CORE.Data
 {
+    
     // The LatticeCell object represents 
-    public class LatticeCell
+    public class LatticeCell: ICloneable 
     {
 
         #region Class fields
@@ -21,6 +24,7 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Class constructors
+        
         public LatticeCell()
         {
             m_nodes = new Point3dList();
@@ -40,13 +44,23 @@ namespace IntraLattice.CORE.Data
         }
         public LatticeCell Duplicate()
         {
-            LatticeCell dup = new LatticeCell();
-            // this is not proper duplication, might still be passing Point3d and IndexPair values by reference, not sure
-            dup.m_nodes = Nodes;
-            dup.m_nodePairs = NodePairs;
-            dup.m_nodeNeighbours = NodeNeighbours;
-            dup.m_nodePaths = NodePaths;
-            return dup;
+            using (MemoryStream stream = new MemoryStream())
+            {
+
+                if (this.GetType().IsSerializable)
+                {
+
+                    BinaryFormatter formatter = new BinaryFormatter();
+
+                    formatter.Serialize(stream, this);
+
+                    stream.Position = 0;
+
+                    return (LatticeCell) formatter.Deserialize(stream);
+
+                }
+                return null;
+            }
         }
         #endregion
 
