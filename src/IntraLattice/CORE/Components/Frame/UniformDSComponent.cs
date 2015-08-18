@@ -76,7 +76,7 @@ namespace IntraLattice.CORE.Components
             double xCellSize = 0;
             double yCellSize = 0;
             double zCellSize = 0;
-            double tol = 0; // the trim tolerance (i.e. minimum strut length)
+            double minLength = 0; // the trim tolerance (i.e. minimum strut length)
 
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref designSpace)) { return; }
@@ -84,7 +84,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(3, ref xCellSize)) { return; }
             if (!DA.GetData(4, ref yCellSize)) { return; }
             if (!DA.GetData(5, ref zCellSize)) { return; }
-            if (!DA.GetData(6, ref tol)) { return; }
+            if (!DA.GetData(6, ref minLength)) { return; }
 
             if (topology.Count < 2) { return; }
             if (!designSpace.IsValid) { return; }
@@ -92,7 +92,7 @@ namespace IntraLattice.CORE.Components
             if (xCellSize == 0) { return; } 
             if (yCellSize == 0) { return; }
             if (zCellSize == 0) { return; }
-            if (tol>=xCellSize || tol>=yCellSize || tol>=zCellSize)
+            if (minLength>=xCellSize || minLength>=yCellSize || minLength>=zCellSize)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Tolerance parameter cannot be larger than the unit cell dimensions.");
                 return;
@@ -104,6 +104,8 @@ namespace IntraLattice.CORE.Components
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Design space must be a Brep, Mesh or Closed Surface");
                 return;
             }
+
+            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
                 
             // 3. Compute oriented bounding box and its corner points
             Box bBox = new Box();
@@ -122,8 +124,7 @@ namespace IntraLattice.CORE.Components
             float[] N = new float[3] { nX, nY, nZ };
 
             // 5. Initialize nodeTree
-            var nodeTree = new DataTree<Point3d>();     // will contain the lattice nodes
-            var stateTree = new DataTree<Boolean>();    // will contain the node states in a parallel tree (true if node is inside design space)
+            var lattice = new Lattice(LatticeType.Uniform);
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new LatticeCell(topology);
@@ -154,35 +155,32 @@ namespace IntraLattice.CORE.Components
 
                             // compute position vector
                             Vector3d V = (u+usub) * vectorU + (v+vsub) * vectorV + (w+wsub) * vectorW;
-                            Point3d currentPt = basePlane.Origin + V;
-
-                            // u,v,w is the cell grid. the 'i' index is for different nodes in each cell.
-                            // create current node
-                            GH_Path currentPath = new GH_Path(u, v, w, i);
-                            if (!nodeTree.PathExists(currentPath))
-                                nodeTree.Add(currentPt, currentPath);
-
+                            var newNode = new LatticeNode(basePlane.Origin + V);
+                            
                             // check if point is inside - use unstrict tolerance, meaning it can be outside the surface by the specified tolerance
                             bool isInside = false;
                             
                             switch (spaceType)
                             {
                                 case 1: // Brep design space
-                                    isInside = ((Brep)designSpace).IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
+                                    isInside = ((Brep)designSpace).IsPointInside(newNode.Point3d, tol, false);
                                     break;
                                 case 2: // Mesh design space
-                                    isInside = ((Mesh)designSpace).IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
+                                    isInside = ((Mesh)designSpace).IsPointInside(newNode.Point3d, tol, false);
                                     break;
                                 case 3: // Solid surface design space (must be converted to brep)
-                                    isInside = ((Surface)designSpace).ToBrep().IsPointInside(currentPt, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, false);
+                                    isInside = ((Surface)designSpace).ToBrep().IsPointInside(newNode.Point3d, tol, false);
                                     break;
                             }
 
-                            // store wether the pt is inside or outside
-                            if (isInside)
-                                stateTree.Add(true, currentPath);
-                            else
-                                stateTree.Add(false, currentPath);
+                            if (isInside) newNode.State = LatticeNodeState.Inside;
+                            else newNode.State = LatticeNodeState.Outside;
+
+                            // u,v,w is the cell grid. the 'i' index is for different nodes in each cell.
+                            // create current node
+                            GH_Path currentPath = new GH_Path(u, v, w, i);
+                            if (!lattice.Nodes.PathExists(currentPath))
+                                lattice.Nodes.Add(newNode, currentPath);
 
                         }
                     }
@@ -192,8 +190,7 @@ namespace IntraLattice.CORE.Components
             // 9. Compute list of struts
             var struts = new List<Curve>();
             var nodes = new Point3dList();
-            struts = FrameTools.UniformMapping(nodeTree, stateTree, cell, designSpace, spaceType, N, tol);
-            struts = FrameTools.CleanNetwork(struts, out nodes);
+            struts = lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
                 
             // 10. Set output
             DA.SetDataList(0, struts);

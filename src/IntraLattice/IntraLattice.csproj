@@ -64,6 +64,7 @@
     <Compile Include="CORE\Data\new\EndoMesh.cs" />
     <Compile Include="CORE\Data\new\Lattice.cs" />
     <Compile Include="CORE\Data\new\ExoMesh.cs" />
+    <Compile Include="CORE\Data\new\PathPair.cs" />
     <Compile Include="CORE\Helpers\CellTools.cs" />
     <Compile Include="CORE\Components\Cell\CustomCellComponent.cs" />
     <Compile Include="CORE\Components\Frame\BasicBoxComponent.cs" />

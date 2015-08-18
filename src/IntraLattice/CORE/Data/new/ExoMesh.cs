@@ -88,9 +88,13 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Constructors
-        public ExoSleeve()
+        public ExoSleeve(LatticeStrut baseStrut)
         {
-            
+            base.Curve = baseStrut.Curve;   // note: passed by reference
+            base.NodePair = baseStrut.NodePair;
+            m_platePair = new IndexPair();
+            m_startRadius = 0.0;
+            m_endRadius = 0.0;
         }
         #endregion
 

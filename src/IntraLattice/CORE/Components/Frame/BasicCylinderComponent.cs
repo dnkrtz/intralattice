@@ -73,9 +73,10 @@ namespace IntraLattice.CORE.Components
             if (nV == 0) { return; }
             if (nW == 0) { return; }
 
-            // 2. Initialize the node tree, derivative tree and morphed space tree
-            var nodeTree = new DataTree<Point3d>();                                 // will contain lattice nodes
-            var spaceTree = new DataTree<GeometryBase>();                           // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
+            // 2. Initialize the lattice
+            var latticeType = morphed ?  LatticeType.MorphUVW : LatticeType.ConformUVW;
+            var lattice = new Lattice(latticeType);
+            var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
             
             // 3. Define cylinder
             Plane basePlane = Plane.WorldXY;
@@ -87,10 +88,10 @@ namespace IntraLattice.CORE.Components
             float[] N = new float[3] { nU, nV, nW };
 
             // 5. Normalize the UV-domain
-            Interval normalDomain = new Interval(0, 1);
-            cylinder.SetDomain(0, normalDomain); // surface u-direction
-            cylinder.SetDomain(1, normalDomain); // surface v-direction
-            axis.Domain = normalDomain;
+            Interval unitDomain = new Interval(0, 1);
+            cylinder.SetDomain(0, unitDomain); // surface u-direction
+            cylinder.SetDomain(1, unitDomain); // surface v-direction
+            axis.Domain = unitDomain;
 
             // 6. Prepare normalized/formatted unit cell topology
             var cell = new LatticeCell(topology);
@@ -135,9 +136,9 @@ namespace IntraLattice.CORE.Components
                             if (w == N[2] && wsub != 0) continue;
 
                             // add point to gridTree
-                            Point3d newPt = pt1 + wVect * (w+wsub)/N[2];
+                            var newNode = new LatticeNode(pt1 + wVect * (w+wsub)/N[2]);
                             GH_Path treePath = new GH_Path(u, v, w, i);
-                            nodeTree.Add(newPt, treePath);
+                            lattice.Nodes.Add(newNode, treePath);
                         }
                     }
 
@@ -149,8 +150,8 @@ namespace IntraLattice.CORE.Components
                         var vInterval = new Interval((v) / N[1], (v + 1) / N[1]);
                         Surface ss1 = cylinder.Trim(uInterval, vInterval);                          // create sub-surface
                         Curve ss2 = axis.Trim(uInterval);
-                        ss1.SetDomain(0, normalDomain); ss1.SetDomain(1, normalDomain);             // normalize domains
-                        ss2.Domain = normalDomain;
+                        ss1.SetDomain(0, unitDomain); ss1.SetDomain(1, unitDomain);             // normalize domains
+                        ss2.Domain = unitDomain;
                         // Save to the space tree
                         spaceTree.Add(ss1, spacePath);
                         spaceTree.Add(ss2, spacePath);
@@ -158,17 +159,13 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 7. Generate the struts
-            //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
+            // 7. Generate the struts using a mapping method
             var struts = new List<Curve>();
-            var nodes = new Point3dList();
-            struts = FrameTools.ConformMapping(nodeTree, spaceTree, cell, N, morphed);
-            struts = FrameTools.CleanNetwork(struts, out nodes);
+            if (morphed) struts = lattice.MorphMapping(cell, spaceTree, N);
+            else struts = lattice.ConformMapping(cell, N);
 
             // 8. Set output
-            DA.SetDataList(0, struts);
-            DA.SetDataList(1, nodes);
-            
+            DA.SetDataList(0, struts);            
         }
 
         // Primitive grid component -> first panel of the toolbar

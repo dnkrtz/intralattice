@@ -99,8 +99,7 @@ namespace IntraLattice.CORE.Components
             if (nZ == 0) { return; }
 
             // 4. Declare our point grid datatree
-            var nodeTree = new DataTree<Point3d>();
-            var stateTree = new DataTree<Boolean>();
+            var lattice = new Lattice(LatticeType.Uniform);
 
             // 5. Prepare normalized/formatted unit cell topology
             var cell = new LatticeCell(topology);
@@ -122,7 +121,10 @@ namespace IntraLattice.CORE.Components
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        // this loop maps each node in the cell onto the UV-surface maps
+                        GH_Path treePath = new GH_Path(u, v, w);                // construct path in tree
+                        var nodeList = lattice.Nodes.EnsurePath(treePath);
+
+                        // this loop maps each node in the cell
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
                             // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
@@ -140,11 +142,10 @@ namespace IntraLattice.CORE.Components
 
                             // compute position vector
                             Vector3d V = (u+usub) * vectorX + (v+vsub) * vectorY + (w+wsub) * vectorZ;
-                            Point3d newPt = basePlane.Origin + V;
 
-                            GH_Path treePath = new GH_Path(u, v, w, i);             // construct path in tree
-                            nodeTree.Add(newPt, treePath);                          // add point to tree
-                            stateTree.Add(true, treePath);                          // state (inside or outside design space, always in for our case)
+                            var newNode = new LatticeNode(basePlane.Origin + V);    // construct new node with pt
+                            
+                            nodeList.Add(newNode);                   // add new node to tree
                         }
                     }
                 }
@@ -152,15 +153,10 @@ namespace IntraLattice.CORE.Components
 
             // 7. Generate the struts
             //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
-            var struts = new List<Curve>();
-            var nodes = new Point3dList();
-            struts = FrameTools.UniformMapping(nodeTree, stateTree, cell, null, 0, N, 0);
-            struts = FrameTools.CleanNetwork(struts, out nodes);
+            var struts = lattice.ConformMapping(cell, N);
 
             // 8. Set output
-            DA.SetDataList(0, struts);
-            DA.SetDataList(1, nodes);
-            
+            DA.SetDataList(0, struts);            
         }
         
         /// <summary>
