@@ -15,11 +15,6 @@ namespace IntraLattice.CORE.Data.GH_Goo
             this.Value = new LatticeCell();
         }
 
-        public LatticeCellGoo(List<Rhino.Geometry.Line> rawcell) 
-        {
-            this.Value = new LatticeCell(rawcell);
-        
-        }
 
         public LatticeCellGoo(LatticeCell cell)
         {
@@ -32,10 +27,10 @@ namespace IntraLattice.CORE.Data.GH_Goo
 
         public override Grasshopper.Kernel.Types.IGH_GeometricGoo DuplicateGeometry()
         {
-            return Duplicate();
+            return DuplicateGoo();
         }
 
-        public LatticeCellGoo Duplicate()
+        public LatticeCellGoo DuplicateGoo()
         {
             return new LatticeCellGoo(Value == null ? new LatticeCell() : Value.Duplicate());
         }
@@ -70,6 +65,11 @@ namespace IntraLattice.CORE.Data.GH_Goo
         public override string TypeDescription
         {
             get { return ("LatticeCell Representation"); }
+        }
+
+        public override string TypeName
+        {
+            get { return "LatticeCellGoo"; }
         }
 
         public override BoundingBox Boundingbox
@@ -125,6 +125,10 @@ namespace IntraLattice.CORE.Data.GH_Goo
      
         }
 
+        public void DrawViewportMeshes(GH_PreviewMeshArgs args)
+        {
+            //No meshes are drawn.   
+        }
     }
 
 
@@ -141,6 +145,16 @@ namespace IntraLattice.CORE.Data.GH_Goo
                 return null;
             }
         }
+
+        protected override GH_GetterResult Prompt_Plural(ref List<LatticeCellGoo> values)
+        {
+            return GH_GetterResult.cancel;
+        }
+        protected override GH_GetterResult Prompt_Singular(ref LatticeCellGoo value)
+        {
+            return GH_GetterResult.cancel;
+        }
+
 
         public override GH_Exposure Exposure
         {
@@ -272,14 +286,9 @@ namespace IntraLattice.CORE.Data.GH_Goo
                 }
             }
 
-            var lattice = new LatticeCellGoo();
+            var lattice = new LatticeCellGoo(new LatticeCell(listofline));
 
-            foreach (var element in listofline) 
-            {
-                
-
-            }
-
+            DA.SetData(0, lattice);
 
         }
 

@@ -13,7 +13,7 @@ namespace IntraLattice.CORE.Data
 {
     
     // The LatticeCell object represents 
-    public class LatticeCell: ICloneable 
+    public class LatticeCell
     {
 
         #region Class fields
