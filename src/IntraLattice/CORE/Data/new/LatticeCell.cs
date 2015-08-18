@@ -13,6 +13,7 @@ namespace IntraLattice.CORE.Data
 {
     
     // The LatticeCell object represents 
+    [Serializable]
     public class LatticeCell
     {
 

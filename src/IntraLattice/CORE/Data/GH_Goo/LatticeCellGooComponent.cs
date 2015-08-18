@@ -22,7 +22,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
             {
                 cell = new LatticeCell();
             }
-            this.Value = cell.Duplicate();
+            this.Value = cell;
         }
 
         public override Grasshopper.Kernel.Types.IGH_GeometricGoo DuplicateGeometry()
@@ -120,7 +120,15 @@ namespace IntraLattice.CORE.Data.GH_Goo
                 foreach (var element in this.Value.Nodes) 
                 {
                     args.Pipeline.DrawPoint(element, args.Color);
-                }                
+                }
+
+                foreach (var element in this.Value.NodePairs) 
+                {
+                    
+                    args.Pipeline.DrawLine(new Line(this.Value.Nodes[element.I], this.Value.Nodes[element.J]), args.Color);
+                    
+                }
+
             }
      
         }
