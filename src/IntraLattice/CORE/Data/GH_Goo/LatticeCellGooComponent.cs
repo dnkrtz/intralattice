@@ -50,6 +50,8 @@ namespace IntraLattice.CORE.Data.GH_Goo
             {
                 //add more info
                 if (Value.Nodes == null) { return "Node list empty"; }
+                if (Value.NodeNeighbours == null) { return "single Point"; }
+                if (Value.NodePairs == null) { return "No line"; }
                 return base.IsValidWhyNot;
             }
         }
@@ -88,7 +90,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
             if (Value.Nodes == null) { return BoundingBox.Empty; }
             return Value.Nodes.BoundingBox;
         }
-
+        // no idea if they work
         public override Grasshopper.Kernel.Types.IGH_GeometricGoo Transform(Transform xform)
         {
             if (Value == null) { return null; }
@@ -96,7 +98,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
             this.m_value.Nodes.Transform(xform);
             return this;
         }
-
+        //no idea if they work
         public override Grasshopper.Kernel.Types.IGH_GeometricGoo Morph(SpaceMorph xmorph)
         {
             for (int i = 0 ; i < this.Value.Nodes.Count; i++) 
