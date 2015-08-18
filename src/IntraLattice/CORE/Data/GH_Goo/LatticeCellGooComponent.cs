@@ -132,72 +132,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
     }
 
 
-    public class LatticeCellParameter : GH_PersistentGeometryParam<LatticeCellGoo>, IGH_PreviewObject 
-    {
-        public LatticeCellParameter() : base(new GH_InstanceDescription("LatticeCell","cell","Lattice cell data","Intralattice","Data")) 
-        { 
-        }
-
-        protected override System.Drawing.Bitmap Icon
-        {
-            get
-            {
-                return null;
-            }
-        }
-
-        protected override GH_GetterResult Prompt_Plural(ref List<LatticeCellGoo> values)
-        {
-            return GH_GetterResult.cancel;
-        }
-        protected override GH_GetterResult Prompt_Singular(ref LatticeCellGoo value)
-        {
-            return GH_GetterResult.cancel;
-        }
-
-
-        public override GH_Exposure Exposure
-        {
-            get
-            {
-                return GH_Exposure.primary;
-            }
-        }
-
-        public override Guid ComponentGuid
-        {
-            get { return new Guid("{4bd10f65-fe3e-48e0-a6be-745c32ee3351}"); }
-        }
-        public BoundingBox ClippingBox
-        {
-            get
-            {
-                return Preview_ComputeClippingBox();
-            }
-        }
-        public void DrawViewportMeshes(IGH_PreviewArgs args)
-        {
-            //Meshes aren't drawn.
-        }
-        public void DrawViewportWires(IGH_PreviewArgs args)
-        {
-            //Use a standard method to draw gunk, you don't have to specifically implement this.
-            Preview_DrawWires(args);
-        }
-
-        private bool m_hidden = false;
-        public bool Hidden
-        {
-            get { return m_hidden; }
-            set { m_hidden = value; }
-        }
-        public bool IsPreviewCapable
-        {
-            get { return true; }
-        }
     
-    }
-
 
     public class LatticeCellGooComponent : GH_Component
     {
@@ -207,7 +142,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
         public LatticeCellGooComponent()
             : base("LatticeCellGoo", "LattiCell",
                 "Lattice Cell data structure",
-                "IntraLattice", "Data")
+                "IntraLattice2", "Cell")
         {
         }
 
@@ -229,7 +164,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddParameter(new LatticeCellParameter(),"LatticeCell", "LC","data rep of LatticeCell",GH_ParamAccess.item);
+            pManager.AddGenericParameter("latticeCell", "LaCell", "Lattice Cell representation in form of data structure", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -254,7 +189,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
 
             if (ListCurve == null && ListCurve.Count == 0) { return; }
 
-            //polygonize curve
+            
             foreach (var element in ListCurve)
             {
                 if (element.IsValid)
