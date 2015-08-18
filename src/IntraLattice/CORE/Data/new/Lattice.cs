@@ -77,19 +77,19 @@ namespace IntraLattice.CORE.Data
                     {
                         // we're inside a unit cell
                         // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.NodePairs)
+                        foreach (IndexPair nodePair in cell.NodePairs)
                         {
                             // prepare the path of the nodes (path in tree)
-                            int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
-                            int[] JRel = cell.NodePaths[cellStrut.J];
-                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2], IRel[3]); // absolute path
-                            GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2], JRel[3]);
+                            int[] IRel = cell.NodePaths[nodePair.I];  // relative path of nodes (with respect to current unit cell)
+                            int[] JRel = cell.NodePaths[nodePair.J];
+                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2]); // absolute path
+                            GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2]);
 
                             // make sure both nodes exist (will be false at boundaries)
                             if (Nodes.PathExists(IPath) && Nodes.PathExists(JPath))
                             {
-                                Point3d node1 = Nodes[IPath, 0].Point3d;
-                                Point3d node2 = Nodes[JPath, 0].Point3d;
+                                Point3d node1 = Nodes[IPath, IRel[3]].Point3d;
+                                Point3d node2 = Nodes[JPath, JRel[3]].Point3d;
 
                                 LineCurve curve = new LineCurve(node1, node2);
                                 if (curve != null && curve.IsValid)
@@ -120,19 +120,19 @@ namespace IntraLattice.CORE.Data
                     {
                         // we're inside a unit cell
                         // loop through all pairs of nodes that make up struts
-                        foreach (IndexPair cellStrut in cell.NodePairs)
+                        foreach (IndexPair nodePair in cell.NodePairs)
                         {
                             // prepare the path of the nodes (path in tree)
-                            int[] IRel = cell.NodePaths[cellStrut.I];  // relative path of nodes (with respect to current unit cell)
-                            int[] JRel = cell.NodePaths[cellStrut.J];
-                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2], IRel[3]); // absolute path
-                            GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2], JRel[3]);
+                            int[] IRel = cell.NodePaths[nodePair.I];  // relative path of nodes (with respect to current unit cell)
+                            int[] JRel = cell.NodePaths[nodePair.J];
+                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2]); // absolute path
+                            GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2]);
 
                             // make sure both nodes exist (will be false at boundaries)
                             if (Nodes.PathExists(IPath) && Nodes.PathExists(JPath))
                             {
-                                Point3d node1 = Nodes[IPath, 0].Point3d;
-                                Point3d node2 = Nodes[JPath, 0].Point3d;
+                                Point3d node1 = Nodes[IPath, IRel[3]].Point3d;
+                                Point3d node2 = Nodes[JPath, JRel[3]].Point3d;
 
                                 GH_Path spacePath;
 
@@ -153,7 +153,7 @@ namespace IntraLattice.CORE.Data
                                 int ptCount = 16;
                                 //int divNumber = (int)(node1.DistanceTo(node2) / morphTol);    // number of discrete segments
                                 var templatePts = new List<Point3d>();   // unitized cell points (x,y of these points are u,v of sub-surface)
-                                Line templateLine = new Line(cell.Nodes[cellStrut.I], cell.Nodes[cellStrut.J]);
+                                Line templateLine = new Line(cell.Nodes[nodePair.I], cell.Nodes[nodePair.J]);
                                 for (int ptIndex = 0; ptIndex <= ptCount; ptIndex++)
                                     templatePts.Add(templateLine.PointAt(ptIndex / (double)ptCount));
 

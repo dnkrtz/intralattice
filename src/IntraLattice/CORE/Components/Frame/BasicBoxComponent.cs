@@ -142,9 +142,8 @@ namespace IntraLattice.CORE.Components
 
                             // compute position vector
                             Vector3d V = (u+usub) * vectorX + (v+vsub) * vectorY + (w+wsub) * vectorZ;
-
                             var newNode = new LatticeNode(basePlane.Origin + V);    // construct new node with pt
-                            
+
                             nodeList.Add(newNode);                   // add new node to tree
                         }
                     }
