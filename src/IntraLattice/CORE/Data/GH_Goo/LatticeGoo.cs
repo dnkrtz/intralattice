@@ -79,13 +79,16 @@ namespace IntraLattice.CORE.Data.GH_Goo
             get { return "LatticeGoo"; }
         }
 
+        
         public override Rhino.Geometry.BoundingBox Boundingbox
         {
             get {
                 throw new NotImplementedException(); 
                 }
         }
+        #endregion
 
+        #region transform
         public override Rhino.Geometry.BoundingBox GetBoundingBox(Rhino.Geometry.Transform xform)
         {
             throw new NotImplementedException();
@@ -95,14 +98,14 @@ namespace IntraLattice.CORE.Data.GH_Goo
         {
             throw new NotImplementedException();
         }
+        
 
-        #endregion
 
         public override Grasshopper.Kernel.Types.IGH_GeometricGoo Morph(Rhino.Geometry.SpaceMorph xmorph)
         {
             throw new NotImplementedException();
         }
-
+        #endregion
 
         #region Casting Methods
         public override bool CastTo<Q>(out Q target)
