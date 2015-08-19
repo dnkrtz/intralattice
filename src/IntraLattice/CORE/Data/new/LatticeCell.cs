@@ -13,14 +13,14 @@ namespace IntraLattice.CORE.Data
     public class LatticeCell
     {
 
-        #region Class fields
+        #region Fields
         private Point3dList m_nodes;
         private List<IndexPair> m_nodePairs;
         private List<List<int>> m_nodeNeighbours;
         private List<int[]> m_nodePaths;
         #endregion
 
-        #region Class constructors
+        #region Constructors
         public LatticeCell()
         {
             m_nodes = new Point3dList();
@@ -50,7 +50,7 @@ namespace IntraLattice.CORE.Data
         }
         #endregion
 
-        #region Class properties
+        #region Properties
         /// <summary>
         /// List of unique nodes
         /// </summary>
@@ -101,7 +101,7 @@ namespace IntraLattice.CORE.Data
 
         #endregion
 
-        #region Class methods
+        #region Methods
         /// <summary>
         /// Formats the line input into the UnitCell object.
         /// </summary>
@@ -258,35 +258,39 @@ namespace IntraLattice.CORE.Data
             Plane yz = Plane.WorldYZ; yz.Translate(new Vector3d(1, 0, 0));
             Plane zx = Plane.WorldZX; zx.Translate(new Vector3d(0, 1, 0));
 
-            // Create the relative tree paths (_,_,_,i), refer to dev docs for better understanding
-            foreach (Point3d node in this.Nodes)
+            // Create the relative uvw tree paths, refer to dev docs for better understanding
+            foreach (Point3d node in Nodes)
             {
+                bool nodeToRemove = true;
+
                 // check top plane first
                 if (Math.Abs(xy.DistanceTo(node)) < tol)
                 {
                     if (node.DistanceTo(new Point3d(1, 1, 1)) < tol)
-                        this.NodePaths.Add(new int[] { 1, 1, 1, this.Nodes.ClosestIndex(new Point3d(0, 0, 0)) });
+                        NodePaths.Add(new int[] { 1, 1, 1, this.Nodes.ClosestIndex(new Point3d(0, 0, 0)) });            // node belongs to 1,1,1 neighbour
                     else if (Math.Abs(node.X - 1) < tol && Math.Abs(node.Z - 1) < tol)
-                        this.NodePaths.Add(new int[] { 1, 0, 1, this.Nodes.ClosestIndex(new Point3d(0, node.Y, 0)) });
+                        NodePaths.Add(new int[] { 1, 0, 1, this.Nodes.ClosestIndex(new Point3d(0, node.Y, 0)) });       // node belongs to 1,0,1 neighbour
                     else if (Math.Abs(node.Y - 1) < tol && Math.Abs(node.Z - 1) < tol)
-                        this.NodePaths.Add(new int[] { 0, 1, 1, this.Nodes.ClosestIndex(new Point3d(node.X, 0, 0)) });
+                        NodePaths.Add(new int[] { 0, 1, 1, this.Nodes.ClosestIndex(new Point3d(node.X, 0, 0)) });       // node belongs to 0,1,1 neighbour
                     else
-                        this.NodePaths.Add(new int[] { 0, 0, 1, this.Nodes.ClosestIndex(new Point3d(node.X, node.Y, 0)) });
+                        NodePaths.Add(new int[] { 0, 0, 1, this.Nodes.ClosestIndex(new Point3d(node.X, node.Y, 0)) });  // node belongs to 0,0,1 neighbour
                 }
                 // check yz boundary plane
                 else if (Math.Abs(yz.DistanceTo(node)) < tol)
                 {
                     if (Math.Abs(node.X - 1) < tol && Math.Abs(node.Y - 1) < tol)
-                        this.NodePaths.Add(new int[] { 1, 1, 0, this.Nodes.ClosestIndex(new Point3d(0, 0, node.Z)) });
+                        NodePaths.Add(new int[] { 1, 1, 0, this.Nodes.ClosestIndex(new Point3d(0, 0, node.Z)) });       // node belongs to 1,1,0 neighbour
                     else
-                        this.NodePaths.Add(new int[] { 1, 0, 0, this.Nodes.ClosestIndex(new Point3d(0, node.Y, node.Z)) });
+                        NodePaths.Add(new int[] { 1, 0, 0, this.Nodes.ClosestIndex(new Point3d(0, node.Y, node.Z)) });  // node belongs to 1,0,0 neighbour
                 }
                 // check last boundary plane
                 else if (Math.Abs(zx.DistanceTo(node)) < tol)
-                    this.NodePaths.Add(new int[] { 0, 1, 0, this.Nodes.ClosestIndex(new Point3d(node.X, 0, node.Z)) });
+                    NodePaths.Add(new int[] { 0, 1, 0, this.Nodes.ClosestIndex(new Point3d(node.X, 0, node.Z)) });      // node belongs to 0,1,0 neighbour
                 // if not on those planes, the node belongs to the current cell
                 else
-                    this.NodePaths.Add(new int[] { 0, 0, 0, this.Nodes.IndexOf(node) });
+                {
+                    NodePaths.Add(new int[] { 0, 0, 0, this.Nodes.IndexOf(node) });
+                }
             }
 
             // now locate any struts that lie on the boundary planes
@@ -304,7 +308,6 @@ namespace IntraLattice.CORE.Data
 
                 if (toRemove) strutsToRemove.Add(i);
             }
-            // discard them (reverse the list because when removing objects from list, all indices larger than the one being removed change by -1)
             strutsToRemove.Reverse();
             foreach (int strutToRemove in strutsToRemove) this.NodePairs.RemoveAt(strutToRemove);
 

@@ -44,7 +44,7 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
             pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // '5' is the default value
             pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
@@ -72,7 +72,7 @@ namespace IntraLattice.CORE.Components
         {
             // 1. Declare placeholder variables and assign initial invalid data.
             //    This way, if the input parameters fail to supply valid data, we know when to abort
-            var topology = new List<Line>();
+            var cell = new LatticeCell();
             double xCellSize = 0;
             double yCellSize = 0;
             double zCellSize = 0;
@@ -81,7 +81,7 @@ namespace IntraLattice.CORE.Components
             int nZ = 0;
 
             // 2. Retrieve input data.
-            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref xCellSize)) { return; }
             if (!DA.GetData(2, ref yCellSize)) { return; }
             if (!DA.GetData(3, ref zCellSize)) { return; }
@@ -90,7 +90,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(6, ref nZ)) { return; }
 
             // 3. If data is invalid, we need to abort.
-            if (topology.Count < 2) { return; }
+            if (!cell.isValid) { return; }
             if (xCellSize == 0) { return; }
             if (yCellSize == 0) { return; }
             if (zCellSize == 0) { return; }
@@ -100,11 +100,10 @@ namespace IntraLattice.CORE.Components
 
             // 4. Declare our point grid datatree
             var lattice = new Lattice(LatticeType.Uniform);
-
-            // 5. Prepare normalized/formatted unit cell topology
-            var cell = new LatticeCell(topology);
-            cell.FormatTopology();          // sets up paths for inter-cell nodes
             
+            // 5. Prepare lattice cell topology
+            cell.FormatTopology();
+
             // 6. Define BasePlane and directional iteration vectors
             Plane basePlane = Plane.WorldXY;
             Vector3d vectorX = xCellSize * basePlane.XAxis;

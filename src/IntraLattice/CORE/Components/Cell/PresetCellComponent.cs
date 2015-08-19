@@ -251,17 +251,9 @@ namespace IntraLattice.CORE.Components
                     break;
             }
 
-
             var cell = new LatticeCell(lines);
-            if (cell.isValid)
-            {
-                cell.FormatTopology();
-            }
-            else
-            {
+            if (!cell.isValid)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - this is embarassing.");
-                return;
-            }
                 
             // 8. Set output
             DA.SetData(0, new LatticeCellGoo(cell));            
