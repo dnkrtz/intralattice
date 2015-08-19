@@ -100,10 +100,11 @@ namespace IntraLattice.CORE.Components
 
             // 4. Declare our point grid datatree
             var lattice = new Lattice(LatticeType.Uniform);
-            
-            // 5. Prepare lattice cell topology
-            cell.FormatTopology();
 
+            // 5. Prepare unit cell topology
+            cell = cell.Duplicate();
+            cell.FormatTopology();
+            
             // 6. Define BasePlane and directional iteration vectors
             Plane basePlane = Plane.WorldXY;
             Vector3d vectorX = xCellSize * basePlane.XAxis;

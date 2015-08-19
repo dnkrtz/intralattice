@@ -48,7 +48,6 @@ namespace IntraLattice.CORE.Data.GH_Goo
             {
                 //add more info
                 if (Value.Nodes == null) { return "Node list empty"; }
-                if (Value.NodeNeighbours == null) { return "single Point"; }
                 if (Value.NodePairs == null) { return "No line"; }
                 return base.IsValidWhyNot;
             }
@@ -149,22 +148,22 @@ namespace IntraLattice.CORE.Data.GH_Goo
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
             if (Value == null) { return; }
-            else
+            if (Value.Nodes != null)
             {
-                foreach (var element in this.Value.Nodes) 
+                foreach (var element in Value.Nodes) 
                 {
                     args.Pipeline.DrawPoint(element, args.Color);
                 }
-
-                foreach (var element in this.Value.NodePairs) 
-                {
-                    
-                    args.Pipeline.DrawLine(new Line(this.Value.Nodes[element.I], this.Value.Nodes[element.J]), args.Color);
-                    
-                }
-
             }
-     
+            if (Value.NodePairs != null)
+            {
+                foreach (var element in Value.NodePairs) 
+                {
+                    Point3d node1 = Value.Nodes[element.I];
+                    Point3d node2 = Value.Nodes[element.J];
+                    args.Pipeline.DrawLine(node1, node2, args.Color);
+                }
+            }     
         }
         public void DrawViewportMeshes(GH_PreviewMeshArgs args)
         {

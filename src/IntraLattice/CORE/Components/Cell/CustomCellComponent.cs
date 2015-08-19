@@ -32,7 +32,7 @@ namespace IntraLattice.CORE.Components
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddCurveParameter("Topology", "Topo", "Verified unit cell topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Verified unit cell topology", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -72,7 +72,7 @@ namespace IntraLattice.CORE.Components
                     break;
             }
 
-            DA.SetDataList(0, lines);
+            DA.SetData(0, cell);
 
         }
 

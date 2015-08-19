@@ -35,7 +35,7 @@ namespace IntraLattice.CORE.Components
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
             pManager.AddSurfaceParameter("Surface", "Surf", "Surface to conform to", GH_ParamAccess.item);
             pManager.AddCurveParameter("Axis", "A", "Axis (may be curved)", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
@@ -54,7 +54,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate inputs
-            var topology = new List<Line>();
+            var cell = new LatticeCell();
             Surface surface = null;
             Curve axis = null;
             bool flipUV = false;
@@ -63,7 +63,7 @@ namespace IntraLattice.CORE.Components
             int nW = 0;
             bool morphed = false;
 
-            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref surface)) { return; }
             if (!DA.GetData(2, ref axis)) { return; }
             if (!DA.GetData(4, ref nU)) { return; }
@@ -71,7 +71,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(6, ref nW)) { return; }
             if (!DA.GetData(7, ref morphed)) { return; }
 
-            if (topology.Count < 2) { return; }
+            if (!cell.isValid) { return; }
             if (!surface.IsValid) { return; }
             if (!axis.IsValid) { return; }
             if (nU == 0) { return; }
@@ -93,8 +93,8 @@ namespace IntraLattice.CORE.Components
             axis.Domain = unitDomain; // axis (u-direction)
 
             // 6. Prepare normalized/formatted unit cell topology
-            var cell = new LatticeCell(topology);
-            cell.FormatTopology();          // sets up paths for inter-cell nodes
+            cell = cell.Duplicate();
+            cell.FormatTopology();
 
             // 7. Divide axis into equal segments, get curve parameters
             List<double> curveParams = new List<double>(axis.DivideByCount((int)N[0], true));

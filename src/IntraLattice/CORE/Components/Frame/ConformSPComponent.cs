@@ -37,7 +37,7 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
             pManager.AddSurfaceParameter("Surface", "Surf", "Surface to conform to", GH_ParamAccess.item);
             pManager.AddPointParameter("Point", "Pt", "Point", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
@@ -63,7 +63,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate inputs
-            var topology = new List<Line>();
+            var cell = new LatticeCell();
             Surface surface = null;
             Point3d pt = Point3d.Unset;
             int nU = 0;
@@ -71,7 +71,7 @@ namespace IntraLattice.CORE.Components
             int nW = 0;
             bool morphed = false;
 
-            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref surface)) { return; }
             if (!DA.GetData(2, ref pt)) { return; }
             if (!DA.GetData(3, ref nU)) { return; }
@@ -79,7 +79,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(5, ref nW)) { return; }
             if (!DA.GetData(6, ref morphed)) { return; }
 
-            if (topology.Count < 2) { return; }
+            if (!cell.isValid) { return; }
             if (!surface.IsValid) { return; }
             if (!pt.IsValid) { return; }
             if (nU == 0) { return; }
@@ -100,7 +100,7 @@ namespace IntraLattice.CORE.Components
             surface.SetDomain(1, unitDomain); // surface v-direction
 
             // 5. Prepare normalized/formatted unit cell topology
-            var cell = new LatticeCell(topology);
+            cell = cell.Duplicate();
             cell.FormatTopology();          // sets up paths for inter-cell nodes
 
             // 6. Let's create the actual lattice nodes now
