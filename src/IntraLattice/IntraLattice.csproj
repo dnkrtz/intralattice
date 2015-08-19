@@ -63,6 +63,7 @@
   <ItemGroup>
     <Compile Include="CORE\Components\Utility\AdjustUVComponent.cs" />
     <Compile Include="CORE\Data\GH_Goo\LatticeCellGooComponent.cs" />
+    <Compile Include="CORE\Data\GH_Goo\LatticeGoo.cs" />
     <Compile Include="CORE\Data\new\EndoMesh.cs" />
     <Compile Include="CORE\Data\new\Lattice.cs" />
     <Compile Include="CORE\Data\new\ExoMesh.cs" />

@@ -8,16 +8,40 @@ namespace IntraLattice.CORE.Data.GH_Goo
 {
     class LatticeGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<Lattice>, IGH_PreviewData
     {
+        #region Constructor
+
         public LatticeGoo(LatticeType type)
         {
             this.Value = new Lattice(type);
         }
 
-        public override Grasshopper.Kernel.Types.IGH_Goo Duplicate()
+        public LatticeGoo(Lattice cell)
         {
-            return base.Duplicate();
+            if (cell == null)
+            {
+                cell = new Lattice(IntraLattice.CORE.Data.LatticeType.None);
+            }
+            this.Value = cell;
         }
 
+        #endregion
+
+        #region method
+
+        public LatticeGoo DuplicateGoo()
+        {
+            
+            return new LatticeGoo(Value.Type == null ? new Lattice(IntraLattice.CORE.Data.LatticeType.None): Value.Duplicate());
+        }
+
+        public override Grasshopper.Kernel.Types.IGH_GeometricGoo DuplicateGeometry()
+        {
+            return DuplicateGoo();
+        }
+
+        #endregion
+
+        #region Properties
         public override bool IsValid
         {
             get
@@ -58,7 +82,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
 
         public override Rhino.Geometry.BoundingBox Boundingbox
         {
-            get {     
+            get {
                 throw new NotImplementedException(); 
                 }
         }
@@ -73,9 +97,48 @@ namespace IntraLattice.CORE.Data.GH_Goo
             throw new NotImplementedException();
         }
 
+        #endregion
+
         public override Grasshopper.Kernel.Types.IGH_GeometricGoo Morph(Rhino.Geometry.SpaceMorph xmorph)
         {
             throw new NotImplementedException();
+        }
+
+
+        #region Casting Methods
+        public override bool CastTo<Q>(out Q target)
+        {
+            //Cast to LatticeCell.
+            if (typeof(Q).IsAssignableFrom(typeof(Lattice)))
+            {
+                if (Value == null)
+                    target = default(Q);
+                else
+                    target = (Q)(object)Value;
+                return true;
+            }
+            target = default(Q);
+            return false;
+        }
+        public override bool CastFrom(object source)
+        {
+            if (source == null) { return false; }
+
+            //Cast from LatticeCell
+            if (typeof(Lattice).IsAssignableFrom(source.GetType()))
+            {
+                Value = (Lattice)source;
+                return true;
+            }
+
+            return false;
+        }
+        #endregion
+
+        #region Drawing Methods
+        public Rhino.Geometry.BoundingBox ClippingBox
+        {
+            get { return Boundingbox; }
         }
 
         public void DrawViewportWires(GH_PreviewWireArgs args)
@@ -91,6 +154,6 @@ namespace IntraLattice.CORE.Data.GH_Goo
         {
             //No meshes are drawn.   
         }
-
+        #endregion
     }
 }
