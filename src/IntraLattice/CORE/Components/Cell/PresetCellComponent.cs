@@ -8,6 +8,8 @@ using Rhino;
 using IntraLattice.Properties;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
+using IntraLattice.CORE.Data.GH_Goo;
+using IntraLattice.CORE.Data;
 
 // Summary:     This component can generate a selection of pre-defined unit cell topologies
 // ===============================================================================
@@ -46,7 +48,7 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddLineParameter("Topology", "Topo", "Line topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Line topology", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -249,11 +251,20 @@ namespace IntraLattice.CORE.Components
                     break;
             }
 
-            // not really required, since it's done by the Frame module, but can help isolate issues
-            CellTools.FixIntersections(ref lines);
 
+            var cell = new LatticeCell(lines);
+            if (cell.isValid)
+            {
+                cell.FormatTopology();
+            }
+            else
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - this is embarassing.");
+                return;
+            }
+                
             // 8. Set output
-            DA.SetDataList(0, lines);            
+            DA.SetData(0, new LatticeCellGoo(cell));            
         }
 
         // Quick method for generating the corner nodes of a cell

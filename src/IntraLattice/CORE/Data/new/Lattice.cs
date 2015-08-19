@@ -242,7 +242,6 @@ namespace IntraLattice.CORE.Data
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-
                         // we're inside a unit cell
                         // loop through all pairs of nodes that make up struts
                         foreach (IndexPair nodePair in cell.NodePairs)
@@ -319,7 +318,6 @@ namespace IntraLattice.CORE.Data
                                             {
                                                 struts.Add(testLine);
                                                 Struts.Add(new LatticeStrut(testLine));
-                                                Nodes.EnsurePath(IPath).Add();
                                             }
                                         }
                                         else if (overlapCurves != null && overlapCurves.Length > 0)
@@ -342,8 +340,9 @@ namespace IntraLattice.CORE.Data
         /// <summary>
         /// Trims strut with known intersection point, returning  the trimmed LineCurve which is inside the space.
         /// </summary>
-        public void AddTrimmedStrut(LatticeNode node1, LatticeNode node2, Point3d intersectionPt, double minStrutLength, out )
+        public LineCurve AddTrimmedStrut(LatticeNode node1, LatticeNode node2, Point3d intersectionPt, double minStrutLength)
         {
+
             LineCurve testStrut = new LineCurve(new Line(node1.Point3d, node2.Point3d), 0, 1);  // set line, with curve parameter domain [0,1]
 
             if (node1.IsInside)
@@ -351,12 +350,7 @@ namespace IntraLattice.CORE.Data
                 double trimmedLength = intersectionPt.DistanceTo(node1.Point3d);
                 if (trimmedLength > minStrutLength)
                 {
-                    
                     Nodes.Add(new LatticeNode(intersectionPt, LatticeNodeState.Boundary));
-
-                    Struts.Add(new LatticeStrut(fullCurve, new NodePair(node1, node2))); // nodepair is a REFERENCE type
-                    
-                    node1.StrutIndices.Add(Struts.Count - 1);
                     
                     return new LineCurve(node1.Point3d, intersectionPt);
                 }

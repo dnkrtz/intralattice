@@ -61,12 +61,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-<<<<<<< HEAD
     <Compile Include="CORE\Components\Utility\AdjustUVComponent.cs" />
-    <Compile Include="CORE\Data\new\EndoMesh.cs" />
-=======
     <Compile Include="CORE\Data\GH_Goo\LatticeCellGooComponent.cs" />
->>>>>>> Goo-implementation
+    <Compile Include="CORE\Data\new\EndoMesh.cs" />
     <Compile Include="CORE\Data\new\Lattice.cs" />
     <Compile Include="CORE\Data\new\ExoMesh.cs" />
     <Compile Include="CORE\Data\new\NodePair.cs" />

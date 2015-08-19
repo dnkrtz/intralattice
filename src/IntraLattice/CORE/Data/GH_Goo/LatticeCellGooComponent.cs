@@ -14,8 +14,6 @@ namespace IntraLattice.CORE.Data.GH_Goo
         {
             this.Value = new LatticeCell();
         }
-
-
         public LatticeCellGoo(LatticeCell cell)
         {
             if (cell == null)
