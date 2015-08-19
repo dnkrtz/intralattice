@@ -84,9 +84,6 @@ namespace IntraLattice.CORE.Data
                 return null;
             }
         }
-
-
-
         /// <summary>
         /// Maps cell topology to UVWI node map (linear struts).         
         /// </summary>

@@ -8,16 +8,32 @@ namespace IntraLattice.CORE.Data.GH_Goo
 {
     class LatticeGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<Lattice>, IGH_PreviewData
     {
+        #region Constructors
         public LatticeGoo(LatticeType type)
         {
             this.Value = new Lattice(type);
         }
-
-        public override Grasshopper.Kernel.Types.IGH_Goo Duplicate()
+        public LatticeGoo(Lattice cell)
         {
-            return base.Duplicate();
+            if (cell == null)
+            {
+                cell = new Lattice(IntraLattice.CORE.Data.LatticeType.None);
+            }
+            this.Value = cell;
+        }
+        public LatticeGoo DuplicateGoo()
+        {
+            
+            return new LatticeGoo(Value.Duplicate());
         }
 
+        public override Grasshopper.Kernel.Types.IGH_GeometricGoo DuplicateGeometry()
+        {
+            return DuplicateGoo();
+        }
+        #endregion
+
+        #region Properties
         public override bool IsValid
         {
             get
@@ -33,7 +49,6 @@ namespace IntraLattice.CORE.Data.GH_Goo
             {
                 if (Value.Nodes == null) { return "nodes empty"; }
                 if (Value.Struts == null) { return "struts empty"; }
-                if(Value.Type == null){return "no type specified";}
                 return base.IsValidWhyNot;
             }
         }
@@ -56,13 +71,58 @@ namespace IntraLattice.CORE.Data.GH_Goo
             get { return "LatticeGoo"; }
         }
 
+        
         public override Rhino.Geometry.BoundingBox Boundingbox
         {
-            get {     
-                throw new NotImplementedException(); 
+            get {
+
+                Rhino.Collections.Point3dList listofpoint = new Rhino.Collections.Point3dList(); 
+
+                foreach (var element in Value.Nodes.AllData())
+                {
+                    listofpoint.Add(element.Point3d);
+                }
+                return listofpoint.BoundingBox;
+
                 }
         }
+        #endregion
 
+        #region Casting Methods
+        public override object ScriptVariable()
+        {
+            return this.Value;
+        }
+        public override bool CastTo<Q>(out Q target)
+        {
+            //Cast to LatticeCell.
+            if (typeof(Q).IsAssignableFrom(typeof(Lattice)))
+            {
+                if (Value == null)
+                    target = default(Q);
+                else
+                    target = (Q)(object)Value;
+                return true;
+            }
+            target = default(Q);
+            return false;
+        }
+        public override bool CastFrom(object source)
+        {
+            if (source == null) { return false; }
+
+            //Cast from LatticeCell
+            if (typeof(Lattice).IsAssignableFrom(source.GetType()))
+            {
+                Value = (Lattice)source;
+                return true;
+            }
+
+            return false;
+        }
+        #endregion
+
+        #region Transformation Methods
         public override Rhino.Geometry.BoundingBox GetBoundingBox(Rhino.Geometry.Transform xform)
         {
             throw new NotImplementedException();
@@ -77,12 +137,23 @@ namespace IntraLattice.CORE.Data.GH_Goo
         {
             throw new NotImplementedException();
         }
+        #endregion
+
+        #region Drawing Methods
+        public Rhino.Geometry.BoundingBox ClippingBox
+        {
+            get { return Boundingbox; }
+        }
 
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
-            foreach (var element in Value.Struts) 
+            if (Value == null) { return; }
+            if (Value.Struts != null)
             {
-                args.Pipeline.DrawCurve(element.Curve, args.Color);               
+                foreach (var element in Value.Struts)
+                {
+                    args.Pipeline.DrawCurve(element.Curve, args.Color, 3);
+                }
             }
 
         }
@@ -91,6 +162,6 @@ namespace IntraLattice.CORE.Data.GH_Goo
         {
             //No meshes are drawn.   
         }
-
+        #endregion
     }
 }

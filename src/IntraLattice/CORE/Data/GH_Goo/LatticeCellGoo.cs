@@ -90,6 +90,10 @@ namespace IntraLattice.CORE.Data.GH_Goo
         #endregion
 
         #region Casting Methods
+        public override object ScriptVariable()
+        {
+            return this.Value;
+        }
         public override bool CastTo<Q>(out Q target)
         {
             //Cast to LatticeCell.
@@ -118,6 +122,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
             return false;
         }
         #endregion
+
 
         #region Transformation Methods
         // no idea if they work

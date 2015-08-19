@@ -11,6 +11,7 @@ using Grasshopper;
 using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
+using IntraLattice.CORE.Data.GH_Goo;
 
 
 
@@ -58,9 +59,7 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
-            pManager.HideParameter(1);   // Do not display the 'Nodes' output points
+            pManager.AddGenericParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -155,7 +154,7 @@ namespace IntraLattice.CORE.Components
             var struts = lattice.ConformMapping(cell, N);
 
             // 8. Set output
-            DA.SetDataList(0, struts);            
+            DA.SetData(0, new LatticeGoo(lattice));            
         }
         
         /// <summary>
