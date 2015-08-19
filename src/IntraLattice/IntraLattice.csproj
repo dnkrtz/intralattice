@@ -64,6 +64,7 @@
     <Compile Include="CORE\Components\Utility\AdjustUVComponent.cs" />
     <Compile Include="CORE\Data\GH_Goo\LatticeCellGooComponent.cs" />
     <Compile Include="CORE\Data\GH_Goo\LatticeGoo.cs" />
+    <Compile Include="CORE\Data\GH_Goo\LatticeGootestfile.cs" />
     <Compile Include="CORE\Data\new\EndoMesh.cs" />
     <Compile Include="CORE\Data\new\Lattice.cs" />
     <Compile Include="CORE\Data\new\ExoMesh.cs" />
@@ -79,7 +80,6 @@
     <Compile Include="CORE\Data\LatticeMesh.cs" />
     <Compile Include="CORE\Helpers\MeshTools.cs" />
     <Compile Include="CORE\Components\Utility\MeshReportComponent.cs" />
-    <Compile Include="CORE\TestFile\MyComponent1.cs" />
     <Compile Include="FEA\Components\FEAInterfaceComponent.cs" />
     <Compile Include="FEA\Components\PointLoadComponent.cs" />
     <Compile Include="FEA\Components\SPCComponentComponent.cs" />

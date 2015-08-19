@@ -83,7 +83,15 @@ namespace IntraLattice.CORE.Data.GH_Goo
         public override Rhino.Geometry.BoundingBox Boundingbox
         {
             get {
-                throw new NotImplementedException(); 
+
+                Rhino.Collections.Point3dList listofpoint = new Rhino.Collections.Point3dList(); 
+
+                foreach (var element in Value.Nodes.AllData())
+                {
+                    listofpoint.Add(element.Point3d);
+                }
+                return listofpoint.BoundingBox;
+
                 }
         }
         #endregion
