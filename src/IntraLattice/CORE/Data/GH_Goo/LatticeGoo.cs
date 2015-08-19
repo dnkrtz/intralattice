@@ -31,7 +31,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
         public LatticeGoo DuplicateGoo()
         {
             
-            return new LatticeGoo(Value.Type == null ? new Lattice(IntraLattice.CORE.Data.LatticeType.None): Value.Duplicate());
+            return new LatticeGoo(Value.Duplicate());
         }
 
         public override Grasshopper.Kernel.Types.IGH_GeometricGoo DuplicateGeometry()
@@ -57,7 +57,6 @@ namespace IntraLattice.CORE.Data.GH_Goo
             {
                 if (Value.Nodes == null) { return "nodes empty"; }
                 if (Value.Struts == null) { return "struts empty"; }
-                if(Value.Type == null){return "no type specified";}
                 return base.IsValidWhyNot;
             }
         }
