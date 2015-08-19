@@ -19,7 +19,7 @@ namespace IntraLattice.CORE.UtilityModule
         public MeshReport()
             : base("Mesh Report", "MeshReport",
                 "Verifies that the mesh represents a solid, and returns a comprehensive report.",
-                "IntraLattice2", "Utility")
+                "IntraLattice2", "Utils")
         {
         }
 
@@ -101,7 +101,7 @@ namespace IntraLattice.CORE.UtilityModule
         {
             get
             {
-                return GH_Exposure.primary;
+                return GH_Exposure.secondary;
             }
         }
 

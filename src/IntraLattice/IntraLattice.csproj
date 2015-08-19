@@ -61,10 +61,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CORE\Components\Utility\AdjustUVComponent.cs" />
     <Compile Include="CORE\Data\new\EndoMesh.cs" />
     <Compile Include="CORE\Data\new\Lattice.cs" />
     <Compile Include="CORE\Data\new\ExoMesh.cs" />
-    <Compile Include="CORE\Data\new\PathPair.cs" />
+    <Compile Include="CORE\Data\new\NodePair.cs" />
     <Compile Include="CORE\Helpers\CellTools.cs" />
     <Compile Include="CORE\Components\Cell\CustomCellComponent.cs" />
     <Compile Include="CORE\Components\Frame\BasicBoxComponent.cs" />
@@ -108,6 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram1.cd" />
+    <None Include="LatticeClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -147,5 +149,6 @@ Erase "$(TargetPath)"</PostBuildEvent>
     </StartArguments>
     <StartAction>Program</StartAction>
     <PlatformTarget>x64</PlatformTarget>
+    <WarningLevel>2</WarningLevel>
   </PropertyGroup>
 </Project>

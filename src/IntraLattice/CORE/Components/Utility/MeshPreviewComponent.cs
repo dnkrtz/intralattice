@@ -23,7 +23,7 @@ namespace IntraLattice.CORE.UtilityModule
         public MeshPreview()
             : base("Mesh Preview", "MeshPreview",
                 "Verifies that the mesh represents a solid.",
-                "IntraLattice2", "Utility")
+                "IntraLattice2", "Utils")
         {
         }
 

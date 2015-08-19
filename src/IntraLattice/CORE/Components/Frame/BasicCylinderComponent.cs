@@ -104,46 +104,48 @@ namespace IntraLattice.CORE.Components
                 // v-direction travels around the cylinder axis (about axis)
                 for (int v = 0; v <= N[1]; v++)
                 {
-                    
-                    // this loop maps each node index in the cell onto the UV-surface maps
-                    for (int i = 0; i < cell.Nodes.Count; i++)
+                    for (int w = 0; w <= N[2]; w++)
                     {
-                        // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
-                        if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
-                            continue;
+                        GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
+                        var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
 
-                        Point3d pt1, pt2;
-                        Vector3d[] derivatives;
-
-                        double usub = cell.Nodes[i].X; // u-position within unit cell
-                        double vsub = cell.Nodes[i].Y; // v-position within unit cell
-                        double wsub = cell.Nodes[i].Z; // w-position within unit cell
-
-                        // construct z-position vector
-                        Vector3d vectorZ = height * basePlane.ZAxis * (u+usub) / N[0];
-                        pt1 = basePlane.Origin + vectorZ;                                                   // compute pt1 (is on axis)
-                        cylinder.Evaluate( (u+usub)/N[0], (v+vsub)/N[1], 2, out pt2, out derivatives);      // compute pt2, and derivates (on surface)
-
-                        // create vector joining these two points
-                        Vector3d wVect = pt2 - pt1;
-
-                        // create grid points on and between surface and axis
-                        for (int w = 0; w <= N[2]; w++)
+                        // this loop maps each node index in the cell onto the UV-surface maps
+                        for (int i = 0; i < cell.Nodes.Count; i++)
                         {
-                            // these conditionals enforce the boundary, no nodes are created beyond the upper boundary
-                            if (u == N[0] && usub != 0) continue;
-                            if (v == N[1] && vsub != 0) continue;
-                            if (w == N[2] && wsub != 0) continue;
+                            double usub = cell.Nodes[i].X; // u-position within unit cell (local)
+                            double vsub = cell.Nodes[i].Y; // v-position within unit cell (local)
+                            double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
+                            double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            // add point to gridTree
-                            var newNode = new LatticeNode(pt1 + wVect * (w+wsub)/N[2]);
-                            GH_Path treePath = new GH_Path(u, v, w, i);
-                            lattice.Nodes.Add(newNode, treePath);
+                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
+                            // check if current uvw-position is beyond the upper boundary
+                            bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
+
+                            if (isOutsideCell || isOutsideSpace)
+                                nodeList.Add(null);
+                            else
+                            {
+                                Point3d pt1, pt2;
+                                Vector3d[] derivatives;
+
+                                // construct z-position vector
+                                Vector3d vectorZ = height * basePlane.ZAxis * uvw[0] / N[0];
+                                pt1 = basePlane.Origin + vectorZ;                                                   // compute pt1 (is on axis)
+                                cylinder.Evaluate(uvw[0] / N[0], uvw[1] / N[1], 2, out pt2, out derivatives);       // compute pt2 (on surface)
+
+                                // create vector joining these two points
+                                Vector3d wVect = pt2 - pt1;
+
+                                // add point to gridTree
+                                var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]);
+                                nodeList.Add(newNode);
+                            }
                         }
                     }
 
-                    // Define the uv space map
-                    if (u < N[0] && v < N[1])
+                    // Define the uv space map for morphing
+                    if (morphed && u < N[0] && v < N[1])
                     {
                         GH_Path spacePath = new GH_Path(u, v);
                         var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);                   // set trimming interval

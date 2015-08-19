@@ -121,37 +121,37 @@ namespace IntraLattice.CORE.Components
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        GH_Path treePath = new GH_Path(u, v, w);                // construct path in tree
-                        var nodeList = lattice.Nodes.EnsurePath(treePath);
+                        GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
+                        var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
 
                         // this loop maps each node in the cell
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
-                            // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
-                            if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
-                                continue;
-                            
-                            double usub = cell.Nodes[i].X; // u-position within unit cell
-                            double vsub = cell.Nodes[i].Y; // v-position within unit cell
-                            double wsub = cell.Nodes[i].Z; // w-position within unit cell
+                            double usub = cell.Nodes[i].X; // u-position within unit cell (local)
+                            double vsub = cell.Nodes[i].Y; // v-position within unit cell (local)
+                            double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
+                            double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            // these conditionals enforce the boundary, no nodes are created beyond the upper boundary
-                            if (u == N[0] && usub != 0) continue;
-                            if (v == N[1] && vsub != 0) continue;
-                            if (w == N[2] && wsub != 0) continue;
+                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
+                            // check if current uvw-position is beyond the upper boundary
+                            bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
 
-                            // compute position vector
-                            Vector3d V = (u+usub) * vectorX + (v+vsub) * vectorY + (w+wsub) * vectorZ;
-                            var newNode = new LatticeNode(basePlane.Origin + V);    // construct new node with pt
-
-                            nodeList.Add(newNode);                   // add new node to tree
+                            if (isOutsideCell || isOutsideSpace)
+                                nodeList.Add(null);
+                            else
+                            {
+                                Vector3d V = uvw[0] * vectorX + uvw[1] * vectorY + uvw[2] * vectorZ; // compute position vector
+                                var newNode = new LatticeNode(basePlane.Origin + V); // construct new node with pt
+                                nodeList.Add(newNode); // add new node to tree
+                            }
                         }
                     }
                 }
             }
 
             // 7. Generate the struts
-            //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
+            //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = lattice.ConformMapping(cell, N);
 
             // 8. Set output

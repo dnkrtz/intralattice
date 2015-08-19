@@ -26,6 +26,51 @@ namespace IntraLattice.CORE.Helpers
     public class FrameTools
     {
 
+        public static bool IsPointInside(GeometryBase geometry, Point3d testPoint, int spaceType, double tol)
+        {
+            bool isInside = false;
+
+            switch (spaceType)
+            {
+                case 1: // Brep design space
+                    isInside = ((Brep)geometry).IsPointInside(testPoint, tol, false);
+                    break;
+                case 2: // Mesh design space
+                    isInside = ((Mesh)geometry).IsPointInside(testPoint, tol, false);
+                    break;
+                case 3: // Solid surface design space (must be converted to brep)
+                    isInside = ((Surface)geometry).ToBrep().IsPointInside(testPoint, tol, false);
+                    break;
+            }
+
+            return isInside;
+        }
+
+        public static double DistanceTo(GeometryBase geometry, Point3d testPoint, int spaceType)
+        {
+            double distanceTo = 0;
+            Point3d closestPoint;
+
+            switch (spaceType)
+            {
+                case 1: // Brep design space
+                    closestPoint = ((Brep)geometry).ClosestPoint(testPoint);
+                    distanceTo = testPoint.DistanceTo(closestPoint);
+                    break;
+                case 2: // Mesh design space
+                    closestPoint = ((Mesh)geometry).ClosestPoint(testPoint);
+                    distanceTo = testPoint.DistanceTo(closestPoint);
+                    break;
+                case 3: // Solid surface design space (must be converted to brep)
+                    closestPoint = ((Surface)geometry).ToBrep().ClosestPoint(testPoint);
+                    distanceTo = testPoint.DistanceTo(closestPoint);
+                    break;
+            }
+
+            return distanceTo;
+        }
+
+
         /// <summary>
         /// Removes duplicate/invalid/tiny curves.
         /// </summary>
@@ -113,14 +158,14 @@ namespace IntraLattice.CORE.Helpers
         /// <summary>
         /// Casts a GeometryBase design space to a brep or a mesh.
         /// </summary>
-        public static int CastDesignSpace(ref GeometryBase designSpace)
+        public static int ValidateSpace(ref GeometryBase designSpace)
         {
             // Types: 0-invalid, 1-brep, 2-mesh, 3-solid surface
             int type = 0;
 
             if (designSpace.ObjectType == ObjectType.Brep)
                 type = 1;
-            else if (designSpace.ObjectType == ObjectType.Mesh)
+            else if (designSpace.ObjectType == ObjectType.Mesh && ((Mesh)designSpace).IsClosed)
                 type = 2;
             else if (designSpace.ObjectType == ObjectType.Surface && ((Surface)designSpace).IsSolid)
                 type = 3;

@@ -27,12 +27,12 @@ using IntraLattice.CORE.Helpers;
 
 namespace IntraLattice.CORE.Components
 {
-    public class GridUniform : GH_Component
+    public class UniformDSComponent : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the GridUniform class.
         /// </summary>
-        public GridUniform()
+        public UniformDSComponent()
             : base("Uniform DS", "UniformDS",
                 "Generates a uniform lattice within by a design space",
                 "IntraLattice2", "Frame")
@@ -59,8 +59,6 @@ namespace IntraLattice.CORE.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
-            pManager.HideParameter(1); // Do not display the 'Nodes' output points
         }
 
         /// <summary>
@@ -98,10 +96,10 @@ namespace IntraLattice.CORE.Components
                 return;
             }
             // 2. Validate the design space
-            int spaceType = FrameTools.CastDesignSpace(ref designSpace);
+            int spaceType = FrameTools.ValidateSpace(ref designSpace);
             if (spaceType == 0)
             {
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Design space must be a Brep, Mesh or Closed Surface");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Design space must be a closed Brep, Mesh or Surface");
                 return;
             }
 
@@ -135,6 +133,9 @@ namespace IntraLattice.CORE.Components
             Vector3d vectorV = yCellSize * basePlane.YAxis;
             Vector3d vectorW = zCellSize * basePlane.ZAxis;
 
+            // max kernel distance should be half the diagonal of a unit cell box
+            double maxKernelDist = Math.Sqrt(Math.Pow(xCellSize,2)+Math.Pow(yCellSize,2)+Math.Pow(zCellSize,2))/2;
+
             // 8. Create grid of nodes (as data tree)
             for (int u = 0; u <= N[0]; u++)
             {
@@ -142,59 +143,46 @@ namespace IntraLattice.CORE.Components
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
+                        GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
+                        var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
+
                         // this loop maps each node in the cell onto the UV-surface maps
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
-                            // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
-                            if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
-                                continue;
+                            double usub = cell.Nodes[i].X; // u-position within unit cell (local)
+                            double vsub = cell.Nodes[i].Y; // v-position within unit cell (local)
+                            double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
+                            double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            double usub = cell.Nodes[i].X; // u-position within unit cell
-                            double vsub = cell.Nodes[i].Y; // v-position within unit cell
-                            double wsub = cell.Nodes[i].Z; // w-position within unit cell
+                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
 
-                            // compute position vector
-                            Vector3d V = (u+usub) * vectorU + (v+vsub) * vectorV + (w+wsub) * vectorW;
-                            var newNode = new LatticeNode(basePlane.Origin + V);
-                            
-                            // check if point is inside - use unstrict tolerance, meaning it can be outside the surface by the specified tolerance
-                            bool isInside = false;
-                            
-                            switch (spaceType)
+                            if (isOutsideCell)
+                                nodeList.Add(null);
+                            else
                             {
-                                case 1: // Brep design space
-                                    isInside = ((Brep)designSpace).IsPointInside(newNode.Point3d, tol, false);
-                                    break;
-                                case 2: // Mesh design space
-                                    isInside = ((Mesh)designSpace).IsPointInside(newNode.Point3d, tol, false);
-                                    break;
-                                case 3: // Solid surface design space (must be converted to brep)
-                                    isInside = ((Surface)designSpace).ToBrep().IsPointInside(newNode.Point3d, tol, false);
-                                    break;
+                                // compute position vector
+                                Vector3d V = uvw[0] * vectorU + uvw[1] * vectorV + uvw[2] * vectorW;
+                                var newNode = new LatticeNode(basePlane.Origin + V);
+
+                                // check if point is inside - use unstrict tolerance, meaning it can be outside the surface by the specified tolerance
+                                bool isInside = FrameTools.IsPointInside(designSpace, newNode.Point3d, spaceType, tol);
+
+                                if (isInside) newNode.State = LatticeNodeState.Inside;
+                                else newNode.State = LatticeNodeState.Outside;
+
+                                nodeList.Add(newNode);
                             }
-
-                            if (isInside) newNode.State = LatticeNodeState.Inside;
-                            else newNode.State = LatticeNodeState.Outside;
-
-                            // u,v,w is the cell grid. the 'i' index is for different nodes in each cell.
-                            // create current node
-                            GH_Path currentPath = new GH_Path(u, v, w, i);
-                            if (!lattice.Nodes.PathExists(currentPath))
-                                lattice.Nodes.Add(newNode, currentPath);
-
                         }
                     }
                 }
             }
 
             // 9. Compute list of struts
-            var struts = new List<Curve>();
-            var nodes = new Point3dList();
-            struts = lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
+            var struts = lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
                 
             // 10. Set output
             DA.SetDataList(0, struts);
-            DA.SetDataList(1, nodes);
         }
 
         /// <summary>

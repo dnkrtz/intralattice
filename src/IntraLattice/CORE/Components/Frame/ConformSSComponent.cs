@@ -35,8 +35,6 @@ namespace IntraLattice.CORE.Components
             pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
             pManager.AddSurfaceParameter("Surface 1", "S1", "First bounding surface", GH_ParamAccess.item);
             pManager.AddSurfaceParameter("Surface 2", "S2", "Second bounding surface", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Flip UV", "FlipUV", "Flip the UV parameters (for alignment purposes)", GH_ParamAccess.item, false); // default value is false
-            pManager.AddIntegerParameter("Reverse UV", "RevUV", "0 : Keep as is\n1 : Reverse U-direction of s1\n2 : Reverse V-direction of s1\n", GH_ParamAccess.item, 0);
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number v", "Nv", "Number of unit cells (v)", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Number w", "Nw", "Number of unit cells (w)", GH_ParamAccess.item, 5);
@@ -56,8 +54,6 @@ namespace IntraLattice.CORE.Components
             var topology = new List<Line>();
             Surface s1 = null;
             Surface s2 = null;
-            bool flipUV = false;
-            int reverseUV = 0;
             int nU = 0;
             int nV = 0;
             int nW = 0;
@@ -66,12 +62,10 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetDataList(0, topology)) { return; }
             if (!DA.GetData(1, ref s1)) { return; }
             if (!DA.GetData(2, ref s2)) { return; }
-            if (!DA.GetData(3, ref flipUV)) { return; }
-            if (!DA.GetData(4, ref reverseUV)) { return; }
-            if (!DA.GetData(5, ref nU)) { return; }
-            if (!DA.GetData(6, ref nV)) { return; }
-            if (!DA.GetData(7, ref nW)) { return; }
-            if (!DA.GetData(8, ref morphed)) { return; }
+            if (!DA.GetData(3, ref nU)) { return; }
+            if (!DA.GetData(4, ref nV)) { return; }
+            if (!DA.GetData(5, ref nW)) { return; }
+            if (!DA.GetData(6, ref morphed)) { return; }
 
             if (topology.Count < 2) { return; }
             if (!s1.IsValid) { return; }
@@ -84,11 +78,6 @@ namespace IntraLattice.CORE.Components
             var latticeType = morphed ? LatticeType.MorphUVW : LatticeType.ConformUVW;
             var lattice = new Lattice(latticeType);
             var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
-
-            // 3. Modify the UV parameters of surface1 if specified
-            if (flipUV) s1 = s1.Transpose();
-            if (reverseUV == 1 || reverseUV == 3) s1.Reverse(0, true);
-            if (reverseUV == 2 || reverseUV == 3) s1.Reverse(1, true);           
 
             // 4. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
@@ -112,48 +101,50 @@ namespace IntraLattice.CORE.Components
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
+                        GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
+                        var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
+
                         // this loop maps each node in the cell onto the UV-surface maps
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
-                            // if the node belongs to another cell (i.e. it's relative path points outside the current cell)
-                            if (cell.NodePaths[i][0] + cell.NodePaths[i][1] + cell.NodePaths[i][2] > 0)
-                                continue;                            
+                            double usub = cell.Nodes[i].X; // u-position within unit cell (local)
+                            double vsub = cell.Nodes[i].Y; // v-position within unit cell (local)
+                            double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
+                            double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            Point3d pt1; Vector3d[] derivatives1; // initialize for surface 1
-                            Point3d pt2; Vector3d[] derivatives2; // initialize for surface 2
+                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
+                            // check if current uvw-position is beyond the upper boundary
+                            bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
 
-                            double usub = cell.Nodes[i].X; // u-position within unit cell
-                            double vsub = cell.Nodes[i].Y; // v-position within unit cell
-                            double wsub = cell.Nodes[i].Z; // w-position within unit cell
+                            if (isOutsideCell || isOutsideSpace)
+                                nodeList.Add(null);
+                            else
+                            {
+                                Point3d pt1; Vector3d[] derivatives1; // initialize for surface 1
+                                Point3d pt2; Vector3d[] derivatives2; // initialize for surface 2
 
-                            GH_Path treePath = new GH_Path(u, v, w, i);    // u,v,w is the cell grid. the last index is for different nodes in each cell.
+                                // evaluate point on both surfaces
+                                s1.Evaluate(uvw[0] / N[0], uvw[1] / N[1], 2, out pt1, out derivatives1);
+                                s2.Evaluate(uvw[0] / N[0], uvw[1] / N[1], 2, out pt2, out derivatives2);
 
-                            // these conditionals enforce the boundary, no nodes are created beyond the upper boundary
-                            if (u == N[0] && usub != 0) continue;
-                            if (v == N[1] && vsub != 0) continue;
-                            if (w == N[2] && wsub != 0) continue;
+                                // create vector joining the two points (this is our w-range)
+                                Vector3d wVect = pt2 - pt1;
 
-                            // evaluate point and its derivatives on both surfaces
-                            s1.Evaluate((u+usub) / N[0], (v+vsub) / N[1], 2, out pt1, out derivatives1);
-                            s2.Evaluate((u+usub) / N[0], (v+vsub) / N[1], 2, out pt2, out derivatives2);
-
-                            // create vector joining the two points (this is our w-range)
-                            Vector3d wVect = pt2 - pt1;
-
-                            // create the node, accounting for the position along the w-direction
-                            var newNode = new LatticeNode(pt1 + wVect * (w + wsub) / N[2]);
-                            lattice.Nodes.Add(newNode, treePath);
-
+                                // create the node, accounting for the position along the w-direction
+                                var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]);
+                                nodeList.Add(newNode);
+                            }
                         }
                     }
 
                     // Define the uv space map
-                    if (u < N[0] && v < N[1])
+                    if (morphed && u < N[0] && v < N[1])
                     {
                         GH_Path spacePath = new GH_Path(u, v);
-                        var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);                   // set trimming interval
+                        var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);       // set trimming interval
                         var vInterval = new Interval((v) / N[1], (v + 1) / N[1]);
-                        Surface ss1 = s1.Trim(uInterval, vInterval);                                // create sub-surface
+                        Surface ss1 = s1.Trim(uInterval, vInterval);                    // create sub-surface
                         Surface ss2 = s2.Trim(uInterval, vInterval);
                         ss1.SetDomain(0, unitDomain); ss1.SetDomain(1, unitDomain);     // normalize domain
                         ss2.SetDomain(0, unitDomain); ss2.SetDomain(1, unitDomain); 
@@ -166,12 +157,10 @@ namespace IntraLattice.CORE.Components
             }
 
             // 8. Generate the struts
-            //     Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
+            //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             var struts = new List<Curve>();
-            if (morphed)
-                struts = lattice.MorphMapping(cell, spaceTree, N);
-            else
-                struts = lattice.ConformMapping(cell, N);
+            if (morphed) struts = lattice.MorphMapping(cell, spaceTree, N);
+            else struts = lattice.ConformMapping(cell, N);
 
             // 9. Set output
             DA.SetDataList(0, struts);
