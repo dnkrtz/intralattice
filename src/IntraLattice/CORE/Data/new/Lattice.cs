@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace IntraLattice.CORE.Data
 {
@@ -62,6 +64,29 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Methods
+        public Lattice Duplicate() 
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+
+                if (this.GetType().IsSerializable)
+                {
+
+                    BinaryFormatter formatter = new BinaryFormatter();
+
+                    formatter.Serialize(stream, this);
+
+                    stream.Position = 0;
+
+                    return (Lattice)formatter.Deserialize(stream);
+
+                }
+                return null;
+            }
+        }
+
+
+
         /// <summary>
         /// Maps cell topology to UVWI node map (linear struts).         
         /// </summary>
@@ -375,7 +400,7 @@ namespace IntraLattice.CORE.Data
 
         #endregion
     }
-
+    [Serializable]
     class LatticeNode
     {
         #region Fields
@@ -443,7 +468,7 @@ namespace IntraLattice.CORE.Data
         // none yet
         #endregion
     }
-
+    [Serializable]
     class LatticeStrut
     {
         #region Fields
