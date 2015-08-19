@@ -42,10 +42,10 @@ namespace IntraLattice.CORE.Data
         {
             LatticeCell dup = new LatticeCell();
             // this is not proper duplication, might still be passing Point3d and IndexPair values by reference, not sure
-            dup.m_nodes = Nodes;
-            dup.m_nodePairs = NodePairs;
-            dup.m_nodeNeighbours = NodeNeighbours;
-            dup.m_nodePaths = NodePaths;
+            dup.m_nodes = new Point3dList(Nodes);
+            dup.m_nodePairs = new List<IndexPair>(NodePairs);
+            dup.m_nodeNeighbours = NodeNeighbours;//2 level of copying 
+            dup.m_nodePaths = new List<int[]>(NodePaths);
             return dup;
         }
         #endregion
