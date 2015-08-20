@@ -6,7 +6,7 @@ using System.Text;
 
 namespace IntraLattice.CORE.Data
 {
-    class NodePair
+    public class NodePair
     {
         #region Fields
         private LatticeNode m_i;

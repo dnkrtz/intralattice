@@ -123,7 +123,7 @@ namespace IntraLattice.CORE.Components
                         GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
                         var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
 
-                        // this loop maps each node in the cell
+                        // This loop maps each node in the cell
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
                             double usub = cell.Nodes[i].X; // u-position within unit cell (local)
@@ -131,9 +131,9 @@ namespace IntraLattice.CORE.Components
                             double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
                             double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            // Check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
                             bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
-                            // check if current uvw-position is beyond the upper boundary
+                            // Check if current uvw-position is beyond the upper boundary
                             bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
 
                             if (isOutsideCell || isOutsideSpace)

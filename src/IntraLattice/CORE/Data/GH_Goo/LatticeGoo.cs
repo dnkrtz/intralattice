@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Grasshopper.Kernel;
+using Rhino.Geometry;
 
 namespace IntraLattice.CORE.Data.GH_Goo
 {
-    class LatticeGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<Lattice>, IGH_PreviewData
+    public class LatticeGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<Lattice>, IGH_PreviewData
     {
         #region Constructors
         public LatticeGoo(LatticeType type)
@@ -71,7 +72,6 @@ namespace IntraLattice.CORE.Data.GH_Goo
             get { return "LatticeGoo"; }
         }
 
-        
         public override Rhino.Geometry.BoundingBox Boundingbox
         {
             get {
@@ -144,20 +144,18 @@ namespace IntraLattice.CORE.Data.GH_Goo
         {
             get { return Boundingbox; }
         }
-
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
             if (Value == null) { return; }
             if (Value.Struts != null)
             {
-                foreach (var element in Value.Struts)
+                foreach (LatticeStrut element in Value.Struts)
                 {
-                    args.Pipeline.DrawCurve(element.Curve, args.Color, 3);
+                    args.Pipeline.DrawCurve(element.Curve, args.Color);
                 }
             }
 
         }
-
         public void DrawViewportMeshes(GH_PreviewMeshArgs args)
         {
             //No meshes are drawn.   

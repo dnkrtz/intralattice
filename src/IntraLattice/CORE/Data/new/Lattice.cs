@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.Data
         Boundary = 2,
     }
 
-    class Lattice
+    public class Lattice
     {
         #region Fields
         private LatticeType m_type;
@@ -398,7 +398,7 @@ namespace IntraLattice.CORE.Data
         #endregion
     }
     [Serializable]
-    class LatticeNode
+    public class LatticeNode
     {
         #region Fields
         private Point3d m_point3d;
@@ -466,7 +466,7 @@ namespace IntraLattice.CORE.Data
         #endregion
     }
     [Serializable]
-    class LatticeStrut
+    public class LatticeStrut
     {
         #region Fields
         private Curve m_curve;
@@ -503,7 +503,7 @@ namespace IntraLattice.CORE.Data
         /// <summary>
         /// The pair of node indices of the strut.
         /// </summary>
-        public NodePair NodePair
+        public NodePair CellNodePair
         {
             get { return m_nodePair; }
             set { m_nodePair = value; }
