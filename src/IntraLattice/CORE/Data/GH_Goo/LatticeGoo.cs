@@ -10,15 +10,15 @@ namespace IntraLattice.CORE.Data.GH_Goo
     public class LatticeGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<Lattice>, IGH_PreviewData
     {
         #region Constructors
-        public LatticeGoo(LatticeType type)
+        public LatticeGoo()
         {
-            this.Value = new Lattice(type);
+            this.Value = new Lattice();
         }
         public LatticeGoo(Lattice cell)
         {
             if (cell == null)
             {
-                cell = new Lattice(IntraLattice.CORE.Data.LatticeType.None);
+                cell = new Lattice();
             }
             this.Value = cell;
         }
@@ -146,19 +146,11 @@ namespace IntraLattice.CORE.Data.GH_Goo
         }
         public void DrawViewportWires(GH_PreviewWireArgs args)
         {
-            if (Value == null) { return; }
-            if (Value.Struts != null)
-            {
-                foreach (LatticeStrut element in Value.Struts)
-                {
-                    args.Pipeline.DrawCurve(element.Curve, args.Color);
-                }
-            }
-
+            // No wires are drawn
         }
         public void DrawViewportMeshes(GH_PreviewMeshArgs args)
         {
-            //No meshes are drawn.   
+            // No meshes are drawn.   
         }
         #endregion
     }

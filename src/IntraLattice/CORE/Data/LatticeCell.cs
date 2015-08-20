@@ -9,8 +9,8 @@ using System.Text;
 
 namespace IntraLattice.CORE.Data
 {
-    // The LatticeCell object represents 
-    public class LatticeCell
+    // The LatticeCell object
+    public class UnitCell
     {
 
         #region Fields
@@ -20,13 +20,13 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Constructors
-        public LatticeCell()
+        public UnitCell()
         {
             m_nodes = new Point3dList();
             m_nodePairs = new List<IndexPair>();
             m_nodePaths = new List<int[]>();
         }
-        public LatticeCell(List<Line> rawCell)
+        public UnitCell(List<Line> rawCell)
         {
             m_nodes = new Point3dList();
             m_nodePairs = new List<IndexPair>();
@@ -35,9 +35,9 @@ namespace IntraLattice.CORE.Data
             ExtractTopology(rawCell);
             NormaliseTopology();
         }
-        public LatticeCell Duplicate()
+        public UnitCell Duplicate()
         {
-            LatticeCell dup = new LatticeCell();
+            UnitCell dup = new UnitCell();
             foreach (Point3d node in Nodes)
                 dup.m_nodes.Add(node);
             foreach (IndexPair nodePair in NodePairs)

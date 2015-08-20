@@ -59,7 +59,7 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.item);
+            pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace IntraLattice.CORE.Components
         {
             // 1. Declare placeholder variables and assign initial invalid data.
             //    This way, if the input parameters fail to supply valid data, we know when to abort
-            var cell = new LatticeCell();
+            var cell = new UnitCell();
             double xCellSize = 0;
             double yCellSize = 0;
             double zCellSize = 0;
@@ -97,8 +97,8 @@ namespace IntraLattice.CORE.Components
             if (nY == 0) { return; }
             if (nZ == 0) { return; }
 
-            // 4. Declare our point grid datatree
-            var lattice = new Lattice(LatticeType.Uniform);
+            // 4. Initialise the lattice object
+            var lattice = new Lattice();
 
             // 5. Prepare unit cell topology
             cell = cell.Duplicate();
@@ -151,10 +151,10 @@ namespace IntraLattice.CORE.Components
 
             // 7. Generate the struts
             //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
-            var struts = lattice.ConformMapping(cell, N);
+            lattice.ConformMapping(cell, N);
 
             // 8. Set output
-            DA.SetData(0, new LatticeGoo(lattice));            
+            DA.SetDataList(0, lattice.Struts);            
         }
         
         /// <summary>

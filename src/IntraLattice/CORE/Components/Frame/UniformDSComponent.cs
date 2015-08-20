@@ -68,7 +68,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate data
-            var cell = new LatticeCell();
+            var cell = new UnitCell();
             GeometryBase designSpace = null;
             Plane orientationPlane = Plane.Unset;
             double xCellSize = 0;
@@ -122,7 +122,7 @@ namespace IntraLattice.CORE.Components
             float[] N = new float[3] { nX, nY, nZ };
 
             // 5. Initialize nodeTree
-            var lattice = new Lattice(LatticeType.Uniform);
+            var lattice = new Lattice();
 
             // 6. Prepare normalized/formatted unit cell topology
             cell = cell.Duplicate();
@@ -176,10 +176,10 @@ namespace IntraLattice.CORE.Components
             }
 
             // 9. Compute list of struts
-            var struts = lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
+            lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
                 
             // 10. Set output
-            DA.SetDataList(0, struts);
+            DA.SetDataList(0, lattice.Struts);
         }
 
         /// <summary>

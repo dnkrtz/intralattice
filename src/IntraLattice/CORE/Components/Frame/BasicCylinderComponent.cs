@@ -50,7 +50,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate data
-            var cell = new LatticeCell();
+            var cell = new UnitCell();
             double radius = 0;
             double height = 0;
             int nU = 0;
@@ -74,8 +74,7 @@ namespace IntraLattice.CORE.Components
             if (nW == 0) { return; }
 
             // 2. Initialize the lattice
-            var latticeType = morphed ?  LatticeType.MorphUVW : LatticeType.ConformUVW;
-            var lattice = new Lattice(latticeType);
+            var lattice = new Lattice();
             var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
             
             // 3. Define cylinder
@@ -162,12 +161,11 @@ namespace IntraLattice.CORE.Components
             }
 
             // 7. Generate the struts using a mapping method
-            var struts = new List<Curve>();
-            if (morphed) struts = lattice.MorphMapping(cell, spaceTree, N);
-            else struts = lattice.ConformMapping(cell, N);
+            if (morphed) lattice.MorphMapping(cell, spaceTree, N);
+            else lattice.ConformMapping(cell, N);
 
             // 8. Set output
-            DA.SetDataList(0, struts);            
+            DA.SetDataList(0, lattice.Struts);            
         }
 
         // Primitive grid component -> first panel of the toolbar

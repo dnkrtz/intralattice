@@ -251,7 +251,7 @@ namespace IntraLattice.CORE.Components
                     break;
             }
 
-            var cell = new LatticeCell(lines);
+            var cell = new UnitCell(lines);
             if (!cell.isValid)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - this is embarassing.");
                 

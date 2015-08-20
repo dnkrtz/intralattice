@@ -13,14 +13,6 @@ using System.IO;
 
 namespace IntraLattice.CORE.Data
 {
-    public enum LatticeType
-    {
-        None = 0,
-        Uniform = 1,
-        ConformUVW = 2,
-        MorphUVW = 3,
-    }
-
     public enum LatticeNodeState
     {
         Outside = 0,
@@ -31,40 +23,17 @@ namespace IntraLattice.CORE.Data
     public class Lattice
     {
         #region Fields
-        private LatticeType m_type;
         private DataTree<LatticeNode> m_nodes;
-        private List<LatticeStrut> m_struts;
+        private List<Curve> m_struts;
         #endregion
 
         #region Constructors
-        public Lattice(LatticeType type)
+        public Lattice()
         {
-            m_type = type;
             m_nodes = new DataTree<LatticeNode>();
-            m_struts = new List<LatticeStrut>();
+            m_struts = new List<Curve>();
         }
-        #endregion
-
-        #region Properties
-        public LatticeType Type
-        {
-            get { return m_type; }
-            set { m_type = value; }
-        }
-        public DataTree<LatticeNode> Nodes
-        {
-            get { return m_nodes; }
-            set { m_nodes = value; }
-        }
-        public List<LatticeStrut> Struts
-        {
-            get { return m_struts; }
-            set { m_struts = value; }
-        }
-        #endregion
-
-        #region Methods
-        public Lattice Duplicate() 
+        public Lattice Duplicate()
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -84,13 +53,27 @@ namespace IntraLattice.CORE.Data
                 return null;
             }
         }
+        #endregion
+
+        #region Properties
+        public DataTree<LatticeNode> Nodes
+        {
+            get { return m_nodes; }
+            set { m_nodes = value; }
+        }
+        public List<Curve> Struts
+        {
+            get { return m_struts; }
+            set { m_struts = value; }
+        }
+        #endregion
+
+        #region Methods
         /// <summary>
         /// Maps cell topology to UVWI node map (linear struts).         
         /// </summary>
-        public List<Curve> ConformMapping(LatticeCell cell, float[] N)
+        public void ConformMapping(UnitCell cell, float[] N)
         {
-            var struts = new List<Curve>();
-
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
@@ -120,10 +103,7 @@ namespace IntraLattice.CORE.Data
                                     LineCurve curve = new LineCurve(node1.Point3d, node2.Point3d);
                                     if (curve != null && curve.IsValid)
                                     {
-                                        struts.Add(curve);
-                                        Struts.Add(new LatticeStrut(curve, new NodePair(node1, node2))); // nodepair is a REFERENCE type
-                                        node1.StrutIndices.Add(Struts.Count - 1);
-                                        node2.StrutIndices.Add(Struts.Count - 1);
+                                        Struts.Add(curve);
                                     }
                                 }
                             }
@@ -132,16 +112,12 @@ namespace IntraLattice.CORE.Data
                     }
                 }
             }
-
-            return struts;
         }
         /// <summary>
         /// Morphs cell topology to UVWI node map (morphed struts).
         /// </summary>
-        public List<Curve> MorphMapping(LatticeCell cell, DataTree<GeometryBase> spaceTree, float[] N)
+        public void MorphMapping(UnitCell cell, DataTree<GeometryBase> spaceTree, float[] N)
         {
-            var struts = new List<Curve>();
-
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
@@ -234,10 +210,7 @@ namespace IntraLattice.CORE.Data
 
                                     if (curve != null && curve.IsValid)
                                     {
-                                        struts.Add(curve);
-                                        Struts.Add(new LatticeStrut(curve, new NodePair(node1, node2))); // nodepair is a REFERENCE type
-                                        node1.StrutIndices.Add(Struts.Count - 1);
-                                        node2.StrutIndices.Add(Struts.Count - 1);
+                                        Struts.Add(curve);
                                     }
                                 }
                             }
@@ -245,17 +218,14 @@ namespace IntraLattice.CORE.Data
                     }
                 }
             }
-
-            return struts;
         }
         /// <summary>
         /// Maps cell topology to the node grid and trims to the design space
         /// =================================================================
         /// =================================================================
         /// </summary>
-        public List<Curve> UniformMapping(LatticeCell cell, GeometryBase designSpace, int spaceType, float[] N, double minStrutLength)
+        public void UniformMapping(UnitCell cell, GeometryBase designSpace, int spaceType, float[] N, double minStrutLength)
         {
-            List<Curve> struts = new List<Curve>();
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
             for (int u = 0; u <= N[0]; u++)
@@ -288,10 +258,7 @@ namespace IntraLattice.CORE.Data
                                     // If both nodes are inside, add full strut
                                     if (node1.IsInside && node2.IsInside)
                                     {
-                                        struts.Add(fullCurve);
-                                        Struts.Add(new LatticeStrut(fullCurve, new NodePair(node1, node2))); // nodepair is a REFERENCE type
-                                        node1.StrutIndices.Add(Struts.Count - 1);
-                                        node2.StrutIndices.Add(Struts.Count - 1);
+                                        Struts.Add(fullCurve);
                                     }
                                     // If neither node is inside, skip to next loop
                                     else if (!node1.IsInside && !node2.IsInside)
@@ -338,14 +305,12 @@ namespace IntraLattice.CORE.Data
                                             // if the strut was succesfully trimmed, add it to the list
                                             if (testLine != null)
                                             {
-                                                struts.Add(testLine);
-                                                Struts.Add(new LatticeStrut(testLine));
+                                                Struts.Add(testLine);
                                             }
                                         }
                                         else if (overlapCurves != null && overlapCurves.Length > 0)
                                         {
-                                            struts.Add(overlapCurves[0]);
-                                            Struts.Add(new LatticeStrut(overlapCurves[0]));
+                                            Struts.Add(overlapCurves[0]);
                                         }
 
                                     }
@@ -355,9 +320,6 @@ namespace IntraLattice.CORE.Data
                     }
                 }
             }
-
-            return struts;
-
         }
         /// <summary>
         /// Trims strut with known intersection point, returning  the trimmed LineCurve which is inside the space.
@@ -403,7 +365,6 @@ namespace IntraLattice.CORE.Data
         #region Fields
         private Point3d m_point3d;
         private LatticeNodeState m_state;
-        private List<int> m_strutIndices;
         #endregion
 
         #region Constructors
@@ -411,19 +372,16 @@ namespace IntraLattice.CORE.Data
         {
             m_point3d = Point3d.Unset;
             m_state = LatticeNodeState.Inside;
-            m_strutIndices = new List<int>();
         }
         public LatticeNode(Point3d point3d)
         {
             m_point3d = point3d;
             m_state = LatticeNodeState.Inside;
-            m_strutIndices = new List<int>();
         }
         public LatticeNode(Point3d point3d, LatticeNodeState state)
         {
             m_point3d = point3d;
             m_state = state;
-            m_strutIndices = new List<int>();
         }
         #endregion
 
@@ -441,14 +399,6 @@ namespace IntraLattice.CORE.Data
             get { return m_state; }
             set { m_state = value; }
         }
-        /// <summary>
-        /// Indices of the struts associated with this node.
-        /// </summary>
-        public List<int> StrutIndices
-        {
-            get { return m_strutIndices; }
-            set { m_strutIndices = value; }
-        }
         public bool IsInside
         {
             get
@@ -458,55 +408,6 @@ namespace IntraLattice.CORE.Data
                 else
                     return true;
             }
-        }
-        #endregion
-
-        #region Methods
-        // none yet
-        #endregion
-    }
-    [Serializable]
-    public class LatticeStrut
-    {
-        #region Fields
-        private Curve m_curve;
-        private NodePair m_nodePair;
-        #endregion
-
-        #region Constructors
-        public LatticeStrut()
-        {
-            m_curve = null;
-            m_nodePair = new NodePair();
-        }
-        public LatticeStrut(Curve curve)
-        {
-            m_curve = curve;
-            m_nodePair = new NodePair();
-        }
-        public LatticeStrut(Curve curve, NodePair nodePair)
-        {
-            m_curve = curve;
-            m_nodePair = nodePair;
-        }
-        #endregion
-
-        #region Properties
-        /// <summary>
-        /// The strut's curve. (may be linear)
-        /// </summary>
-        public Curve Curve
-        {
-            get { return m_curve; }
-            set { m_curve = value; }
-        }
-        /// <summary>
-        /// The pair of node indices of the strut.
-        /// </summary>
-        public NodePair CellNodePair
-        {
-            get { return m_nodePair; }
-            set { m_nodePair = value; }
         }
         #endregion
 

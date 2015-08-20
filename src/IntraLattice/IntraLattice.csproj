@@ -67,16 +67,11 @@
     <Compile Include="CORE\Data\new\EndoMesh.cs" />
     <Compile Include="CORE\Data\new\Lattice.cs" />
     <Compile Include="CORE\Data\new\ExoMesh.cs" />
-    <Compile Include="CORE\Data\new\NodePair.cs" />
     <Compile Include="CORE\Helpers\CellTools.cs" />
     <Compile Include="CORE\Components\Cell\CustomCellComponent.cs" />
     <Compile Include="CORE\Components\Frame\BasicBoxComponent.cs" />
     <Compile Include="CORE\Components\Frame\ConformFVComponent.cs" />
     <Compile Include="CORE\Data\new\LatticeCell.cs" />
-    <Compile Include="CORE\Data\Node.cs" />
-    <Compile Include="CORE\Data\Plate.cs" />
-    <Compile Include="CORE\Data\Strut.cs" />
-    <Compile Include="CORE\Data\LatticeMesh.cs" />
     <Compile Include="CORE\Helpers\MeshTools.cs" />
     <Compile Include="CORE\Components\Utility\MeshReportComponent.cs" />
     <Compile Include="FEA\Components\FEAInterfaceComponent.cs" />

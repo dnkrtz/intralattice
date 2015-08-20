@@ -7,18 +7,18 @@ using Rhino.Geometry;
 
 namespace IntraLattice.CORE.Data.GH_Goo
 {
-    public class LatticeCellGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<LatticeCell>, IGH_PreviewData
+    public class LatticeCellGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<UnitCell>, IGH_PreviewData
     {
         #region Constructors
         public LatticeCellGoo()
         {
-            this.Value = new LatticeCell();
+            this.Value = new UnitCell();
         }
-        public LatticeCellGoo(LatticeCell cell)
+        public LatticeCellGoo(UnitCell cell)
         {
             if (cell == null)
             {
-                cell = new LatticeCell();
+                cell = new UnitCell();
             }
             this.Value = cell;
         }
@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
         }
         public LatticeCellGoo DuplicateGoo()
         {
-            return new LatticeCellGoo(Value == null ? new LatticeCell() : Value.Duplicate());
+            return new LatticeCellGoo(Value == null ? new UnitCell() : Value.Duplicate());
         }
         #endregion
 
@@ -97,7 +97,7 @@ namespace IntraLattice.CORE.Data.GH_Goo
         public override bool CastTo<Q>(out Q target)
         {
             //Cast to LatticeCell.
-            if (typeof(Q).IsAssignableFrom(typeof(LatticeCell)))
+            if (typeof(Q).IsAssignableFrom(typeof(UnitCell)))
             {
                 if (Value == null)
                     target = default(Q);
@@ -113,9 +113,9 @@ namespace IntraLattice.CORE.Data.GH_Goo
             if (source == null) { return false; }
 
             //Cast from LatticeCell
-            if (typeof(LatticeCell).IsAssignableFrom(source.GetType()))
+            if (typeof(UnitCell).IsAssignableFrom(source.GetType()))
             {
-                Value = (LatticeCell)source;
+                Value = (UnitCell)source;
                 return true;
             }
 

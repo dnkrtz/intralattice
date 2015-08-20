@@ -54,7 +54,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate inputs
-            var cell = new LatticeCell();
+            var cell = new UnitCell();
             Surface surface = null;
             Curve axis = null;
             bool flipUV = false;
@@ -79,8 +79,7 @@ namespace IntraLattice.CORE.Components
             if (nW == 0) { return; }
 
             // 2. Initialize the lattice
-            var latticeType = morphed ? LatticeType.MorphUVW : LatticeType.ConformUVW;
-            var lattice = new Lattice(latticeType);
+            var lattice = new Lattice();
             var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
 
             // 4. Package the number of cells in each direction into an array
@@ -167,13 +166,12 @@ namespace IntraLattice.CORE.Components
             }
 
             // 9. Generate the struts
-            //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
-            var struts = new List<Curve>();
-            if (morphed) struts = lattice.MorphMapping(cell, spaceTree, N);
-            else struts = lattice.ConformMapping(cell, N);
+            //    Simply loop through all unit cells, and enforce the cell topology
+            if (morphed) lattice.MorphMapping(cell, spaceTree, N);
+            else lattice.ConformMapping(cell, N);
 
             // 10. Set output
-            DA.SetDataList(0, struts);
+            DA.SetDataList(0, lattice.Struts);
         }
 
         // Conform components are in second slot of the grid category
