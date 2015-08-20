@@ -82,26 +82,26 @@ namespace IntraLattice.CORE.Components
             var lattice = new Lattice();
             var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
 
-            // 4. Package the number of cells in each direction into an array
+            // 3. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
 
-            // 5. Normalize the UV-domain
+            // 4. Normalize the UV-domain
             Interval unitDomain = new Interval(0, 1);
             surface.SetDomain(0, unitDomain); // surface u-direction
             surface.SetDomain(1, unitDomain); // surface v-direction
             axis.Domain = unitDomain; // axis (u-direction)
 
-            // 6. Prepare normalized/formatted unit cell topology
+            // 5. Prepare normalized/formatted unit cell topology
             cell = cell.Duplicate();
             cell.FormatTopology();
 
-            // 7. Divide axis into equal segments, get curve parameters
+            // 6. Divide axis into equal segments, get curve parameters
             List<double> curveParams = new List<double>(axis.DivideByCount((int)N[0], true));
             double uStep = curveParams[1] - curveParams[0];
             //    If axis is closed curve, add last parameter to close the loop
             if (axis.IsClosed) curveParams.Add(0);
 
-            // 8. Let's create the actual lattice nodes now
+            // 7. Let's create the actual lattice nodes now
             //
             for (int u = 0; u <= N[0]; u++)
             {
@@ -165,12 +165,12 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 9. Generate the struts
+            // 8. Generate the struts
             //    Simply loop through all unit cells, and enforce the cell topology
             if (morphed) lattice.MorphMapping(cell, spaceTree, N);
             else lattice.ConformMapping(cell, N);
 
-            // 10. Set output
+            // 9. Set output
             DA.SetDataList(0, lattice.Struts);
         }
 

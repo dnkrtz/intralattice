@@ -53,8 +53,7 @@ namespace IntraLattice.CORE.MeshModule
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
             // 4. Initialize lattice object
-            // This constructor cleans the curve network (removes duplicates), and
-            // formats it as an ExoMesh.
+            // This constructor cleans the curve network (removes duplicates), and formats it as an ExoMesh.
             ExoMesh exoMesh = new ExoMesh(struts);
 
             //====================================================================================

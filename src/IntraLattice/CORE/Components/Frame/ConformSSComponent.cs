@@ -78,21 +78,21 @@ namespace IntraLattice.CORE.Components
             var lattice = new Lattice();
             var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
 
-            // 4. Package the number of cells in each direction into an array
+            // 3. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
 
-            // 5. Normalize the UV-domain
+            // 4. Normalize the UV-domain
             Interval unitDomain = new Interval(0,1);
             s1.SetDomain(0, unitDomain); // s1 u-direction
             s1.SetDomain(1, unitDomain); // s1 v-direction
             s2.SetDomain(0, unitDomain); // s2 u-direction
             s2.SetDomain(1, unitDomain); // s2 v-direction
 
-            // 6. Prepare normalized/formatted unit cell topology
+            // 5. Prepare normalized/formatted unit cell topology
             cell = cell.Duplicate();
             cell.FormatTopology();          // sets up paths for inter-cell nodes
 
-            // 7. Map nodes to design space
+            // 6. Map nodes to design space
             //    Loop through the uvw cell grid
             for (int u = 0; u <= N[0]; u++)
             {
@@ -155,12 +155,12 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 8. Generate the struts
+            // 7. Generate the struts
             //    Simply loop through all unit cells, and enforce the cell topology
             if (morphed) lattice.MorphMapping(cell, spaceTree, N);
             else lattice.ConformMapping(cell, N);
 
-            // 9. Set output
+            // 8. Set output
             DA.SetDataList(0, lattice.Struts);
 
         }

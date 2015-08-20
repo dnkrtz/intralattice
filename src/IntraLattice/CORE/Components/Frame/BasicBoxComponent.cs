@@ -149,11 +149,11 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 7. Generate the struts
+            // 8. Generate the struts
             //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
             lattice.ConformMapping(cell, N);
 
-            // 8. Set output
+            // 9. Set output
             DA.SetDataList(0, lattice.Struts);            
         }
         
