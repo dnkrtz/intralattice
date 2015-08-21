@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="IntraLattice.CORE.Data.ExoMesh">
+    <Position X="0.75" Y="0.5" Width="2.25" />
+    <Members>
+      <Method Name="ExoMesh" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>IEACEAASAQAAAAAAAAAQAEEAAAAAAAAAgQAAAAgAAAA=</HashCode>
+      <FileName>CORE\Data\ExoMesh.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IntraLattice.CORE.Data.ExoHull">
+    <Position X="3.25" Y="0.5" Width="2.25" />
+    <Members>
+      <Method Name="ExoHull" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAgAAAQAAAAAIAABAAAAAAAgAAAAAAAAFAAAAAAAAQA=</HashCode>
+      <FileName>CORE\Data\ExoMesh.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IntraLattice.CORE.Data.ExoSleeve">
+    <Position X="5.75" Y="0.5" Width="2.25" />
+    <Members>
+      <Method Name="ExoSleeve" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AAAAQAMAQAACAAAAAAAACAAAAAABAAAAhAAAAAAAAAA=</HashCode>
+      <FileName>CORE\Data\ExoMesh.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IntraLattice.CORE.Data.ExoPlate">
+    <Position X="8.25" Y="0.5" Width="2" />
+    <Members>
+      <Method Name="ExoPlate" Hidden="true" />
+    </Members>
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAgAAAAAAAAAAAAAAAAEIIAAAAAAAAkAAgAA=</HashCode>
+      <FileName>CORE\Data\ExoMesh.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

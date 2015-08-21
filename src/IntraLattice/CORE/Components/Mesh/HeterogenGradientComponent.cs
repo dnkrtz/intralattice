@@ -11,6 +11,13 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
+// Summary:     This component generates a solid mesh of a curve network, with gradient strut radii.
+//              Approach based on Exoskeleton by David Stasiuk.
+// ===============================================================================
+// Details:     - Strut radii based on user-input mathematical expression f(x,y,z), representing a spatial gradient.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.CORE.MeshModule
 {
     public class HeterogenGradient : GH_Component
@@ -62,8 +69,8 @@ namespace IntraLattice.CORE.MeshModule
             ExoMesh exoMesh = new ExoMesh(struts);
 
             //====================================================================================
-            // PART A - Compute nodal radii
-            // Strut radius is node-based
+            // PART A - Compute radii
+            // Set the start/end radii of each sleeve, based on spatial gradient.
             //====================================================================================
 
             // A0. Prepare bounding box domain for normalized gradient string
@@ -83,7 +90,7 @@ namespace IntraLattice.CORE.MeshModule
             foreach (ExoSleeve sleeve in exoMesh.Sleeves)
             {
                 // Start node
-                ExoHull node = exoMesh.Hulls[sleeve.NodePair.I];
+                ExoHull node = exoMesh.Hulls[sleeve.HullPair.I];
                 var parser = new Grasshopper.Kernel.Expressions.GH_ExpressionParser();
                 parser.AddVariable("x", (node.Point3d.X - fullBox.Min.X) / boxSizeX);
                 parser.AddVariable("y", (node.Point3d.Y - fullBox.Min.Y) / boxSizeY);
@@ -91,7 +98,7 @@ namespace IntraLattice.CORE.MeshModule
                 sleeve.StartRadius = minRadius + (parser.Evaluate(gradientString)._Double) * (maxRadius - minRadius);
                 parser.ClearVariables();
                 // End node
-                node = exoMesh.Hulls[sleeve.NodePair.J];
+                node = exoMesh.Hulls[sleeve.HullPair.J];
                 parser.AddVariable("x", (node.Point3d.X - fullBox.Min.X) / boxSizeX);
                 parser.AddVariable("y", (node.Point3d.Y - fullBox.Min.Y) / boxSizeY);
                 parser.AddVariable("z", (node.Point3d.Z - fullBox.Min.Z) / boxSizeZ);
@@ -102,8 +109,8 @@ namespace IntraLattice.CORE.MeshModule
             //====================================================================================
             // PART B - Compute plate offsets
             // Each plate is offset from its parent node, to avoid mesh overlaps.
-            // We also ensure that the no plates are engulfed by the hulls, so we're looking for
-            // a convex plate layout. If any plate vertex gets engulfed, meshing will fail.
+            // We also need to ensure that the no plates are engulfed by the hulls, so we're 
+            // looking for a convex plate layout. If any plate vertex gets engulfed, meshing will fail.
             //====================================================================================
 
             // B0. Loop over nodes
@@ -124,7 +131,7 @@ namespace IntraLattice.CORE.MeshModule
             // 
             //====================================================================================
 
-            // C0. Loop over struts
+            // C0. Loop over all sleeves
             for (int i = 0; i < exoMesh.Sleeves.Count; i++)
             {
                 Mesh sleeveMesh = exoMesh.MakeSleeve(i, sides);
@@ -137,7 +144,7 @@ namespace IntraLattice.CORE.MeshModule
             // Generates convex hulls, then removes the faces that lie on the plates.
             //====================================================================================
 
-            // HULLS - Loop over all nodes
+            // D0. Loop over all hulls
             for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
                 ExoHull node = exoMesh.Hulls[i];
@@ -157,7 +164,7 @@ namespace IntraLattice.CORE.MeshModule
                 }
             }
 
-            // POST-PROCESS FINAL MESH
+            // Post-process the final mesh.
             exoMesh.Mesh.Vertices.CombineIdentical(true, true);
             exoMesh.Mesh.FaceNormals.ComputeFaceNormals();
             exoMesh.Mesh.UnifyNormals();

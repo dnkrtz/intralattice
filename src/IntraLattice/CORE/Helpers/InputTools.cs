@@ -4,13 +4,10 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using System.Drawing;
 
-// Summary:     This class contains a set of methods used to automatically generate input menus
+// Summary:     This class contains a set of static methods used to automatically generate input menus
 // ===============================================================================
 // Methods:     TopoSelect (written by Aidan)       - Menu for unit cell topologhy
 //              GradientSelect (written by Aidan)   - Menu for thickness gradient expressions
-// ===============================================================================
-// Issues:      Menus are generated after the component runs succesfully. This means that we cannot automatically generate menus for
-//              components which require inputs that are non-default-able.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -19,9 +16,10 @@ namespace IntraLattice.CORE.Helpers
     public class InputTools
     {
         /// <summary>
-        /// The 'index' input represents the input index (first input is index 0)
-        /// The 'offset' parameter is the vertical offset of the menu, to help with positioning
+        /// Generates selection list for preset unit cell topologies.
         /// </summary>
+        /// <param name="index">Component input index. (first input is index 0)</param>
+        /// <param name="offset">Vertical offset of the menu, to help with positioning.</param>
         public static void TopoSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
             //instantiate  new value list
@@ -56,8 +54,11 @@ namespace IntraLattice.CORE.Helpers
             Component.Params.Input[index].AddSource(vallist);
             Component.Params.Input[index].CollectData();
         }
-
-        // index represents the input position (first input is index == 0)
+        /// <summary>
+        /// Generates selection list for heterogeneous radii gradients.
+        /// </summary>
+        /// <param name="index">Component input index. (first input is index 0)</param>
+        /// <param name="offset">Vertical offset of the menu, to help with positioning.</param>
         public static void GradientSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
             //instantiate  new value list
@@ -95,56 +96,5 @@ namespace IntraLattice.CORE.Helpers
             Component.Params.Input[index].AddSource(vallist);
             Component.Params.Input[index].CollectData();
         }
-
-        /*public static void BooleanSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
-        {
-            //instantiate  new value list
-            var boollist = new Grasshopper.Kernel.Special.GH_BooleanToggle();
-            boollist.CreateAttributes();
-
-            //customise value list position
-            float xCoord = (float)Component.Attributes.Pivot.X - 200;
-            float yCoord = (float)Component.Attributes.Pivot.Y + index*40 - offset;
-            PointF cornerPt = new PointF(xCoord, yCoord);
-            boollist.Attributes.Pivot = cornerPt;
-            
-            // Until now, the slider is a hypothetical object.
-            // This command makes it 'real' and adds it to the canvas.
-            GrasshopperDocument.AddObject(boollist, false);
-            //Connect the new slider to this component
-            Component.Params.Input[index].AddSource(boollist);
-            Component.Params.Input[index].CollectData();
-            // Little hack, required because of how booleantoggle is rendered
-            boollist.ExpireSolution(true);
-        }
-
-        public static void NumberSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset, int min, int max, bool isFloat)
-        {
-            //instantiate  new value list
-            var numberSlider = new Grasshopper.Kernel.Special.GH_NumberSlider();
-            numberSlider.Slider.Minimum = min;
-            numberSlider.Slider.Maximum = max;
-            if (isFloat)
-                numberSlider.Slider.Type = Grasshopper.GUI.Base.GH_SliderAccuracy.Integer;
-            else
-                numberSlider.Slider.Type = Grasshopper.GUI.Base.GH_SliderAccuracy.Float;
-            numberSlider.CreateAttributes();
-
-            //customise value list position
-            float xCoord = (float)Component.Attributes.Pivot.X - 200;
-            float yCoord = (float)Component.Attributes.Pivot.Y + index * 40;
-            PointF cornerPt = new PointF(xCoord, yCoord);
-            numberSlider.Attributes.Pivot = cornerPt;
-
-            // Until now, the slider is a hypothetical object.
-            // This command makes it 'real' and adds it to the canvas.
-            GrasshopperDocument.AddObject(numberSlider, false);
-
-            //Connect the new slider to this component
-            Component.Params.Input[index].AddSource(numberSlider);
-            Component.Params.Input[index].CollectData();
-        }*/
-
-
     }
 }

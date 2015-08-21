@@ -13,12 +13,11 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
-// Summary:     This component generates a (u,v,w) lattice grid between a surface and an axis
+// Summary:     This component generates a (u,v,w) lattice between a surface and an axis.
 // ===============================================================================
 // Details:     - The axis can be an open curve or a closed curve. Of course, it may also be a straight line.
 //              - The surface does not need to loop a full 360 degrees around the axis.
 //              - Our implementation assumes that the axis is a set of U parameters.
-//              - The flipUV input allows the user to swap U and V parameters of the surface.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 

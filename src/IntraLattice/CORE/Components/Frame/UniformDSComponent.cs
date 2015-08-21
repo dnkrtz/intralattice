@@ -14,13 +14,13 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
-// Summary:     This component generates a uniform lattice trimmed to the shape of design space
+// Summary:     This component generates a uniform lattice trimmed to the shape of design space.
 // ===============================================================================
 // Details:     - Uniform lattice grids have unmorphed unit cells, and are trimmed by the design space.
 //              - Design space may be a Mesh, Brep or Solid Surface.
 //              - Orientation plane does not need to be centered at any particular location
 // ===============================================================================
-// Issues:      = Currently trimming for the meshes occasionally has really weird behaviour.. issue with Rhino's isInside method!
+// Issues:      = Mesh design spaces with many coplanar faces are prone to failure.. issue with Rhino's Mesh.isInside method
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 

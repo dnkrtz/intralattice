@@ -6,11 +6,10 @@ using System.Drawing;
 using Rhino;
 using IntraLattice.CORE.Data;
 
-// Summary:     This component processes/verifies user-defined unit cells, and outputs a valid Topo unit cell
+// Summary:     This component processes/verifies user-defined unit cells, and outputs a valid unit cell
 // ===============================================================================
-// Details:     - Assumes unit cell is aligned with the xyz world axes
-//              - Begins by fixing any undefined intersections (intersections must be defined nodes)
-//              - Checks validity of the unit cell (opposing faces must be identical, in terms of nodes, to ensure continuity)     
+// Details:     - Assumes unit cell is aligned with the xyz world axes.
+//              - Checks validity of the unit cell.   
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -45,7 +44,7 @@ namespace IntraLattice.CORE.Components
             var lines = new List<Line>();
             foreach (Curve curve in curves)
             {
-                // Make sure the curve is linear, if not, abort and return error
+                // Make sure the curve is linear, if not, return error and abort.
                 if (!curve.IsLinear())
                 {
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "All struts must be linear.");
@@ -55,11 +54,11 @@ namespace IntraLattice.CORE.Components
                 lines.Add(new Line(curve.PointAtStart, curve.PointAtEnd));
             }
     
+            // Extract the topology into a UnitCell object.
             UnitCell cell = new UnitCell(lines);
             
-            int validity = cell.CheckValidity();
-
-            switch (validity)
+            // CheckValidity instance method to check the unit cell. Use the return value to output useful error message.
+            switch (cell.CheckValidity())
             {
                 case -1:
                     AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - opposing faces must be identical.");

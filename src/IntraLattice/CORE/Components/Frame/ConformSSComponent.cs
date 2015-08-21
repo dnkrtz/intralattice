@@ -13,9 +13,9 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
-// Summary:     This component generates a (u,v,w) lattice between two surfaces
+// Summary:     This component generates a (u,v,w) lattice between two surfaces.
 // ===============================================================================
-// Details:     - 
+// Details:     - Does not fix orientation issues with the UV-maps of the two surfaces. To fix, use the UV-Adjust component.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 

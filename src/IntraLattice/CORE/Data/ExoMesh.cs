@@ -9,6 +9,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+// Summary:     This set of classes is used to generate a solid mesh of a lattice wireframe.
+//              Refer to the developer documentation for more information.
+//              * Meshing approach based on Exoskeleton by David Stasiuk.
+// =====================================================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.CORE.Data
 {
 
@@ -37,26 +43,26 @@ namespace IntraLattice.CORE.Data
             m_mesh = new Mesh();
 
             // First, we convert the struts to a list of unique nodes and node pairs
-            // We use the following three lists to extract valid data from the input list
+            // We use the following lists to extract valid data from the input list
             var nodeList = new Point3dList();               // List of unique nodes
             var nodePairList = new List<IndexPair>();       // List of struts, as node index pairs
             struts = FrameTools.CleanNetwork(struts, out nodeList, out nodePairList);
 
-            // Set node locations
+            // Set hull locations
             foreach (Point3d node in nodeList)
                 m_hulls.Add(new ExoHull(node));
 
-            // Create struts, plates and relational indices
+            // Create sleeves, plates and relational indices
             for (int i = 0; i < struts.Count; i++)
             {
-                m_sleeves.Add(new ExoSleeve(struts[i], nodePairList[i])); // assign
-                // construct plates
+                m_sleeves.Add(new ExoSleeve(struts[i], nodePairList[i]));
+                // Construct plates
                 m_plates.Add(new ExoPlate(nodePairList[i].I, struts[i].TangentAtStart));
                 m_plates.Add(new ExoPlate(nodePairList[i].J, -struts[i].TangentAtEnd));
-                // set strut relational parameters
+                // Set strut relational parameters
                 IndexPair platePair = new IndexPair(m_plates.Count - 2, m_plates.Count - 1);
                 m_sleeves[i].PlatePair = platePair;
-                // set node relational parameters
+                // Set node relational parameters
                 m_hulls[nodePairList[i].I].StrutIndices.Add(i);
                 m_hulls[nodePairList[i].J].StrutIndices.Add(i);
                 m_hulls[nodePairList[i].I].PlateIndices.Add(platePair.I);
@@ -83,11 +89,8 @@ namespace IntraLattice.CORE.Data
             set { m_sleeves = value; }
         }
         /// <summary>
-        /// List of plates in the lattice (as Plate objects).
+        /// List of plates in the lattice (as Plate objects). Plates are essentially the vertices that are shared between sleeve and hull meshes.
         /// </summary>
-        /// <remarks>
-        /// Plates are essentially the vertices that are shared between sleeve and hull meshes.
-        /// </remarks>
         public List<ExoPlate> Plates
         {
             get { return m_plates; }
@@ -421,11 +424,12 @@ namespace IntraLattice.CORE.Data
                         foreach (Point3f testPt in plateVtc)
                             if (testPt.EpsilonEquals(ptA, (float)tol) || testPt.EpsilonEquals(ptB, (float)tol) || testPt.EpsilonEquals(ptC, (float)tol))
                                 matches++;
-                        // if matches == 3, we should remove the face
+                        // if all three face vertices are plate vertices, we should remove the face
                         if (matches == 3)
                             deleteFaces.Add(j);
                     }
                 }
+                // Remove the faces. Reverse the list so that it is in decreasing order.
                 deleteFaces.Reverse();
                 foreach (int faceIndx in deleteFaces) hullMesh.Faces.RemoveAt(faceIndx);
             }
@@ -445,7 +449,7 @@ namespace IntraLattice.CORE.Data
             // Stitch faces
             for (int i = 1; i < sides; i++)
                 endMesh.Faces.AddFace(0, i, i + 1);
-            endMesh.Faces.AddFace(0, sides, 1); // last face wraps*/
+            endMesh.Faces.AddFace(0, sides, 1); // last face wraps
 
             return endMesh;
         }
@@ -496,7 +500,7 @@ namespace IntraLattice.CORE.Data
             set { m_strutIndices = value; }
         }
         /// <summary>
-        /// Indices of the plates associated with this node (parallel to StrutIndices)
+        /// Indices of the plates associated with this node. (parallel to StrutIndices)
         /// </summary>
         public List<int> PlateIndices
         {
@@ -504,7 +508,7 @@ namespace IntraLattice.CORE.Data
             set { m_plateIndices = value; }
         }
         /// <summary>
-        /// Average radius at the node.
+        /// Average radius at the node, used primarly for extra plates at sharp nodes.
         /// </summary>
         public double AvgRadius
         {
@@ -557,7 +561,7 @@ namespace IntraLattice.CORE.Data
 
         #region Properties
          /// <summary>
-        /// The strut's curve. (may be linear)
+        /// The sleeve's curve. (may be linear)
         /// </summary>
         public Curve Curve
         {
@@ -565,9 +569,9 @@ namespace IntraLattice.CORE.Data
             set { m_curve = value; }
         }
         /// <summary>
-        /// The pair of node indices of the strut.
+        /// The pair of node indices for this sleeve.
         /// </summary>
-        public IndexPair NodePair
+        public IndexPair HullPair
         {
             get { return m_nodePair; }
             set { m_nodePair = value; }
@@ -637,21 +641,33 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Properties
+        /// <summary>
+        /// The offset from the hull's center point (lattice node).
+        /// </summary>
         public double Offset
         {
             get { return m_offset; }
             set { m_offset = value; }
         }
+        /// <summary>
+        /// The direction of offset. (only used for linear struts)
+        /// </summary>
         public Vector3d Normal
         {
             get { return m_normal; }
             set { m_normal = value; }
         }
+        /// <summary>
+        /// The vertices on the plate. Note that Vtc[0] should be the centerpoint of the plate.
+        /// </summary>
         public List<Point3d> Vtc
         {
             get { return m_vtc; }
             set { m_vtc = value; }
         }
+        /// <summary>
+        /// The index of the parent hull.
+        /// </summary>
         public int HullIndex
         {
             get { return m_hullIndex; }

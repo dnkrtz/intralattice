@@ -12,69 +12,17 @@ using Rhino.Collections;
 using IntraLattice.CORE.Data;
 
 
-// Summary:     This class contains a set of methods used by the frame components
-// ===============================================================================
-// Methods:     ConformMapping (Aidan)   - Generates conforming wire lattice for a (u,v,w,i) node grid.
-//              UniformMapping (Aidan)    - Generates trimmed wire lattice for a (u,v,w,i) node grid.
-//              TrimStrut (Aidan)        - Trims strut at an intersection point and keeps the trimmed strut that is inside a design space.
-//              CastDesignSpace (Aidan)  - Casts GeometryBase design space to a Brep or Mesh.
-// ===============================================================================
+// Summary:     This class contains a set of static methods used by the frame components.
+// ======================================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice.CORE.Helpers
 {
     public class FrameTools
     {
-
-        public static bool IsPointInside(GeometryBase geometry, Point3d testPoint, int spaceType, double tol)
-        {
-            bool isInside = false;
-
-            switch (spaceType)
-            {
-                case 1: // Brep design space
-                    isInside = ((Brep)geometry).IsPointInside(testPoint, tol, false);
-                    break;
-                case 2: // Mesh design space
-                    isInside = ((Mesh)geometry).IsPointInside(testPoint, tol, false);
-                    break;
-                case 3: // Solid surface design space (must be converted to brep)
-                    isInside = ((Surface)geometry).ToBrep().IsPointInside(testPoint, tol, false);
-                    break;
-            }
-
-            return isInside;
-        }
-
-        public static double DistanceTo(GeometryBase geometry, Point3d testPoint, int spaceType)
-        {
-            double distanceTo = 0;
-            Point3d closestPoint;
-
-            switch (spaceType)
-            {
-                case 1: // Brep design space
-                    closestPoint = ((Brep)geometry).ClosestPoint(testPoint);
-                    distanceTo = testPoint.DistanceTo(closestPoint);
-                    break;
-                case 2: // Mesh design space
-                    closestPoint = ((Mesh)geometry).ClosestPoint(testPoint);
-                    distanceTo = testPoint.DistanceTo(closestPoint);
-                    break;
-                case 3: // Solid surface design space (must be converted to brep)
-                    closestPoint = ((Surface)geometry).ToBrep().ClosestPoint(testPoint);
-                    distanceTo = testPoint.DistanceTo(closestPoint);
-                    break;
-            }
-
-            return distanceTo;
-        }
-
-
         /// <summary>
-        /// Removes duplicate/invalid/tiny curves.
+        /// Removes duplicate/invalid/tiny curves and outputs the cleaned list.
         /// </summary>
-        /// <param name="inputStruts"></param>
         public static List<Curve> CleanNetwork(List<Curve> inputStruts)
         {
             var nodes = new Point3dList();
@@ -82,6 +30,9 @@ namespace IntraLattice.CORE.Helpers
 
             return CleanNetwork(inputStruts, out nodes, out nodePairs);
         }
+        /// <summary>
+        /// Removes duplicate/invalid/tiny curves and outputs the cleaned list, and a list of unique nodes.
+        /// </summary>
         public static List<Curve> CleanNetwork(List<Curve> inputStruts, out Point3dList nodes)
         {
             nodes = new Point3dList();
@@ -89,6 +40,9 @@ namespace IntraLattice.CORE.Helpers
 
             return CleanNetwork(inputStruts, out nodes, out nodePairs);
         }
+        /// <summary>
+        /// Removes duplicate/invalid/tiny curves and outputs the cleaned list, a list of unique nodes and a list of node pairs.
+        /// </summary>
         public static List<Curve> CleanNetwork(List<Curve> inputStruts, out Point3dList nodes, out List<IndexPair> nodePairs)
         {
             nodes = new Point3dList();
@@ -171,6 +125,54 @@ namespace IntraLattice.CORE.Helpers
                 type = 3;
 
             return type;
+        }
+        /// <summary>
+        /// Determines if a point is inside a geometry. (Brep, Mesh or closed Surface)
+        /// </summary>
+        public static bool IsPointInside(GeometryBase geometry, Point3d testPoint, int spaceType, double tol)
+        {
+            bool isInside = false;
+
+            switch (spaceType)
+            {
+                case 1: // Brep design space
+                    isInside = ((Brep)geometry).IsPointInside(testPoint, tol, false);
+                    break;
+                case 2: // Mesh design space
+                    isInside = ((Mesh)geometry).IsPointInside(testPoint, tol, false);
+                    break;
+                case 3: // Solid surface design space (must be converted to brep)
+                    isInside = ((Surface)geometry).ToBrep().IsPointInside(testPoint, tol, false);
+                    break;
+            }
+
+            return isInside;
+        }
+        /// <summary>
+        /// Computes the distance of a point to a given geometry. (Brep, Mesh or closed Surface)
+        /// </summary>
+        public static double DistanceTo(GeometryBase geometry, Point3d testPoint, int spaceType)
+        {
+            double distanceTo = 0;
+            Point3d closestPoint;
+
+            switch (spaceType)
+            {
+                case 1: // Brep design space
+                    closestPoint = ((Brep)geometry).ClosestPoint(testPoint);
+                    distanceTo = testPoint.DistanceTo(closestPoint);
+                    break;
+                case 2: // Mesh design space
+                    closestPoint = ((Mesh)geometry).ClosestPoint(testPoint);
+                    distanceTo = testPoint.DistanceTo(closestPoint);
+                    break;
+                case 3: // Solid surface design space (must be converted to brep)
+                    closestPoint = ((Surface)geometry).ToBrep().ClosestPoint(testPoint);
+                    distanceTo = testPoint.DistanceTo(closestPoint);
+                    break;
+            }
+
+            return distanceTo;
         }
 
     }

@@ -14,8 +14,6 @@ using IntraLattice.CORE.Helpers;
 
 // Summary:     This component generates a simple cylindrical lattice.
 // ===============================================================================
-// Details:     - 
-// ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice.CORE.Components
@@ -182,8 +180,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 // You can add image files to your project resources and access them like this:
-                //return Resources.circle2;
-                return null;
+                return Resources.cyl;
             }
         }
 

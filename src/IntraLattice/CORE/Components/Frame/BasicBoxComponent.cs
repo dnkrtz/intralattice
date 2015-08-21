@@ -17,8 +17,6 @@ using IntraLattice.CORE.Data.GH_Goo;
 
 // Summary:     This component generates a simple cartesian 3D lattice.
 // ===============================================================================
-// Details:     - 
-// ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice.CORE.Components

@@ -9,12 +9,7 @@ using Rhino.Collections;
 using Grasshopper.Kernel.Types.Transforms;
 using Rhino.Geometry.Intersect;
 
-// Summary:     This class contains a set of methods used to verify/format unit cells
-// ===============================================================================
-// Methods:     FixIntersections (written by Aidan)     - Explode lines at intersections and creates nodes (if cell is ill-defined)
-//              ExtractTopology (written by Aidan)      - Converts list of lines to unique set of nodes, for both an adjacency format and a node-pair format of struts
-//              NormaliseTopology (written by Aidan)    - Scales the cell to unit size (1x1x1 bounding box) and moves it to the origin
-//              FormatTopology (written by Aidan)       - Defines relative tree paths of nodes (this avoids creation of duplicate nodes and struts)
+// Summary:     This class contains static methods used to format unit cells.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -24,9 +19,8 @@ namespace IntraLattice.CORE.Helpers
     {
 
         /// <summary>
-        /// This method explode lines at intersections (because all nodes must be defined)
+        /// This method explodes lines at intersections. (because all nodes must be defined)
         /// </summary>
-        /// <param name="lines"></param>
         public static void FixIntersections(ref List<Line> lines)
         {
             // Set tolerance
@@ -69,12 +63,6 @@ namespace IntraLattice.CORE.Helpers
             foreach (int index in linesToRemove) lines.RemoveAt(index);
             lines.AddRange(splitLines);
         }
-
-
-
-
-
-        
 
     }
 

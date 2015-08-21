@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-// This is a set of methods & objects used by the mesh components
-// =====================================================
+// This is a set of static methods used by the mesh components.
+// ===========================================================
 // Written by Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice.CORE.Helpers
@@ -19,13 +19,8 @@ namespace IntraLattice.CORE.Helpers
     {
 
         /// <summary>
-        /// 
+        /// Creates knuckle vertices. (generally for sleeve meshing, but also used for 'sharp' node plates)
         /// </summary>
-        /// <param name="plane"></param>
-        /// <param name="sides"></param>
-        /// <param name="radius"></param>
-        /// <param name="startAngle"></param>
-        /// <param name="Vtc"></param>
         public static List<Point3d> CreateKnuckle(Plane plane, int sides, double radius, double startAngle)
         {
             var Vtc = new List<Point3d>();
@@ -41,10 +36,8 @@ namespace IntraLattice.CORE.Helpers
         }
 
         /// <summary>
-        /// 
+        /// Converts a list of Point3d to a list of Point3f
         /// </summary>
-        /// <param name="in3d"></param>
-        /// <returns></returns>
         public static List<Point3f> Point3dToPoint3f(List<Point3d> in3d)
         {
             var out3f = new List<Point3f>();
@@ -56,34 +49,8 @@ namespace IntraLattice.CORE.Helpers
         }
         
         /// <summary>
-        /// 
+        /// Fixes inconsistencies in the mesh face normals.
         /// </summary>
-        /// <param name="x"></param>
-        /// <param name="offsets"></param>
-        /// <param name="tol"></param>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        public static bool FilterOffset(double x, List<double> offsets, double tol, out double offset)
-        {
-            offset = x;
-
-            foreach (double y in offsets)
-            {
-                double variance = x > y ? x - y : y - x;
-                if (variance < tol)
-                {
-                    offset = y;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="mesh"></param>
         public static void NormaliseMesh(ref Mesh mesh)
         {
             if (mesh.SolidOrientation() == -1) mesh.Flip(true, true, true);

@@ -11,10 +11,10 @@ using IntraLattice.CORE.Data;
 using Rhino.Collections;
 using IntraLattice.CORE.Helpers;
 
-// Summary:     This component generates a (u,v,w) lattice between a surface and a point
+// Summary:     This component generates a (u,v,w) lattice between a surface and a point.
 // ===============================================================================
 // Details:     - Surface does not need to be closed, but it can be.
-//              - Point does not need to be center with respect to the surface.
+//              - Point does not need to be centered with respect to the surface.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 

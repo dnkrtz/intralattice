@@ -10,6 +10,14 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
+// Summary:     This component generates a solid mesh of a curve network, with constant strut radii.
+//              Approach based on Exoskeleton by David Stasiuk.
+// ===============================================================================
+// Details:     - Still lacks robustness: will output invalid mesh if mesh overlaps occur, which
+//                tends to happen when lattice is unevenly distributed.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.CORE.MeshModule
 {
     public class Homogen : GH_Component
@@ -57,8 +65,8 @@ namespace IntraLattice.CORE.MeshModule
             ExoMesh exoMesh = new ExoMesh(struts);
 
             //====================================================================================
-            // PART A - Compute nodal radii
-            // Strut radius is node-based
+            // PART A - Compute radii
+            // Set the start/end radii of each sleeve, based on user input.
             //====================================================================================
 
             // C0. Set radii
@@ -94,7 +102,7 @@ namespace IntraLattice.CORE.MeshModule
             // 
             //====================================================================================
 
-            // E0. Loop over struts
+            // E0. Loop over all sleeves
             for (int i = 0; i < exoMesh.Sleeves.Count; i++)
             {
                 Mesh sleeveMesh = exoMesh.MakeSleeve(i, sides);
@@ -109,7 +117,7 @@ namespace IntraLattice.CORE.MeshModule
 
             var hullMeshList = new List<Mesh>();
 
-            // HULLS - Loop over all nodes
+            // D0. Loop over all hulls
             for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
                 ExoHull node = exoMesh.Hulls[i];
@@ -137,7 +145,7 @@ namespace IntraLattice.CORE.MeshModule
                 plateCircles.Add(new Circle(plate.Vtc[1], plate.Vtc[2], plate.Vtc[3]));
             }
 
-            // POST-PROCESS FINAL MESH
+            // Post-process the final mesh.
             exoMesh.Mesh.Vertices.CombineIdentical(true, true);
             exoMesh.Mesh.FaceNormals.ComputeFaceNormals();
             exoMesh.Mesh.UnifyNormals();

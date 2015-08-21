@@ -11,15 +11,18 @@ using System.Text;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 
+// Summary:     This set of classes is used to generate a lattice wireframe.
+//              Refer to the developer documentation for more information.
+// =====================================================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.CORE.Data
 {
-    public enum LatticeNodeState
-    {
-        Outside = 0,
-        Inside = 1,
-        Boundary = 2,
-    }
-
+    /// <summary>
+    /// Represents the lattice as a set of nodes in a UVW tree.
+    /// Once the nodes are set, the various mapping methods can be used to 
+    /// map the unit cell topology to the node tree.
+    /// </summary>
     public class Lattice
     {
         #region Fields
@@ -56,11 +59,17 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Properties
+        /// <summary>
+        /// Nodes as a UVWi tree.
+        /// </summary>
         public DataTree<LatticeNode> Nodes
         {
             get { return m_nodes; }
             set { m_nodes = value; }
         }
+        /// <summary>
+        /// Struts as a list of curves, to be output.
+        /// </summary>
         public List<Curve> Struts
         {
             get { return m_struts; }
@@ -359,6 +368,10 @@ namespace IntraLattice.CORE.Data
 
         #endregion
     }
+
+    /// <summary>
+    /// Represents a lattice node. Could be extended to include more information. This will do for now.
+    /// </summary>
     [Serializable]
     public class LatticeNode
     {
@@ -414,6 +427,16 @@ namespace IntraLattice.CORE.Data
         #region Methods
         // none yet
         #endregion
+    }
+
+    /// <summary>
+    /// Represents the state of the node, with respect to the design space.
+    /// </summary>
+    public enum LatticeNodeState
+    {
+        Outside = 0,
+        Inside = 1,
+        Boundary = 2,
     }
 
 }

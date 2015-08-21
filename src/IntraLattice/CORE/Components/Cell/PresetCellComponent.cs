@@ -14,7 +14,7 @@ using IntraLattice.CORE.Data;
 // Summary:     This component can generate a selection of pre-defined unit cell topologies
 // ===============================================================================
 // Details:     - Selection menu is automatically generated (if you add a topology, make sure to add it to the selection menu, in InputTools.TopoSelect()
-//              - The cells don't need to be unitized (bounding box 1x1x1) or at the origin, the framing components are responsible of this
+//              - The cells don't need to be unitized (bounding box 1x1x1) or at the origin.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -66,14 +66,14 @@ namespace IntraLattice.CORE.Components
             int cellType = 0;
             if (!DA.GetData(0, ref cellType)) { return; }
 
-            // 2. Instantiate lists
+            // 2. Instantiate node and line lists
             var nodes = new List<Point3d>();
             var lines = new List<Line>();
 
-            // Set cell size
+            // 3. Set cell size
             double d = 5;
 
-            // Switch statement for the different cell types
+            // 4. Switch statement for the different cell types
             switch (cellType)
             {
                 // "GRID"
@@ -251,15 +251,18 @@ namespace IntraLattice.CORE.Components
                     break;
             }
 
+            // 5. Extract lines in a unit cell object and check validity.
             var cell = new UnitCell(lines);
             if (!cell.isValid)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - this is embarassing.");
                 
-            // 8. Set output
+            // 8. Set output (LatticeCellGoo)
             DA.SetData(0, new LatticeCellGoo(cell));            
         }
 
-        // Quick method for generating the corner nodes of a cell
+        /// <summary>
+        /// Quick method for generating the corner nodes of a cell.
+        /// </summary>
         private void makeCornerNodes(ref List<Point3d> nodes, double d)
         {
             nodes.Add(new Point3d(0, 0, 0));

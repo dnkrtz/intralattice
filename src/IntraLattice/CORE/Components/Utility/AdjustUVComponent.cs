@@ -4,6 +4,12 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
+// Summary:     This component can be used to adjust the UV-Map of a surface, for alignment purposes.
+// ===============================================================================
+// Details:     - When using the uvw-conform components, the orientation of the surface UV-maps is important.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.CORE.Components.Utility
 {
     public class AdjustUVComponent : GH_Component
@@ -56,7 +62,7 @@ namespace IntraLattice.CORE.Components.Utility
 
             if (surf == null) { return; }
 
-            // Start adjustment
+            // Make adjustments, if specified.
             if (swapUV) surf = surf.Transpose();
             if (reverseU) surf.Reverse(0, true);
             if (reverseV) surf.Reverse(1, true);

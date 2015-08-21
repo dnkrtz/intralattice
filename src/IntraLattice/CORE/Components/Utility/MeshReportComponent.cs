@@ -5,7 +5,7 @@ using Rhino.Geometry;
 
 // Summary:     This component is a post-processing tool used to inspect a mesh.
 // ===============================================================================
-// Details:     - Checks that the mesh represents a solid, and gives a comprehensive report.
+// Details:     - Checks that the mesh represents a solid, and returns a comprehensive report.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 

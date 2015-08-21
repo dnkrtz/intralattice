@@ -10,6 +10,13 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
+// Summary:     This component generates a solid mesh of a curve network, with custom strut radii.
+//              Approach based on Exoskeleton by David Stasiuk.
+// ===============================================================================
+// Details:     - Strut radii specified as a list of start/end radii. (parallel to curves list)
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.CORE.MeshModule
 {
     public class HeterogenCustom : GH_Component
@@ -48,7 +55,7 @@ namespace IntraLattice.CORE.MeshModule
             // 2. Validate data
             if (struts == null || struts.Count == 0) { return; }
             if (startRadius != null || startRadius.Count == 0) { return; }
-            if (startRadius != null || endRadius.Count == 0) { return; }
+            if (endRadius != null || endRadius.Count == 0) { return; }
             if (startRadius.Count != struts.Count || endRadius.Count != struts.Count)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Number of radii in each list must have same number of elements as the struts list.");
@@ -63,10 +70,9 @@ namespace IntraLattice.CORE.MeshModule
             // This constructor cleans the curve network (removes duplicates), and formats it as an ExoMesh.
             ExoMesh exoMesh = new ExoMesh(struts);
 
-
             //====================================================================================
-            // PART A - Compute nodal radii
-            // Strut radius is node-based
+            // PART A - Compute radii
+            // Set the start/end radii of each sleeve, based on user input.
             //====================================================================================
             for (int i = 0; i < exoMesh.Sleeves.Count; i++ )
             {
@@ -98,8 +104,8 @@ namespace IntraLattice.CORE.MeshModule
             // PART C - Construct sleeve meshes and hull points
             // 
             //====================================================================================
-            
-            // C0. Loop over struts
+
+            // C0. Loop over all sleeves
             for (int i = 0; i < exoMesh.Sleeves.Count; i++)
             {
                 Mesh sleeveMesh = exoMesh.MakeSleeve(i, sides);
@@ -112,13 +118,14 @@ namespace IntraLattice.CORE.MeshModule
             // Generates convex hulls, then removes the faces that lie on the plates.
             //====================================================================================
 
-            // D0. Loop over struts
-            for (int i = 0; i < exoMesh.Sleeves.Count; i++)
+            // D0. Loop over all hulls
+            for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
                 ExoHull node = exoMesh.Hulls[i];
 
+                int plateCount = exoMesh.Hulls[i].PlateIndices.Count;
                 // If node has a single plate, create an endmesh
-                if (exoMesh.Hulls[i].PlateIndices.Count < 2)
+                if (plateCount < 2)
                 {
                     Mesh endMesh = exoMesh.MakeEndFace(i, sides);
                     exoMesh.Mesh.Append(endMesh);
@@ -131,7 +138,7 @@ namespace IntraLattice.CORE.MeshModule
                 }
             }
 
-            // POST-PROCESS FINAL MESH
+            // Post-process the final mesh.
             exoMesh.Mesh.Vertices.CombineIdentical(true, true);
             exoMesh.Mesh.FaceNormals.ComputeFaceNormals();
             exoMesh.Mesh.UnifyNormals();

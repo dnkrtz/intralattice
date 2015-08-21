@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+
+// Summary:     This component cleans a curve network.
+// ===============================================================================
+// Details:     - 
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice.CORE.Components.Utility
 {
