@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.UtilityModule
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Mesh to inspect.", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Mesh to inspect.", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace IntraLattice.CORE.UtilityModule
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("Report", "R", "Report of inspection", GH_ParamAccess.item);
+            pManager.AddTextParameter("Report", "Report", "Report of inspection", GH_ParamAccess.item);
         }
 
         /// <summary>

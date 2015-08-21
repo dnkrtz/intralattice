@@ -37,9 +37,7 @@ namespace IntraLattice.CORE.MeshModule
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Thickened wireframe", GH_ParamAccess.item);
-            pManager.AddMeshParameter("Mesh", "M", "Thickened wireframe", GH_ParamAccess.list);
-            pManager.AddCircleParameter("Mesh", "M", "Thickened wireframe", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Thickened wireframe", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -153,8 +151,6 @@ namespace IntraLattice.CORE.MeshModule
 
 
             DA.SetData(0, exoMesh.Mesh);
-            DA.SetDataList(1, hullMeshList);
-            DA.SetDataList(2, plateCircles);
         }
 
         public override GH_Exposure Exposure

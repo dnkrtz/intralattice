@@ -39,7 +39,7 @@ namespace IntraLattice.CORE.MeshModule
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Thickened wireframe", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Thickened wireframe", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)

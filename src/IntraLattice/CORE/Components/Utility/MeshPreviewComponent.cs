@@ -29,7 +29,7 @@ namespace IntraLattice.CORE.UtilityModule
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Mesh(es) to preview.", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Mesh(es) to preview.", GH_ParamAccess.list);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)

@@ -37,7 +37,7 @@ namespace IntraLattice.CORE.MeshModule
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Thickened wireframe.", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "Mesh", "Thickened wireframe.", GH_ParamAccess.item);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -49,8 +49,8 @@ namespace IntraLattice.CORE.MeshModule
 
             // 1. Attempt to fetch data inputs
             if (!DA.GetDataList(0, struts)) { return; }
-            if (!DA.GetData(1, ref startRadius)) { return; }
-            if (!DA.GetData(2, ref endRadius)) { return; }
+            if (!DA.GetDataList(1, startRadius)) { return; }
+            if (!DA.GetDataList(2, endRadius)) { return; }
 
             // 2. Validate data
             if (struts == null || struts.Count == 0) { return; }

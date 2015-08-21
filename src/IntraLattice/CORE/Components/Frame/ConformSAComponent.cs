@@ -46,8 +46,6 @@ namespace IntraLattice.CORE.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
-            pManager.HideParameter(1);  // Do not display the 'Nodes' output points
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -56,7 +54,6 @@ namespace IntraLattice.CORE.Components
             var cell = new UnitCell();
             Surface surface = null;
             Curve axis = null;
-            bool flipUV = false;
             int nU = 0;
             int nV = 0;
             int nW = 0;
@@ -65,10 +62,10 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref surface)) { return; }
             if (!DA.GetData(2, ref axis)) { return; }
-            if (!DA.GetData(4, ref nU)) { return; }
-            if (!DA.GetData(5, ref nV)) { return; }
-            if (!DA.GetData(6, ref nW)) { return; }
-            if (!DA.GetData(7, ref morphed)) { return; }
+            if (!DA.GetData(3, ref nU)) { return; }
+            if (!DA.GetData(4, ref nV)) { return; }
+            if (!DA.GetData(5, ref nW)) { return; }
+            if (!DA.GetData(6, ref morphed)) { return; }
 
             if (!cell.isValid) { return; }
             if (!surface.IsValid) { return; }

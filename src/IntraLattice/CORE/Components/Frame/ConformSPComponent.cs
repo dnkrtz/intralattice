@@ -52,8 +52,6 @@ namespace IntraLattice.CORE.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
-            pManager.HideParameter(1);  // Do not display the 'Nodes' output points
         }
 
         /// <summary>
