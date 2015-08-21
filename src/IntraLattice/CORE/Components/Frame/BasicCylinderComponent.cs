@@ -14,8 +14,6 @@ using IntraLattice.CORE.Helpers;
 
 // Summary:     This component generates a simple cylindrical lattice.
 // ===============================================================================
-// Details:     - 
-// ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice.CORE.Components
@@ -31,7 +29,7 @@ namespace IntraLattice.CORE.Components
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
             pManager.AddNumberParameter("Radius", "R", "Radius of cylinder", GH_ParamAccess.item, 15);
             pManager.AddNumberParameter("Height", "H", "Height of cylinder", GH_ParamAccess.item, 25);
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (axial)", GH_ParamAccess.item, 5);
@@ -50,7 +48,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate data
-            var topology = new List<Line>();
+            var cell = new UnitCell();
             double radius = 0;
             double height = 0;
             int nU = 0;
@@ -58,7 +56,7 @@ namespace IntraLattice.CORE.Components
             int nW = 0;
             bool morphed = false;
 
-            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref radius)) { return; }
             if (!DA.GetData(2, ref height)) { return; }
             if (!DA.GetData(3, ref nU)) { return; }
@@ -66,7 +64,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(5, ref nW)) { return; }
             if (!DA.GetData(6, ref morphed)) { return; }
 
-            if (topology.Count < 2) { return; }
+            if (!cell.isValid) { return; }
             if (radius == 0) { return; }
             if (height == 0) { return; }
             if (nU == 0) { return; }
@@ -74,8 +72,7 @@ namespace IntraLattice.CORE.Components
             if (nW == 0) { return; }
 
             // 2. Initialize the lattice
-            var latticeType = morphed ?  LatticeType.MorphUVW : LatticeType.ConformUVW;
-            var lattice = new Lattice(latticeType);
+            var lattice = new Lattice();
             var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
             
             // 3. Define cylinder
@@ -93,9 +90,9 @@ namespace IntraLattice.CORE.Components
             cylinder.SetDomain(1, unitDomain); // surface v-direction
             axis.Domain = unitDomain;
 
-            // 6. Prepare normalized/formatted unit cell topology
-            var cell = new LatticeCell(topology);
-            cell.FormatTopology();          // sets up paths for inter-cell nodes
+            // 6. Prepare unit cell topology
+            cell = cell.Duplicate();
+            cell.FormatTopology();
 
             // 7. Create grid of points (as data tree)
             //    u-direction is along the cylinder
@@ -162,12 +159,11 @@ namespace IntraLattice.CORE.Components
             }
 
             // 7. Generate the struts using a mapping method
-            var struts = new List<Curve>();
-            if (morphed) struts = lattice.MorphMapping(cell, spaceTree, N);
-            else struts = lattice.ConformMapping(cell, N);
+            if (morphed) lattice.MorphMapping(cell, spaceTree, N);
+            else lattice.ConformMapping(cell, N);
 
             // 8. Set output
-            DA.SetDataList(0, struts);            
+            DA.SetDataList(0, lattice.Struts);            
         }
 
         // Primitive grid component -> first panel of the toolbar
@@ -184,8 +180,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 // You can add image files to your project resources and access them like this:
-                //return Resources.circle2;
-                return null;
+                return Resources.cyl;
             }
         }
 

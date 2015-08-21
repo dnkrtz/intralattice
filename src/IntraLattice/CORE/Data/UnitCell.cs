@@ -7,45 +7,50 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+// Summary:     This class is used to validate and format a unit cell.
+//              Refer to the developer documentation for more information.
+// =====================================================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.CORE.Data
 {
-    // The LatticeCell object represents 
-    public class LatticeCell
+    /// <summary>
+    /// Represents the unit cell, in a manner which can be used to map topology to a UVWi node tree, without creating duplicate nodes/struts.
+    /// </summary>
+    public class UnitCell
     {
 
         #region Fields
         private Point3dList m_nodes;
         private List<IndexPair> m_nodePairs;
-        private List<List<int>> m_nodeNeighbours;
         private List<int[]> m_nodePaths;
         #endregion
 
         #region Constructors
-        public LatticeCell()
+        public UnitCell()
         {
             m_nodes = new Point3dList();
             m_nodePairs = new List<IndexPair>();
-            m_nodeNeighbours = new List<List<int>>();
             m_nodePaths = new List<int[]>();
         }
-        public LatticeCell(List<Line> rawCell)
+        public UnitCell(List<Line> rawCell)
         {
             m_nodes = new Point3dList();
             m_nodePairs = new List<IndexPair>();
-            m_nodeNeighbours = new List<List<int>>();
             m_nodePaths = new List<int[]>();
 
             ExtractTopology(rawCell);
             NormaliseTopology();
         }
-        public LatticeCell Duplicate()
+        public UnitCell Duplicate()
         {
-            LatticeCell dup = new LatticeCell();
-            // this is not proper duplication, might still be passing Point3d and IndexPair values by reference, not sure
-            dup.m_nodes = Nodes;
-            dup.m_nodePairs = NodePairs;
-            dup.m_nodeNeighbours = NodeNeighbours;
-            dup.m_nodePaths = NodePaths;
+            UnitCell dup = new UnitCell();
+            foreach (Point3d node in Nodes)
+                dup.m_nodes.Add(node);
+            foreach (IndexPair nodePair in NodePairs)
+                dup.m_nodePairs.Add(nodePair);
+            foreach (int[] nodePath in NodePaths)
+                dup.m_nodePaths = NodePaths;
             return dup;
         }
         #endregion
@@ -60,7 +65,7 @@ namespace IntraLattice.CORE.Data
             set { m_nodes = value; }
         }
         /// <summary>
-        /// List of struts as node index pairs
+        /// List of struts as node index pairs.
         /// </summary>
         public List<IndexPair> NodePairs
         {
@@ -68,15 +73,7 @@ namespace IntraLattice.CORE.Data
             set { m_nodePairs = value; }
         }
         /// <summary>
-        /// List of node adjacency lists (parallel to Nodes list)
-        /// </summary>
-        public List<List<int>> NodeNeighbours
-        {
-            get { return m_nodeNeighbours; }
-            set { m_nodeNeighbours = value; }
-        }
-        /// <summary>
-        /// List of relative paths in tree (parallel to Nodes list)
+        /// List of relative paths in tree. (parallel to Nodes list)
         /// </summary>
         public List<int[]> NodePaths
         {
@@ -97,13 +94,12 @@ namespace IntraLattice.CORE.Data
                     return false;
             }
         }
-
-
         #endregion
 
         #region Methods
         /// <summary>
-        /// Formats the line input into the UnitCell object.
+        /// Formats the line input into the UnitCell object. It converts the list of lines into
+        /// a list of unique nodes and unique node pairs, ignoring duplicates.
         /// </summary>
         /// <param name="lines"></param>
         private void ExtractTopology(List<Line> lines)
@@ -131,7 +127,6 @@ namespace IntraLattice.CORE.Data
                     {
                         this.Nodes.Add(pt);
                         nodeIndices.Add(this.Nodes.Count - 1);
-                        this.NodeNeighbours.Add(new List<int>());
                     }
                 }
 
@@ -140,14 +135,12 @@ namespace IntraLattice.CORE.Data
                 if (this.NodePairs.Count == 0 || !NodePairs.Contains(nodePair))
                 {
                     this.NodePairs.Add(nodePair);
-                    this.NodeNeighbours[nodeIndices[0]].Add(nodeIndices[1]);
-                    this.NodeNeighbours[nodeIndices[1]].Add(nodeIndices[0]);
                 }
                 
             }
         }
         /// <summary>
-        /// Scales the unit cell down to unit size (1x1x1) and moves it to the origin
+        /// Scales the unit cell down to unit size (1x1x1) and moves it to the origin.
         /// </summary>
         private void NormaliseTopology()
         {
@@ -245,7 +238,7 @@ namespace IntraLattice.CORE.Data
             return 1;
         }
         /// <summary>
-        /// Defines relative paths of nodes, to ensure no duplicate nodes or struts are created
+        /// Defines relative paths of nodes for node pairing.
         /// ASSUMPTION: valid, normalized unit cell
         /// </summary>
         public void FormatTopology()
@@ -262,38 +255,37 @@ namespace IntraLattice.CORE.Data
             foreach (Point3d node in Nodes)
             {
                 bool nodeToRemove = true;
-
-                // check top plane first
+                // Check top plane first
                 if (Math.Abs(xy.DistanceTo(node)) < tol)
                 {
                     if (node.DistanceTo(new Point3d(1, 1, 1)) < tol)
-                        NodePaths.Add(new int[] { 1, 1, 1, this.Nodes.ClosestIndex(new Point3d(0, 0, 0)) });            // node belongs to 1,1,1 neighbour
+                        NodePaths.Add(new int[] { 1, 1, 1, Nodes.ClosestIndex(new Point3d(0, 0, 0)) });            // node belongs to 1,1,1 neighbour
                     else if (Math.Abs(node.X - 1) < tol && Math.Abs(node.Z - 1) < tol)
-                        NodePaths.Add(new int[] { 1, 0, 1, this.Nodes.ClosestIndex(new Point3d(0, node.Y, 0)) });       // node belongs to 1,0,1 neighbour
+                        NodePaths.Add(new int[] { 1, 0, 1, Nodes.ClosestIndex(new Point3d(0, node.Y, 0)) });       // node belongs to 1,0,1 neighbour
                     else if (Math.Abs(node.Y - 1) < tol && Math.Abs(node.Z - 1) < tol)
-                        NodePaths.Add(new int[] { 0, 1, 1, this.Nodes.ClosestIndex(new Point3d(node.X, 0, 0)) });       // node belongs to 0,1,1 neighbour
+                        NodePaths.Add(new int[] { 0, 1, 1, Nodes.ClosestIndex(new Point3d(node.X, 0, 0)) });       // node belongs to 0,1,1 neighbour
                     else
-                        NodePaths.Add(new int[] { 0, 0, 1, this.Nodes.ClosestIndex(new Point3d(node.X, node.Y, 0)) });  // node belongs to 0,0,1 neighbour
+                        NodePaths.Add(new int[] { 0, 0, 1, Nodes.ClosestIndex(new Point3d(node.X, node.Y, 0)) });  // node belongs to 0,0,1 neighbour
                 }
-                // check yz boundary plane
+                // Check yz boundary plane
                 else if (Math.Abs(yz.DistanceTo(node)) < tol)
                 {
                     if (Math.Abs(node.X - 1) < tol && Math.Abs(node.Y - 1) < tol)
-                        NodePaths.Add(new int[] { 1, 1, 0, this.Nodes.ClosestIndex(new Point3d(0, 0, node.Z)) });       // node belongs to 1,1,0 neighbour
+                        NodePaths.Add(new int[] { 1, 1, 0, Nodes.ClosestIndex(new Point3d(0, 0, node.Z)) });       // node belongs to 1,1,0 neighbour
                     else
-                        NodePaths.Add(new int[] { 1, 0, 0, this.Nodes.ClosestIndex(new Point3d(0, node.Y, node.Z)) });  // node belongs to 1,0,0 neighbour
+                        NodePaths.Add(new int[] { 1, 0, 0, Nodes.ClosestIndex(new Point3d(0, node.Y, node.Z)) });  // node belongs to 1,0,0 neighbour
                 }
-                // check last boundary plane
+                // Check last boundary plane
                 else if (Math.Abs(zx.DistanceTo(node)) < tol)
-                    NodePaths.Add(new int[] { 0, 1, 0, this.Nodes.ClosestIndex(new Point3d(node.X, 0, node.Z)) });      // node belongs to 0,1,0 neighbour
+                    NodePaths.Add(new int[] { 0, 1, 0, Nodes.ClosestIndex(new Point3d(node.X, 0, node.Z)) });      // node belongs to 0,1,0 neighbour
                 // if not on those planes, the node belongs to the current cell
                 else
                 {
-                    NodePaths.Add(new int[] { 0, 0, 0, this.Nodes.IndexOf(node) });
+                    NodePaths.Add(new int[] { 0, 0, 0, Nodes.IndexOf(node) });
                 }
             }
 
-            // now locate any struts that lie on the boundary planes
+            // Now locate any struts that lie on the boundary planes
             List<int> strutsToRemove = new List<int>();
             for (int i = 0; i < this.NodePairs.Count; i++)
             {

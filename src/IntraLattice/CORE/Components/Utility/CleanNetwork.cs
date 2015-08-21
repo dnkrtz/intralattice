@@ -1,18 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace IntraLattice.CORE.Components
+// Summary:     This component cleans a curve network.
+// ===============================================================================
+// Details:     - 
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
+namespace IntraLattice.CORE.Components.Utility
 {
-    public class ConformFV : GH_Component
+    public class CleanNetwork : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the ConformFV class.
+        /// Initializes a new instance of the CleanNetwork class.
         /// </summary>
-        public ConformFV()
-            : base("ConformFV", "Nickname",
+        public CleanNetwork()
+            : base("CleanNetwork", "Nickname",
                 "Description",
                 "Category", "Subcategory")
         {
@@ -58,7 +63,7 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("{bd789a0c-9cb2-4f1a-8828-ee77741c3513}"); }
+            get { return new Guid("{8b3a2f8c-3a76-4b19-84b9-f3eea80010ea}"); }
         }
     }
 }

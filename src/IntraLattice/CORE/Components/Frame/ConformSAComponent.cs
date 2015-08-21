@@ -13,12 +13,11 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
-// Summary:     This component generates a (u,v,w) lattice grid between a surface and an axis
+// Summary:     This component generates a (u,v,w) lattice between a surface and an axis.
 // ===============================================================================
 // Details:     - The axis can be an open curve or a closed curve. Of course, it may also be a straight line.
 //              - The surface does not need to loop a full 360 degrees around the axis.
 //              - Our implementation assumes that the axis is a set of U parameters.
-//              - The flipUV input allows the user to swap U and V parameters of the surface.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -35,7 +34,7 @@ namespace IntraLattice.CORE.Components
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
             pManager.AddSurfaceParameter("Surface", "Surf", "Surface to conform to", GH_ParamAccess.item);
             pManager.AddCurveParameter("Axis", "A", "Axis (may be curved)", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
@@ -54,7 +53,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate inputs
-            var topology = new List<Line>();
+            var cell = new UnitCell();
             Surface surface = null;
             Curve axis = null;
             bool flipUV = false;
@@ -63,7 +62,7 @@ namespace IntraLattice.CORE.Components
             int nW = 0;
             bool morphed = false;
 
-            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref surface)) { return; }
             if (!DA.GetData(2, ref axis)) { return; }
             if (!DA.GetData(4, ref nU)) { return; }
@@ -71,7 +70,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(6, ref nW)) { return; }
             if (!DA.GetData(7, ref morphed)) { return; }
 
-            if (topology.Count < 2) { return; }
+            if (!cell.isValid) { return; }
             if (!surface.IsValid) { return; }
             if (!axis.IsValid) { return; }
             if (nU == 0) { return; }
@@ -79,30 +78,29 @@ namespace IntraLattice.CORE.Components
             if (nW == 0) { return; }
 
             // 2. Initialize the lattice
-            var latticeType = morphed ? LatticeType.MorphUVW : LatticeType.ConformUVW;
-            var lattice = new Lattice(latticeType);
+            var lattice = new Lattice();
             var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
 
-            // 4. Package the number of cells in each direction into an array
+            // 3. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
 
-            // 5. Normalize the UV-domain
+            // 4. Normalize the UV-domain
             Interval unitDomain = new Interval(0, 1);
             surface.SetDomain(0, unitDomain); // surface u-direction
             surface.SetDomain(1, unitDomain); // surface v-direction
             axis.Domain = unitDomain; // axis (u-direction)
 
-            // 6. Prepare normalized/formatted unit cell topology
-            var cell = new LatticeCell(topology);
-            cell.FormatTopology();          // sets up paths for inter-cell nodes
+            // 5. Prepare normalized/formatted unit cell topology
+            cell = cell.Duplicate();
+            cell.FormatTopology();
 
-            // 7. Divide axis into equal segments, get curve parameters
+            // 6. Divide axis into equal segments, get curve parameters
             List<double> curveParams = new List<double>(axis.DivideByCount((int)N[0], true));
             double uStep = curveParams[1] - curveParams[0];
             //    If axis is closed curve, add last parameter to close the loop
             if (axis.IsClosed) curveParams.Add(0);
 
-            // 8. Let's create the actual lattice nodes now
+            // 7. Let's create the actual lattice nodes now
             //
             for (int u = 0; u <= N[0]; u++)
             {
@@ -166,14 +164,13 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 9. Generate the struts
-            //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
-            var struts = new List<Curve>();
-            if (morphed) struts = lattice.MorphMapping(cell, spaceTree, N);
-            else struts = lattice.ConformMapping(cell, N);
+            // 8. Generate the struts
+            //    Simply loop through all unit cells, and enforce the cell topology
+            if (morphed) lattice.MorphMapping(cell, spaceTree, N);
+            else lattice.ConformMapping(cell, N);
 
-            // 10. Set output
-            DA.SetDataList(0, struts);
+            // 9. Set output
+            DA.SetDataList(0, lattice.Struts);
         }
 
         // Conform components are in second slot of the grid category

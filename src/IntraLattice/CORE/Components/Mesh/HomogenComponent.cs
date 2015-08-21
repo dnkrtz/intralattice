@@ -10,6 +10,14 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
+// Summary:     This component generates a solid mesh of a curve network, with constant strut radii.
+//              Approach based on Exoskeleton by David Stasiuk.
+// ===============================================================================
+// Details:     - Still lacks robustness: will output invalid mesh if mesh overlaps occur, which
+//                tends to happen when lattice is unevenly distributed.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
+
 namespace IntraLattice.CORE.MeshModule
 {
     public class Homogen : GH_Component
@@ -37,15 +45,15 @@ namespace IntraLattice.CORE.MeshModule
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 0. Declare placeholder variables
-            List<Curve> strutList = new List<Curve>();
+            List<Curve> struts = new List<Curve>();
             double radius = 0;
 
             // 1. Attempt to fetch data inputs
-            if (!DA.GetDataList(0, strutList)) { return; }
+            if (!DA.GetDataList(0, struts)) { return; }
             if (!DA.GetData(1, ref radius)) { return; }
 
             // 2. Validate data
-            if (strutList == null || strutList.Count == 0) { return; }
+            if (struts == null || struts.Count == 0) { return; }
             if (radius <= 0) { return; }
 
             // 3. Set some variables
@@ -53,140 +61,98 @@ namespace IntraLattice.CORE.MeshModule
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
             // 4. Initialize lattice object
-            LatticeMesh lattice = new LatticeMesh();
+            // This constructor cleans the curve network (removes duplicates), and formats it as an ExoMesh.
+            ExoMesh exoMesh = new ExoMesh(struts);
 
             //====================================================================================
-            //  PART A - Network cleanse
-            //  Clean the network of curves
-            //  - Remove duplicate nodes and struts
-            //  - Remove null, invalid or tiny curves
-            //  - (Future idea: Combining colinear struts)
-            //====================================================================================
-
-            // A0. We use the following three lists to extract valid data from the input list
-            var nodeList = new Point3dList();               // List of unique nodes
-            var nodePairList = new List<IndexPair>();       // List of struts, as node index pairs
-
-            strutList = FrameTools.CleanNetwork(strutList, out nodeList, out nodePairList);
-
-            //====================================================================================
-            // PART B - Data structure
-            // In this section, we construct the wireframe lattice
-            // Ensuring that no duplicate nodes or struts are present
-            //====================================================================================
-
-            // B0. Create nodes
-            foreach (Point3d node in nodeList)
-                lattice.Nodes.Add(new Node(node));
-
-            // B1. Create struts and plates
-            for (int i = 0; i < strutList.Count; i++)
-            {
-                lattice.Struts.Add(new Strut(strutList[i], nodePairList[i])); // assign
-                // construct plates
-                lattice.Plates.Add(new Plate(nodePairList[i].I, strutList[i].TangentAtStart));
-                lattice.Plates.Add(new Plate(nodePairList[i].J, -strutList[i].TangentAtEnd));
-                // set strut relational parameters
-                IndexPair platePair = new IndexPair(lattice.Plates.Count - 2, lattice.Plates.Count - 1);
-                lattice.Struts[i].PlatePair = platePair;
-                // set node relational parameters
-                lattice.Nodes[nodePairList[i].I].StrutIndices.Add(i);
-                lattice.Nodes[nodePairList[i].J].StrutIndices.Add(i);
-                lattice.Nodes[nodePairList[i].I].PlateIndices.Add(platePair.I);
-                lattice.Nodes[nodePairList[i].J].PlateIndices.Add(platePair.J);
-            }
-
-
-            //====================================================================================
-            // PART C - Compute nodal radii
-            // Strut radius is node-based
+            // PART A - Compute radii
+            // Set the start/end radii of each sleeve, based on user input.
             //====================================================================================
 
             // C0. Set radii
-            foreach (Node node in lattice.Nodes)
+            foreach (ExoSleeve sleeve in exoMesh.Sleeves)
             {
-                node.Radius = radius;
+                sleeve.StartRadius = radius;
+                sleeve.EndRadius = radius;
             }
 
-
             //====================================================================================
-            // PART D - Compute plate offsets
+            // PART B - Compute plate offsets
             // Each plate is offset from its parent node, to avoid mesh overlaps.
+            // We also ensure that the no plates are engulfed by the hulls, so we're looking for
+            // a convex plate layout. If any plate vertex gets engulfed, meshing will fail.
             //====================================================================================
 
-            // D0. Loop over nodes
-            for (int i = 0; i < lattice.Nodes.Count; i++)
+            // B0. Loop over nodes
+            for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
                 // if node has only 1 strut, skip it
-                if (lattice.Nodes[i].StrutIndices.Count < 2) continue;
+                if (exoMesh.Hulls[i].StrutIndices.Count < 2) continue;
                 // compute the offsets required to avoid plate overlaps
-                bool success = lattice.ComputeOffsets(i, tol);
+                bool success = exoMesh.ComputeOffsets(i, tol);
                 // To improve convex hull shape at 'sharp' nodes, we add an extra plate
-                lattice.FixSharpNodes(i, sides);
+                exoMesh.FixSharpNodes(i, sides);
             }
 
             // IDEA : add a new loop here that adjusts radii to avoid overlapping struts
 
 
-
             //====================================================================================
-            // PART E - Construct sleeve meshes and hull points
+            // PART C - Construct sleeve meshes and hull points
             // 
             //====================================================================================
 
-            // E0. Loop over struts
-            for (int i = 0; i < lattice.Struts.Count; i++)
+            // E0. Loop over all sleeves
+            for (int i = 0; i < exoMesh.Sleeves.Count; i++)
             {
-                Mesh sleeveMesh = lattice.MakeSleeve(i, sides);
+                Mesh sleeveMesh = exoMesh.MakeSleeve(i, sides);
                 // append the new sleeve mesh to the full lattice mesh
-                lattice.Mesh.Append(sleeveMesh);
+                exoMesh.Mesh.Append(sleeveMesh);
             }
 
             //====================================================================================
-            // STEP 5 - Construct hull meshes
-            // 
+            // PART D - Construct hull meshes
+            // Generates convex hulls, then removes the faces that lie on the plates.
             //====================================================================================
 
             var hullMeshList = new List<Mesh>();
 
-            // HULLS - Loop over all nodes
-            for (int i = 0; i < lattice.Nodes.Count; i++)
+            // D0. Loop over all hulls
+            for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
-                Node node = lattice.Nodes[i];
+                ExoHull node = exoMesh.Hulls[i];
 
-                int plateCount = lattice.Nodes[i].PlateIndices.Count;
+                int plateCount = exoMesh.Hulls[i].PlateIndices.Count;
                 // If node has a single plate, create an endmesh
                 if (plateCount < 2)
                 {
-                    Mesh endMesh = lattice.MakeEndFace(i, sides);
-                    lattice.Mesh.Append(endMesh);
+                    Mesh endMesh = exoMesh.MakeEndFace(i, sides);
+                    exoMesh.Mesh.Append(endMesh);
                 }
                 // If node has more than 1 plate, create a hullmesh
                 else
                 {
-                    Mesh hullMesh = lattice.MakeConvexHull(i, sides, tol, true);
+                    Mesh hullMesh = exoMesh.MakeConvexHull(i, sides, tol, true);
                     hullMeshList.Add(hullMesh);
-                    lattice.Mesh.Append(hullMesh);
+                    exoMesh.Mesh.Append(hullMesh);
                 }
             }
 
-            
             List<Circle> plateCircles = new List<Circle>();
 
-            foreach (Plate plate in lattice.Plates)
-                {
-                    plateCircles.Add(new Circle(plate.Vtc[1], plate.Vtc[2], plate.Vtc[3]));
-                }
+            foreach (ExoPlate plate in exoMesh.Plates)
+            {
+                plateCircles.Add(new Circle(plate.Vtc[1], plate.Vtc[2], plate.Vtc[3]));
+            }
+
+            // Post-process the final mesh.
+            exoMesh.Mesh.Vertices.CombineIdentical(true, true);
+            exoMesh.Mesh.FaceNormals.ComputeFaceNormals();
+            exoMesh.Mesh.UnifyNormals();
+            exoMesh.Mesh.Normals.ComputeNormals();
 
 
-            // POST-PROCESS FINAL MESH
-            lattice.Mesh.Vertices.CombineIdentical(true, true);
-            lattice.Mesh.FaceNormals.ComputeFaceNormals();
-            lattice.Mesh.UnifyNormals();
-            lattice.Mesh.Normals.ComputeNormals();
-
-
-            DA.SetData(0, lattice.Mesh);
+            DA.SetData(0, exoMesh.Mesh);
             DA.SetDataList(1, hullMeshList);
             DA.SetDataList(2, plateCircles);
         }

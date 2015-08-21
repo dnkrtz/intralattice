@@ -11,12 +11,11 @@ using Grasshopper;
 using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
+using IntraLattice.CORE.Data.GH_Goo;
 
 
 
 // Summary:     This component generates a simple cartesian 3D lattice.
-// ===============================================================================
-// Details:     - 
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -59,8 +58,6 @@ namespace IntraLattice.CORE.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("Nodes", "Nodes", "Lattice Nodes", GH_ParamAccess.list);
-            pManager.HideParameter(1);   // Do not display the 'Nodes' output points
         }
 
         /// <summary>
@@ -72,7 +69,7 @@ namespace IntraLattice.CORE.Components
         {
             // 1. Declare placeholder variables and assign initial invalid data.
             //    This way, if the input parameters fail to supply valid data, we know when to abort
-            var cell = new LatticeCell();
+            var cell = new UnitCell();
             double xCellSize = 0;
             double yCellSize = 0;
             double zCellSize = 0;
@@ -98,12 +95,13 @@ namespace IntraLattice.CORE.Components
             if (nY == 0) { return; }
             if (nZ == 0) { return; }
 
-            // 4. Declare our point grid datatree
-            var lattice = new Lattice(LatticeType.Uniform);
-            
-            // 5. Prepare lattice cell topology
-            cell.FormatTopology();
+            // 4. Initialise the lattice object
+            var lattice = new Lattice();
 
+            // 5. Prepare unit cell topology
+            cell = cell.Duplicate();
+            cell.FormatTopology();
+            
             // 6. Define BasePlane and directional iteration vectors
             Plane basePlane = Plane.WorldXY;
             Vector3d vectorX = xCellSize * basePlane.XAxis;
@@ -123,7 +121,7 @@ namespace IntraLattice.CORE.Components
                         GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
                         var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
 
-                        // this loop maps each node in the cell
+                        // This loop maps each node in the cell
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
                             double usub = cell.Nodes[i].X; // u-position within unit cell (local)
@@ -131,9 +129,9 @@ namespace IntraLattice.CORE.Components
                             double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
                             double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            // Check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
                             bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
-                            // check if current uvw-position is beyond the upper boundary
+                            // Check if current uvw-position is beyond the upper boundary
                             bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
 
                             if (isOutsideCell || isOutsideSpace)
@@ -149,12 +147,12 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 7. Generate the struts
+            // 8. Generate the struts
             //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
-            var struts = lattice.ConformMapping(cell, N);
+            lattice.ConformMapping(cell, N);
 
-            // 8. Set output
-            DA.SetDataList(0, struts);            
+            // 9. Set output
+            DA.SetDataList(0, lattice.Struts);            
         }
         
         /// <summary>

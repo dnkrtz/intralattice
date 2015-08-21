@@ -11,10 +11,10 @@ using IntraLattice.CORE.Data;
 using Rhino.Collections;
 using IntraLattice.CORE.Helpers;
 
-// Summary:     This component generates a (u,v,w) lattice between a surface and a point
+// Summary:     This component generates a (u,v,w) lattice between a surface and a point.
 // ===============================================================================
 // Details:     - Surface does not need to be closed, but it can be.
-//              - Point does not need to be center with respect to the surface.
+//              - Point does not need to be centered with respect to the surface.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -37,7 +37,7 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
             pManager.AddSurfaceParameter("Surface", "Surf", "Surface to conform to", GH_ParamAccess.item);
             pManager.AddPointParameter("Point", "Pt", "Point", GH_ParamAccess.item);
             pManager.AddIntegerParameter("Number u", "Nu", "Number of unit cells (u)", GH_ParamAccess.item, 5);
@@ -63,7 +63,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate inputs
-            var topology = new List<Line>();
+            var cell = new UnitCell();
             Surface surface = null;
             Point3d pt = Point3d.Unset;
             int nU = 0;
@@ -71,7 +71,7 @@ namespace IntraLattice.CORE.Components
             int nW = 0;
             bool morphed = false;
 
-            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref surface)) { return; }
             if (!DA.GetData(2, ref pt)) { return; }
             if (!DA.GetData(3, ref nU)) { return; }
@@ -79,7 +79,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(5, ref nW)) { return; }
             if (!DA.GetData(6, ref morphed)) { return; }
 
-            if (topology.Count < 2) { return; }
+            if (!cell.isValid) { return; }
             if (!surface.IsValid) { return; }
             if (!pt.IsValid) { return; }
             if (nU == 0) { return; }
@@ -87,8 +87,7 @@ namespace IntraLattice.CORE.Components
             if (nW == 0) { return; }
 
             // 2. Initialize the node tree, derivative tree and morphed space tree
-            var latticeType = morphed ? LatticeType.MorphUVW : LatticeType.ConformUVW;
-            var lattice = new Lattice(latticeType);
+            var lattice = new Lattice();
             var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
 
             // 3. Package the number of cells in each direction into an array
@@ -100,7 +99,7 @@ namespace IntraLattice.CORE.Components
             surface.SetDomain(1, unitDomain); // surface v-direction
 
             // 5. Prepare normalized/formatted unit cell topology
-            var cell = new LatticeCell(topology);
+            cell = cell.Duplicate();
             cell.FormatTopology();          // sets up paths for inter-cell nodes
 
             // 6. Let's create the actual lattice nodes now
@@ -167,12 +166,11 @@ namespace IntraLattice.CORE.Components
 
             // 7. Generate the struts
             //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
-            var struts = new List<Curve>();
-            if (morphed) struts = lattice.MorphMapping(cell, spaceTree, N);
-            else struts = lattice.ConformMapping(cell, N);
+            if (morphed) lattice.MorphMapping(cell, spaceTree, N);
+            else lattice.ConformMapping(cell, N);
 
             // 8. Set output
-            DA.SetDataList(0, struts);
+            DA.SetDataList(0, lattice.Struts);
         }
 
         // Conform components are in second slot of the grid category

@@ -1,52 +1,112 @@
-﻿using System;
-using System.Collections.Generic;
-using Grasshopper.Kernel;
-using Rhino.Geometry;
-using Rhino;
-using Rhino.Geometry.Intersect;
-using IntraLattice.CORE.Data;
+﻿using Grasshopper.Kernel.Data;
 using IntraLattice.CORE.Helpers;
+using Rhino;
+using Rhino.Collections;
+using Rhino.Geometry;
+using Rhino.Geometry.Intersect;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+// Summary:     This set of classes is used to generate a solid mesh of a lattice wireframe.
+//              Refer to the developer documentation for more information.
+//              * Meshing approach based on Exoskeleton by David Stasiuk.
+// =====================================================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice.CORE.Data
 {
 
-    public class LatticeMesh
+    class ExoMesh
     {
-        /// <summary>
-        /// Public constructor
-        /// </summary>
-        public LatticeMesh()
-        {
-            this.Nodes = new List<Node>();
-            this.Struts = new List<Strut>();
-            this.Plates = new List<Plate>();
-            this.Mesh = new Mesh();
-        }
-        
-        // Properties
-        //
-        /// <summary>
-        /// List of nodes in the lattice (as Node objects).
-        /// </summary>
-        public List<Node> Nodes { get; set; }
-        /// <summary>
-        /// List of struts in the lattice (as Strut objects).
-        /// </summary>
-        public List<Strut> Struts { get; set; }
-        /// <summary>
-        /// List of plates in the lattice (as Plate objects).
-        /// </summary>
-        /// <remarks>
-        /// Plates are essentially the vertices that are shared between sleeve and hull meshes.
-        /// </remarks>
-        public List<Plate> Plates { get; set; }
-        /// <summary>
-        /// The actual mesh of the lattice.
-        /// </summary>
-        public Mesh Mesh { get; set; }
+        #region Fields
+        private List<ExoHull> m_hulls;
+        private List<ExoSleeve> m_sleeves;
+        private List<ExoPlate> m_plates;
+        private Mesh m_mesh;
+        #endregion
 
-        // Pre-processsing methods
-        //
+        #region Constructors
+        public ExoMesh()
+        {
+            m_hulls = new List<ExoHull>();
+            m_sleeves = new List<ExoSleeve>();
+            m_plates = new List<ExoPlate>();
+            m_mesh = new Mesh();
+        }
+        public ExoMesh(List<Curve> struts)
+        {
+            m_hulls = new List<ExoHull>();
+            m_sleeves = new List<ExoSleeve>();
+            m_plates = new List<ExoPlate>();
+            m_mesh = new Mesh();
+
+            // First, we convert the struts to a list of unique nodes and node pairs
+            // We use the following lists to extract valid data from the input list
+            var nodeList = new Point3dList();               // List of unique nodes
+            var nodePairList = new List<IndexPair>();       // List of struts, as node index pairs
+            struts = FrameTools.CleanNetwork(struts, out nodeList, out nodePairList);
+
+            // Set hull locations
+            foreach (Point3d node in nodeList)
+                m_hulls.Add(new ExoHull(node));
+
+            // Create sleeves, plates and relational indices
+            for (int i = 0; i < struts.Count; i++)
+            {
+                m_sleeves.Add(new ExoSleeve(struts[i], nodePairList[i]));
+                // Construct plates
+                m_plates.Add(new ExoPlate(nodePairList[i].I, struts[i].TangentAtStart));
+                m_plates.Add(new ExoPlate(nodePairList[i].J, -struts[i].TangentAtEnd));
+                // Set strut relational parameters
+                IndexPair platePair = new IndexPair(m_plates.Count - 2, m_plates.Count - 1);
+                m_sleeves[i].PlatePair = platePair;
+                // Set node relational parameters
+                m_hulls[nodePairList[i].I].StrutIndices.Add(i);
+                m_hulls[nodePairList[i].J].StrutIndices.Add(i);
+                m_hulls[nodePairList[i].I].PlateIndices.Add(platePair.I);
+                m_hulls[nodePairList[i].J].PlateIndices.Add(platePair.J);
+            }
+        }
+        #endregion
+
+        #region Properties
+        /// <summary>
+        /// List of nodes in the lattice (as ExoHull objects).
+        /// </summary>
+        public List<ExoHull> Hulls
+        {
+            get { return m_hulls; }
+            set { m_hulls = value; }
+        }
+        /// <summary>
+        /// List of struts in the lattice (as ExoSleeve objects).
+        /// </summary>
+        public List<ExoSleeve> Sleeves
+        {
+            get { return m_sleeves; }
+            set { m_sleeves = value; }
+        }
+        /// <summary>
+        /// List of plates in the lattice (as Plate objects). Plates are essentially the vertices that are shared between sleeve and hull meshes.
+        /// </summary>
+        public List<ExoPlate> Plates
+        {
+            get { return m_plates; }
+            set { m_plates = value; }
+        }
+        /// <summary>
+        /// The actual mesh.
+        /// </summary>
+        public Mesh Mesh
+        {
+            get { return m_mesh; }
+            set { m_mesh = value; }
+        }
+        #endregion
+
+        #region Pre-Processing Methods
         /// <summary>
         /// Computes plate offsets required to avoid mesh overlaps.
         /// For linear struts, this is done with simple trig.
@@ -57,45 +117,59 @@ namespace IntraLattice.CORE.Data
         /// <returns>True if offsets are valid, false if struts are engulfed by their nodes.</returns>
         public bool ComputeOffsets(int nodeIndex, double tol)
         {
-            Node node = this.Nodes[nodeIndex];
-            double minOffset = node.Radius; // the minimum offset is based on the radius at the node
+            ExoHull node = Hulls[nodeIndex];
 
             List<Curve> paths = new List<Curve>();
+            List<double> radii = new List<double>();
             List<double> offsets = new List<double>();  // parameter offset (path domains are unitized)
 
             // Prepare all struts and initialize offsets
             foreach (int strutIndex in node.StrutIndices)
             {
-                Curve curve = this.Struts[strutIndex].Curve.DuplicateCurve();
+                Curve curve = Sleeves[strutIndex].Curve.DuplicateCurve();
+                // If curve doesn't start at this node, reverse the curve and save end radius
                 if (curve.PointAtEnd.EpsilonEquals(node.Point3d, 100 * tol))
                 {
                     curve.Reverse(); // reverse direction of curve to start at this node
                     curve.Domain = new Interval(0, 1);
+                    radii.Add(Sleeves[strutIndex].EndRadius);
                 }
-                    
+                else
+                {
+                    radii.Add(Sleeves[strutIndex].StartRadius);
+                }
+
                 paths.Add(curve);
                 
+                // We start at an offset equal to the strut radius at the node (this is our minimum offset).
+                // Get the starting parameter at this offset
                 double offsetParam;
-                curve.LengthParameter(minOffset, out offsetParam);
+                curve.LengthParameter(radii[radii.Count-1], out offsetParam);
                 offsets.Add(offsetParam);
             }
+
+            // Compute avg radius at the node (mainly used for sharp node extra plate)
+            double sumRadii = 0;
+            foreach (double radius in radii)
+                sumRadii += radius;
+            node.AvgRadius = sumRadii / radii.Count;
 
             bool convexFound = false;
             bool[] travel;
             int iteration = 0;
             double paramIncrement = offsets[0] / 10;
             // Iterate until a suitable plate layout is found (i.e. ensures the convex hull won't engulf any plate points)
-            while (!convexFound && iteration<500)
+            while (!convexFound && iteration < 500)
             {
                 // Prepare list of circles
                 List<Circle> circles = new List<Circle>();
-                for (int i=0; i<paths.Count; i++)
+                for (int i = 0; i < paths.Count; i++)
                 {
                     Plane plane;
                     paths[i].PerpendicularFrameAt(offsets[i], out plane);
-                    circles.Add(new Circle(plane, node.Radius));
+                    circles.Add(new Circle(plane, radii[i]));
                 }
-                    
+
                 // Do stuff here...
 
                 // Loop over all pairs of struts
@@ -116,7 +190,7 @@ namespace IntraLattice.CORE.Data
 
                 // Increase offset of plates that intersected, if no intersections, we have a suitable convex layout
                 convexFound = true;
-                for (int i=0; i < paths.Count; i++)
+                for (int i = 0; i < paths.Count; i++)
                 {
                     if (travel[i])
                     {
@@ -135,7 +209,7 @@ namespace IntraLattice.CORE.Data
             }
 
             return true;
-        }
+        } 
         /// <summary>
         /// Adds a plate to the node if it is a 'sharp' node, to improve convex hull shape.
         /// </summary>
@@ -143,7 +217,7 @@ namespace IntraLattice.CORE.Data
         /// <param name="sides"> Number of sides on the sleeve meshes. </param>
         public void FixSharpNodes(int nodeIndex, int sides)
         {
-            Node node = this.Nodes[nodeIndex];
+            ExoHull node = Hulls[nodeIndex];
 
             // The extra plate is in the direction of the negative sum of all normals
             // We use the new plate normal to check if the node struts are contained within a 180deg peripheral (i.e. the node is 'sharp')
@@ -159,19 +233,19 @@ namespace IntraLattice.CORE.Data
             if (isSharp)
             {
 
-                // plane offset from node slightly
-                Plane plane = new Plane(node.Point3d - extraNormal * node.Radius / 3, -extraNormal);
-                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, node.Radius, 0);    // compute the vertices
-                // add new plate and its vertices
-                this.Plates.Add(new Plate(nodeIndex, -extraNormal));
+                // Plane offset from node slightly
+                Plane plane = new Plane(node.Point3d - extraNormal * node.AvgRadius / 3, -extraNormal);
+                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, node.AvgRadius, 0);    // compute the vertices
+                // Add new plate and its vertices
+                this.Plates.Add(new ExoPlate(nodeIndex, -extraNormal));
                 int newPlateIndx = this.Plates.Count - 1;
                 this.Plates[newPlateIndx].Vtc.AddRange(Vtc);
                 node.PlateIndices.Add(newPlateIndx);
             }
         }
+        #endregion
 
-        // Meshing methods
-        //
+        #region Meshing Methods
         /// <summary>
         /// Generates sleeve mesh for the struts. The plate offsets should be set before you use this method.
         /// </summary>
@@ -181,59 +255,54 @@ namespace IntraLattice.CORE.Data
         public Mesh MakeSleeve(int strutIndex, int sides)
         {
             Mesh sleeveMesh = new Mesh();
-            Strut strut = this.Struts[strutIndex];
-            Plate startPlate = this.Plates[strut.PlatePair.I];   // plate for the start of the strut
-            Plate endPlate = this.Plates[strut.PlatePair.J];
+            ExoSleeve strut = this.Sleeves[strutIndex];
+            ExoPlate startPlate = this.Plates[strut.PlatePair.I];   // plate for the start of the strut
+            ExoPlate endPlate = this.Plates[strut.PlatePair.J];
             double startParam, endParam;
             startParam = startPlate.Offset;
             endParam = 1 - endPlate.Offset;
-            //strut.Curve.LengthParameter(startPlate.Offset, out startParam);   // get start and end params of strut (accounting for offset)
-            //strut.Curve.LengthParameter(strut.Curve.GetLength() - endPlate.Offset, out endParam);
-            double startRadius = this.Nodes[strut.NodePair.I].Radius;    // set radius at start & end
-            double endRadius = this.Nodes[strut.NodePair.J].Radius;
 
-            // set center point of start & end plates
+            // Set center point of start & end plates
             startPlate.Vtc.Add(strut.Curve.PointAt(startParam));
             endPlate.Vtc.Add(strut.Curve.PointAt(endParam));
 
-            // compute the number of sleeve divisions
-            double avgRadius = (startRadius + endRadius) / 2;
+            // Compute the number of sleeve divisions (must be even)
+            double avgRadius = strut.AvgRadius;
             double length = strut.Curve.GetLength(new Interval(startParam, endParam));
-            double divisions = Math.Max((Math.Round(length * 0.5 / avgRadius) * 2), 2); // Number of sleeve divisions (must be even)
+            double divisions = Math.Max((Math.Round(length * 0.5 / avgRadius) * 2), 2); 
 
-            // GENERATE SLEEVE VERTICES
-
+            // Generate sleeve vertices
             Vector3d normal = strut.Curve.TangentAtStart;
-
-            // Loops: j along strut
+            // Loops along strut
             for (int j = 0; j <= divisions; j++)
             {
                 Plane plane;
-                if (strut.Curve.IsLinear()) // for linear strut
+                // For linear struts
+                if (strut.Curve.IsLinear())
                 {
                     Point3d knucklePt = startPlate.Vtc[0] + (normal * (length * j / divisions));
                     plane = new Plane(knucklePt, normal);
                 }
-                else // for curved struts, we compute a new perpendicular frame at every iteration
+                // For curved struts, we compute a new perpendicular frame at every iteration
+                else 
                 {
                     double locParameter = startParam + (j / divisions) * (endParam - startParam);
                     Point3d knucklePt = strut.Curve.PointAt(locParameter);
                     strut.Curve.PerpendicularFrameAt(locParameter, out plane);
                 }
-                double R = startRadius - j / (double)divisions * (startRadius - endRadius); //variable radius
+                double R = strut.StartRadius - j * (strut.StartRadius - strut.EndRadius)/ (double)divisions; //variable radius
                 double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
 
                 List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, R, startAngle);    // compute the vertices
 
-                // if the vertices are hull points (plates that connect sleeves to node hulls), save them
+                // If the vertices are hull points (plates that connect sleeves to node hulls), save them
                 if (j == 0) startPlate.Vtc.AddRange(Vtc);
                 if (j == divisions) endPlate.Vtc.AddRange(Vtc);
 
-                sleeveMesh.Vertices.AddVertices(Vtc); // save vertices to sleeve mes
+                sleeveMesh.Vertices.AddVertices(Vtc); // save vertices to sleeve mesh
             }
 
-            // STITCH SLEEVE FACES
-
+            // Generate sleeve mesh (stitch vertices)
             int V1, V2, V3, V4;
             for (int j = 0; j < divisions; j++)
             {
@@ -252,7 +321,7 @@ namespace IntraLattice.CORE.Data
             return sleeveMesh;
         }
         /// <summary>
-        /// Generates a convex hull mesh for a set of points.
+        /// Generates a convex hull mesh for a set of points. Also removes all faces that lie on the ExoMesh plates.
         /// </summary>
         /// <param name="nodeIndex">Index of node being hulled.</param>
         /// <param name="sides">Number of sides per strut.</param>
@@ -265,8 +334,8 @@ namespace IntraLattice.CORE.Data
         public Mesh MakeConvexHull(int nodeIndex, int sides, double tol, bool cleanPlates)
         {
             Mesh hullMesh = new Mesh();
-            Node node = this.Nodes[nodeIndex];
-            double radius = node.Radius;
+            ExoHull node = this.Hulls[nodeIndex];
+            double radius = node.AvgRadius;
 
             double planeTolerance = tol * radius / 10;
 
@@ -317,7 +386,7 @@ namespace IntraLattice.CORE.Data
                 hullMesh.Vertices.Add(pts[i]);
 
                 List<MeshFace> addFaces = new List<MeshFace>();
-                // Close open hull with new vertex
+                // Close open hull based on new vertex
                 for (int edgeIndex = 0; edgeIndex < hullMesh.TopologyEdges.Count; edgeIndex++)
                 {
                     if (!hullMesh.TopologyEdges.IsSwappableEdge(edgeIndex))
@@ -355,11 +424,12 @@ namespace IntraLattice.CORE.Data
                         foreach (Point3f testPt in plateVtc)
                             if (testPt.EpsilonEquals(ptA, (float)tol) || testPt.EpsilonEquals(ptB, (float)tol) || testPt.EpsilonEquals(ptC, (float)tol))
                                 matches++;
-                        // if matches == 3, we should remove the face
+                        // if all three face vertices are plate vertices, we should remove the face
                         if (matches == 3)
                             deleteFaces.Add(j);
                     }
                 }
+                // Remove the faces. Reverse the list so that it is in decreasing order.
                 deleteFaces.Reverse();
                 foreach (int faceIndx in deleteFaces) hullMesh.Faces.RemoveAt(faceIndx);
             }
@@ -374,14 +444,235 @@ namespace IntraLattice.CORE.Data
         {
             Mesh endMesh = new Mesh();
             // Set vertices
-            foreach (Point3d platePoint in this.Plates[this.Nodes[nodeIndex].PlateIndices[0]].Vtc)
+            foreach (Point3d platePoint in this.Plates[this.Hulls[nodeIndex].PlateIndices[0]].Vtc)
                 endMesh.Vertices.Add(platePoint);
             // Stitch faces
             for (int i = 1; i < sides; i++)
                 endMesh.Faces.AddFace(0, i, i + 1);
-            endMesh.Faces.AddFace(0, sides, 1); // last face wraps*/
+            endMesh.Faces.AddFace(0, sides, 1); // last face wraps
 
             return endMesh;
         }
+        #endregion
+    }
+
+    class ExoHull
+    {
+        #region Fields
+        private Point3d m_point3d;
+        private List<int> m_strutIndices;
+        private List<int> m_plateIndices;
+        private double m_avgRadius;
+        #endregion
+
+        #region Constructors
+        public ExoHull()
+        {
+            m_point3d = Point3d.Unset;
+            m_strutIndices = new List<int>();
+            m_plateIndices = new List<int>();
+            m_avgRadius = 0.0;
+        }
+        public ExoHull(Point3d point3d)
+        {
+            m_point3d = point3d;
+            m_strutIndices = new List<int>();
+            m_plateIndices = new List<int>();
+            m_avgRadius = 0.0;
+        }
+        #endregion
+
+        #region Properties
+        /// <summary>
+        /// Coordinates of node.
+        /// </summary>
+        public Point3d Point3d
+        {
+            get { return m_point3d; }
+            set { m_point3d = value; }
+        }
+        /// <summary>
+        /// Indices of the struts associated with this node.
+        /// </summary>
+        public List<int> StrutIndices
+        {
+            get { return m_strutIndices; }
+            set { m_strutIndices = value; }
+        }
+        /// <summary>
+        /// Indices of the plates associated with this node. (parallel to StrutIndices)
+        /// </summary>
+        public List<int> PlateIndices
+        {
+            get { return m_plateIndices; }
+            set { m_plateIndices = value; }
+        }
+        /// <summary>
+        /// Average radius at the node, used primarly for extra plates at sharp nodes.
+        /// </summary>
+        public double AvgRadius
+        {
+            get { return m_avgRadius; }
+            set { m_avgRadius = value; }
+        }
+        #endregion
+
+        #region Methods
+        // none yet
+        #endregion
+    }
+
+    class ExoSleeve
+    {
+        #region Fields
+        private Curve m_curve;
+        private IndexPair m_nodePair;
+        private IndexPair m_platePair;
+        private double m_startRadius;
+        private double m_endRadius;
+        #endregion
+
+        #region Constructors
+        public ExoSleeve()
+        {
+            m_curve = null;
+            m_nodePair = new IndexPair();
+            m_platePair = new IndexPair();
+            m_startRadius = 0.0;
+            m_endRadius = 0.0;
+        }
+        public ExoSleeve(Curve curve)
+        {
+            m_curve = curve;
+            m_nodePair = new IndexPair();
+            m_platePair = new IndexPair();
+            m_startRadius = 0.0;
+            m_endRadius = 0.0;
+        }
+        public ExoSleeve(Curve curve, IndexPair nodePair)
+        {
+            m_curve = curve;
+            m_nodePair = nodePair;
+            m_platePair = new IndexPair();
+            m_startRadius = 0.0;
+            m_endRadius = 0.0;
+        }
+        #endregion
+
+        #region Properties
+         /// <summary>
+        /// The sleeve's curve. (may be linear)
+        /// </summary>
+        public Curve Curve
+        {
+            get { return m_curve; }
+            set { m_curve = value; }
+        }
+        /// <summary>
+        /// The pair of node indices for this sleeve.
+        /// </summary>
+        public IndexPair HullPair
+        {
+            get { return m_nodePair; }
+            set { m_nodePair = value; }
+        }
+        /// <summary>
+        /// The pair of plate indices for this sleeve.
+        /// </summary>
+        public IndexPair PlatePair
+        {
+            get { return m_platePair; }
+            set { m_platePair = value; }
+        }
+        /// <summary>
+        /// The start radius of the sleeve.
+        /// </summary>
+        public double StartRadius
+        {
+            get { return m_startRadius; }
+            set { m_startRadius = value; }
+        }
+        /// <summary>
+        /// The end radius of the sleeve.
+        /// </summary>
+        public double EndRadius
+        {
+            get { return m_endRadius; }
+            set { m_endRadius = value; }
+        }
+        /// <summary>
+        /// The average radius of the sleeve.
+        /// </summary>
+        public double AvgRadius
+        {
+            get { return (StartRadius + EndRadius) / 2; }
+        }
+        #endregion
+
+        #region Methods
+        // none yet
+        #endregion
+    }
+
+    class ExoPlate
+    {
+        #region Fields
+        private double m_offset;
+        private Vector3d m_normal;
+        private List<Point3d> m_vtc;
+        private int m_hullIndex;
+        #endregion
+
+        #region Constructors
+        public ExoPlate()
+        {
+            m_offset = 0;
+            m_normal = Vector3d.Unset;
+            m_vtc = new List<Point3d>();
+            m_hullIndex = 0;
+        }
+        public ExoPlate(int hullIndex, Vector3d normal)
+        {
+            m_offset = 0;
+            m_normal = normal;
+            m_vtc = new List<Point3d>();
+            m_hullIndex = hullIndex;
+        }
+        #endregion
+
+        #region Properties
+        /// <summary>
+        /// The offset from the hull's center point (lattice node).
+        /// </summary>
+        public double Offset
+        {
+            get { return m_offset; }
+            set { m_offset = value; }
+        }
+        /// <summary>
+        /// The direction of offset. (only used for linear struts)
+        /// </summary>
+        public Vector3d Normal
+        {
+            get { return m_normal; }
+            set { m_normal = value; }
+        }
+        /// <summary>
+        /// The vertices on the plate. Note that Vtc[0] should be the centerpoint of the plate.
+        /// </summary>
+        public List<Point3d> Vtc
+        {
+            get { return m_vtc; }
+            set { m_vtc = value; }
+        }
+        /// <summary>
+        /// The index of the parent hull.
+        /// </summary>
+        public int HullIndex
+        {
+            get { return m_hullIndex; }
+            set { m_hullIndex = value; }
+        }
+        #endregion
     }
 }

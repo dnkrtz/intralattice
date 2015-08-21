@@ -14,13 +14,13 @@ using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
-// Summary:     This component generates a uniform lattice trimmed to the shape of design space
+// Summary:     This component generates a uniform lattice trimmed to the shape of design space.
 // ===============================================================================
 // Details:     - Uniform lattice grids have unmorphed unit cells, and are trimmed by the design space.
 //              - Design space may be a Mesh, Brep or Solid Surface.
 //              - Orientation plane does not need to be centered at any particular location
 // ===============================================================================
-// Issues:      = Currently trimming for the meshes occasionally has really weird behaviour.. issue with Rhino's isInside method!
+// Issues:      = Mesh design spaces with many coplanar faces are prone to failure.. issue with Rhino's Mesh.isInside method
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
@@ -44,7 +44,7 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddLineParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
             pManager.AddGeometryParameter("Design Space", "DS", "Design Space (Brep or Mesh)", GH_ParamAccess.item);
             pManager.AddPlaneParameter("Orientation Plane", "Plane", "Lattice orientation plane", GH_ParamAccess.item, Plane.WorldXY); // default is XY-plane
             pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // default is 5
@@ -68,7 +68,7 @@ namespace IntraLattice.CORE.Components
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate data
-            var topology = new List<Line>();
+            var cell = new UnitCell();
             GeometryBase designSpace = null;
             Plane orientationPlane = Plane.Unset;
             double xCellSize = 0;
@@ -76,7 +76,7 @@ namespace IntraLattice.CORE.Components
             double zCellSize = 0;
             double minLength = 0; // the trim tolerance (i.e. minimum strut length)
 
-            if (!DA.GetDataList(0, topology)) { return; }
+            if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref designSpace)) { return; }
             if (!DA.GetData(2, ref orientationPlane)) { return; }
             if (!DA.GetData(3, ref xCellSize)) { return; }
@@ -84,7 +84,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(5, ref zCellSize)) { return; }
             if (!DA.GetData(6, ref minLength)) { return; }
 
-            if (topology.Count < 2) { return; }
+            if (!cell.isValid) { return; }
             if (!designSpace.IsValid) { return; }
             if (!orientationPlane.IsValid) { return; }
             if (xCellSize == 0) { return; } 
@@ -122,19 +122,16 @@ namespace IntraLattice.CORE.Components
             float[] N = new float[3] { nX, nY, nZ };
 
             // 5. Initialize nodeTree
-            var lattice = new Lattice(LatticeType.Uniform);
+            var lattice = new Lattice();
 
             // 6. Prepare normalized/formatted unit cell topology
-            var cell = new LatticeCell(topology);
+            cell = cell.Duplicate();
             cell.FormatTopology();          // sets up paths for inter-cell nodes
 
             // 7. Define iteration vectors in each direction (accounting for Cell Size)
             Vector3d vectorU = xCellSize * basePlane.XAxis;
             Vector3d vectorV = yCellSize * basePlane.YAxis;
             Vector3d vectorW = zCellSize * basePlane.ZAxis;
-
-            // max kernel distance should be half the diagonal of a unit cell box
-            double maxKernelDist = Math.Sqrt(Math.Pow(xCellSize,2)+Math.Pow(yCellSize,2)+Math.Pow(zCellSize,2))/2;
 
             // 8. Create grid of nodes (as data tree)
             for (int u = 0; u <= N[0]; u++)
@@ -179,10 +176,10 @@ namespace IntraLattice.CORE.Components
             }
 
             // 9. Compute list of struts
-            var struts = lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
+            lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
                 
             // 10. Set output
-            DA.SetDataList(0, struts);
+            DA.SetDataList(0, lattice.Struts);
         }
 
         /// <summary>
