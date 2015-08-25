@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace IntraLattice.FEAInterface.Data
+namespace IntraLattice.OPTI.Data
 {
     // This is the class of isotropic material properties
     class MAT1

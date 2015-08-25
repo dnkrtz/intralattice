@@ -17,16 +17,16 @@ using IntraLattice.CORE.Helpers;
 
 namespace IntraLattice.CORE.MeshModule
 {
-    public class InputGradientComponent : GH_Component
+    public class PresetGradientComponent : GH_Component
     {
         GH_Document GrasshopperDocument;
         IGH_Component Component;
 
         /// <summary>
-        /// Initializes a new instance of the InputGradientComponent class.
+        /// Initializes a new instance of the PresetGradientComponent class.
         /// </summary>
-        public InputGradientComponent()
-            : base("Select Gradient", "Gradient",
+        public PresetGradientComponent()
+            : base("Preset Gradient", "PresetGradient",
                 "Generates gradient string (i.e. a spatial math expression)",
                 "IntraLattice2", "Mesh")
         {
@@ -68,7 +68,7 @@ namespace IntraLattice.CORE.MeshModule
             string mathString = null;
 
             // 3. Define gradients here
-            // Assume unitized bounding box ( 0<x<1 , 0<y<1, 0<z<1), where radius values range from minRadius (mathString=0) to maxRadius (mathString=1)
+            // Assume unitized domain ( 0<x<1 , 0<y<1, 0<z<1), where radius values range from minRadius (mathString=0) to maxRadius (mathString=1)
             // Based on this assumption, the actual values are scaled to the size of the bounding box of the lattice
             switch (gradientType)
             {

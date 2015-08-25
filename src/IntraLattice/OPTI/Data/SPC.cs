@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace IntraLattice.FEAInterface.Data
+namespace IntraLattice.OPTI.Data
 {
     //This Class is use to present Static Point Constraints
     class SPC

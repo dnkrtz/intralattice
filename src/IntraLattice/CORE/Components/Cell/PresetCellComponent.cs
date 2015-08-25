@@ -29,7 +29,7 @@ namespace IntraLattice.CORE.Components
         /// Initializes a new instance of the PresetCellComponent class.
         /// </summary>
         public PresetCellComponent()
-            : base("PresetCell", "PresetCell",
+            : base("Preset Cell", "PresetCell",
                 "Built-in selection of unit cell topologies.",
                 "IntraLattice2", "Cell")
         {

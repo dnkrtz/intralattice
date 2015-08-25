@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Rhino.Geometry;
-using IntraLattice.FEAInterface.Data;
+using IntraLattice.OPTI.Data;
 
-namespace IntraLattice.FEAInterface.Manager
+namespace IntraLattice.OPTI.Manager
 {
     // Author:TYL
     // This class is use to write Text File

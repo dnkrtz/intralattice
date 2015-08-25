@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace IntraLattice.FEAInterface.Data
+namespace IntraLattice.OPTI.Data
 {
     // Author: TYL
     // This is the class to represent Beam element

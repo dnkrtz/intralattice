@@ -5,7 +5,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
 
-namespace IntraLattice.FEAInterface.Components
+namespace IntraLattice.OPTI.Components
 {
     public class PointLoadComponent : GH_Component
     {

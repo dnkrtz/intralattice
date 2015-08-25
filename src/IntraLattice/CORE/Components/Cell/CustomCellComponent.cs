@@ -21,7 +21,7 @@ namespace IntraLattice.CORE.Components
         /// Initializes a new instance of the CustomCellComponent class.
         /// </summary>
         public CustomCellComponent()
-            : base("CustomCell", "CustomCell",
+            : base("Custom Cell", "CustomCell",
                 "Pre-processes a custom unit cell by check validity and outputting topology.",
                 "IntraLattice2", "Cell")
         {

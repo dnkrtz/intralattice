@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace IntraLattice.FEAInterface.Data
+namespace IntraLattice.OPTI.Data
 {
     // This is a class to represent external load
     class Load

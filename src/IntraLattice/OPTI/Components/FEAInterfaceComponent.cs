@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using Grasshopper.Kernel.Types;
-using IntraLattice.FEAInterface.Data;
-using IntraLattice.FEAInterface.Manager;
+using IntraLattice.OPTI.Data;
+using IntraLattice.OPTI.Manager;
 
 
-namespace IntraLattice.FEAInterface.Components
+namespace IntraLattice.OPTI.Components
 {
     // Define the type of crossection
     public class FEAInterfaceComponent : GH_Component
