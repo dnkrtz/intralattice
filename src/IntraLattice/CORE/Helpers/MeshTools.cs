@@ -36,7 +36,7 @@ namespace IntraLattice.CORE.Helpers
         }
 
         /// <summary>
-        /// Converts a list of Point3d to a list of Point3f
+        /// Converts a list of Point3d to a list of Point3f.
         /// </summary>
         public static List<Point3f> Point3dToPoint3f(List<Point3d> in3d)
         {

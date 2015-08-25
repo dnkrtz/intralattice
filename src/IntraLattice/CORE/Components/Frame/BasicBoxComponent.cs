@@ -21,17 +21,12 @@ using IntraLattice.CORE.Data.GH_Goo;
 
 namespace IntraLattice.CORE.Components
 {
-    public class BasicBox : GH_Component
+    public class BasicBoxComponent : GH_Component
     {
-
         /// <summary>
-        /// Each implementation of GH_Component must provide a public 
-        /// constructor without any arguments.
-        /// Category represents the Tab in which the component will appear, 
-        /// Subcategory the panel. If you use non-existing tab or panel names, 
-        /// new tabs/panels will automatically be created.
+        /// Initializes a new instance of the BasicBoxComponent class.
         /// </summary>
-        public BasicBox()
+        public BasicBoxComponent()
             : base("Basic Box", "BasicBox",
                 "Generates a lattice box.",
                 "IntraLattice2", "Frame")
@@ -98,7 +93,7 @@ namespace IntraLattice.CORE.Components
             // 4. Initialise the lattice object
             var lattice = new Lattice();
 
-            // 5. Prepare unit cell topology
+            // 5. Prepare cell (this is a UnitCell object)
             cell = cell.Duplicate();
             cell.FormatTopology();
             
@@ -139,7 +134,7 @@ namespace IntraLattice.CORE.Components
                             else
                             {
                                 Vector3d V = uvw[0] * vectorX + uvw[1] * vectorY + uvw[2] * vectorZ; // compute position vector
-                                var newNode = new LatticeNode(basePlane.Origin + V); // construct new node with pt
+                                var newNode = new LatticeNode(basePlane.Origin + V); // construct new node
                                 nodeList.Add(newNode); // add new node to tree
                             }
                         }
@@ -147,8 +142,7 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 8. Generate the struts
-            //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
+            // 8. Map struts to the node tree
             lattice.ConformMapping(cell, N);
 
             // 9. Set output
@@ -156,7 +150,7 @@ namespace IntraLattice.CORE.Components
         }
         
         /// <summary>
-        /// Here we set the exposure of the component (i.e. the toolbar panel it is in)
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
         /// </summary>
         public override GH_Exposure Exposure
         {
@@ -167,7 +161,7 @@ namespace IntraLattice.CORE.Components
         }
 
         /// <summary>
-        /// Provides an Icon for every component that will be visible in the User Interface.
+        /// Provides an Icon for the component.
         /// Icons need to be 24x24 pixels.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
@@ -181,9 +175,7 @@ namespace IntraLattice.CORE.Components
         }
 
         /// <summary>
-        /// Each component must have a unique Guid to identify it. 
-        /// It is vital this Guid doesn't change otherwise old ghx files 
-        /// that use the old ID will partially fail during loading.
+        /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid
         {

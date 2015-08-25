@@ -30,7 +30,7 @@ namespace IntraLattice.CORE.Components
     public class UniformDSComponent : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the GridUniform class.
+        /// Initializes a new instance of the UniformDSComponent class.
         /// </summary>
         public UniformDSComponent()
             : base("Uniform DS", "UniformDS",
@@ -124,16 +124,17 @@ namespace IntraLattice.CORE.Components
             // 5. Initialize nodeTree
             var lattice = new Lattice();
 
-            // 6. Prepare normalized/formatted unit cell topology
+            // 6. Prepare cell (this is a UnitCell object)
             cell = cell.Duplicate();
-            cell.FormatTopology();          // sets up paths for inter-cell nodes
+            cell.FormatTopology();
 
             // 7. Define iteration vectors in each direction (accounting for Cell Size)
             Vector3d vectorU = xCellSize * basePlane.XAxis;
             Vector3d vectorV = yCellSize * basePlane.YAxis;
             Vector3d vectorW = zCellSize * basePlane.ZAxis;
 
-            // 8. Create grid of nodes (as data tree)
+            // 8. Map nodes to design space
+            //    Loop through the uvw cell grid
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
@@ -165,9 +166,11 @@ namespace IntraLattice.CORE.Components
                                 // check if point is inside - use unstrict tolerance, meaning it can be outside the surface by the specified tolerance
                                 bool isInside = FrameTools.IsPointInside(designSpace, newNode.Point3d, spaceType, tol);
 
+                                // set the node state (it's location wrt the design space)
                                 if (isInside) newNode.State = LatticeNodeState.Inside;
                                 else newNode.State = LatticeNodeState.Outside;
 
+                                // add node to tree
                                 nodeList.Add(newNode);
                             }
                         }
@@ -175,7 +178,7 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 9. Compute list of struts
+            // 9. Map struts to the node tree
             lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
                 
             // 10. Set output
@@ -183,7 +186,7 @@ namespace IntraLattice.CORE.Components
         }
 
         /// <summary>
-        /// Here we set the exposure of the component (i.e. the toolbar panel it is in)
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
         /// </summary>
         public override GH_Exposure Exposure
         {
@@ -195,6 +198,7 @@ namespace IntraLattice.CORE.Components
 
         /// <summary>
         /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {

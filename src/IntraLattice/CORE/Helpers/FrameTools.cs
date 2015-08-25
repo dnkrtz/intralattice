@@ -23,34 +23,32 @@ namespace IntraLattice.CORE.Helpers
         /// <summary>
         /// Removes duplicate/invalid/tiny curves and outputs the cleaned list.
         /// </summary>
-        public static List<Curve> CleanNetwork(List<Curve> inputStruts)
+        public static List<Curve> CleanNetwork(List<Curve> inputStruts, double tol)
         {
             var nodes = new Point3dList();
             var nodePairs = new List<IndexPair>();
 
-            return CleanNetwork(inputStruts, out nodes, out nodePairs);
+            return CleanNetwork(inputStruts, tol, out nodes, out nodePairs);
         }
         /// <summary>
         /// Removes duplicate/invalid/tiny curves and outputs the cleaned list, and a list of unique nodes.
         /// </summary>
-        public static List<Curve> CleanNetwork(List<Curve> inputStruts, out Point3dList nodes)
+        public static List<Curve> CleanNetwork(List<Curve> inputStruts, double tol, out Point3dList nodes)
         {
             nodes = new Point3dList();
             var nodePairs = new List<IndexPair>();
 
-            return CleanNetwork(inputStruts, out nodes, out nodePairs);
+            return CleanNetwork(inputStruts, tol, out nodes, out nodePairs);
         }
         /// <summary>
         /// Removes duplicate/invalid/tiny curves and outputs the cleaned list, a list of unique nodes and a list of node pairs.
         /// </summary>
-        public static List<Curve> CleanNetwork(List<Curve> inputStruts, out Point3dList nodes, out List<IndexPair> nodePairs)
+        public static List<Curve> CleanNetwork(List<Curve> inputStruts, double tol, out Point3dList nodes, out List<IndexPair> nodePairs)
         {
             nodes = new Point3dList();
             nodePairs = new List<IndexPair>();
 
             var struts = new List<Curve>();
-
-            double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
             // Loop over list of struts
             for (int i = 0; i < inputStruts.Count; i++)
@@ -110,7 +108,7 @@ namespace IntraLattice.CORE.Helpers
         }
 
         /// <summary>
-        /// Casts a GeometryBase design space to a brep or a mesh.
+        /// Validates a GeometryBase design space as a brep or a mesh.
         /// </summary>
         public static int ValidateSpace(ref GeometryBase designSpace)
         {
@@ -126,6 +124,7 @@ namespace IntraLattice.CORE.Helpers
 
             return type;
         }
+
         /// <summary>
         /// Determines if a point is inside a geometry. (Brep, Mesh or closed Surface)
         /// </summary>
@@ -148,6 +147,7 @@ namespace IntraLattice.CORE.Helpers
 
             return isInside;
         }
+
         /// <summary>
         /// Computes the distance of a point to a given geometry. (Brep, Mesh or closed Surface)
         /// </summary>

@@ -11,54 +11,67 @@ using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
 
 // Summary:     This component generates a solid mesh of a curve network, with constant strut radii.
-//              Approach based on Exoskeleton by David Stasiuk.
+//              General approach based on Exoskeleton by David Stasiuk.
 // ===============================================================================
-// Details:     - Still lacks robustness: will output invalid mesh if mesh overlaps occur, which
-//                tends to happen when lattice is unevenly distributed.
+// Details:     - Lacks robustness: if strut radius is too thick, and results in overlaps, meshing fails.
 // ===============================================================================
 // Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
 namespace IntraLattice.CORE.MeshModule
 {
-    public class Homogen : GH_Component
+    public class HomogenComponent : GH_Component
     {
-        public Homogen()
+        /// <summary>
+        /// Initializes a new instance of the HomogenComponent class.
+        /// </summary>
+        public HomogenComponent()
             : base("Homogen","Homogen",
                 "Homogeneous solidification of lattice wireframe",
                 "IntraLattice2", "Mesh")
         {
         }
 
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Wireframe to thicken", GH_ParamAccess.list);
             pManager.AddNumberParameter("Radius", "Radius", "Strut Radius", GH_ParamAccess.item);
         }
 
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddMeshParameter("Mesh", "Mesh", "Thickened wireframe", GH_ParamAccess.item);
         }
 
+        /// <summary>
+        /// This is the method that actually does the work.
+        /// </summary>
+        /// <param name="DA">The DA object can be used to retrieve data from input parameters and 
+        /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // 0. Declare placeholder variables
+            // 1. Declare placeholder variables
             List<Curve> struts = new List<Curve>();
             double radius = 0;
 
-            // 1. Attempt to fetch data inputs
+            // 2. Attempt to fetch data inputs
             if (!DA.GetDataList(0, struts)) { return; }
             if (!DA.GetData(1, ref radius)) { return; }
 
-            // 2. Validate data
+            // 3. Validate data
             if (struts == null || struts.Count == 0) { return; }
             if (radius <= 0) { return; }
 
-            // 3. Set some variables
+            // 4. Set some variables
             int sides = 6;  // Number of sides on each strut
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
-            // 4. Initialize lattice object
+            // 5. Initialize lattice object
             // This constructor cleans the curve network (removes duplicates), and formats it as an ExoMesh.
             ExoMesh exoMesh = new ExoMesh(struts);
 
@@ -85,7 +98,7 @@ namespace IntraLattice.CORE.MeshModule
             for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
                 // if node has only 1 strut, skip it
-                if (exoMesh.Hulls[i].StrutIndices.Count < 2) continue;
+                if (exoMesh.Hulls[i].SleeveIndices.Count < 2) continue;
                 // compute the offsets required to avoid plate overlaps
                 bool success = exoMesh.ComputeOffsets(i, tol);
                 // To improve convex hull shape at 'sharp' nodes, we add an extra plate
@@ -143,16 +156,19 @@ namespace IntraLattice.CORE.MeshModule
                 plateCircles.Add(new Circle(plate.Vtc[1], plate.Vtc[2], plate.Vtc[3]));
             }
 
-            // Post-process the final mesh.
+            // 6. Post-process the final mesh.
             exoMesh.Mesh.Vertices.CombineIdentical(true, true);
             exoMesh.Mesh.FaceNormals.ComputeFaceNormals();
             exoMesh.Mesh.UnifyNormals();
             exoMesh.Mesh.Normals.ComputeNormals();
 
-
+            // 7. Set output
             DA.SetData(0, exoMesh.Mesh);
         }
 
+        /// <summary>
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
         public override GH_Exposure Exposure
         {
             get
@@ -161,6 +177,10 @@ namespace IntraLattice.CORE.MeshModule
             }
         }
 
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
+        /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
             get
@@ -169,6 +189,9 @@ namespace IntraLattice.CORE.MeshModule
             }
         }
 
+        /// <summary>
+        /// Gets the unique ID for this component. Do not change this ID after release.
+        /// </summary>
         public override Guid ComponentGuid
         {
             get { return new Guid("{a51ac688-3afc-48a5-b121-48cecf687eb5}"); }
