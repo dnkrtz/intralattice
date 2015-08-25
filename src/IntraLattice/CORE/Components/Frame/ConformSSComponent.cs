@@ -21,15 +21,21 @@ using IntraLattice.CORE.Helpers;
 
 namespace IntraLattice.CORE.Components
 {
-    public class GridConformSS : GH_Component
+    public class ConformSSComponent : GH_Component
     {
-        public GridConformSS()
+        /// <summary>
+        /// Initializes a new instance of the ConformSSComponent class.
+        /// </summary>
+        public ConformSSComponent()
             : base("Conform Surface-Surface", "ConformSS",
                 "Generates a conforming lattice between two surfaces.",
                 "IntraLattice2", "Frame")
         {
         }
 
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
@@ -41,11 +47,19 @@ namespace IntraLattice.CORE.Components
             pManager.AddBooleanParameter("Morph", "Morph", "If true, struts are morphed to the space as curves.", GH_ParamAccess.item, false);
         }
 
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
         }
 
+        /// <summary>
+        /// This is the method that actually does the work.
+        /// </summary>
+        /// <param name="DA">The DA object can be used to retrieve data from input parameters and 
+        /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate inputs
@@ -86,9 +100,9 @@ namespace IntraLattice.CORE.Components
             s2.SetDomain(0, unitDomain); // s2 u-direction
             s2.SetDomain(1, unitDomain); // s2 v-direction
 
-            // 5. Prepare normalized/formatted unit cell topology
+            // 5. Prepare cell (this is a UnitCell object)
             cell = cell.Duplicate();
-            cell.FormatTopology();          // sets up paths for inter-cell nodes
+            cell.FormatTopology();
 
             // 6. Map nodes to design space
             //    Loop through the uvw cell grid
@@ -135,7 +149,7 @@ namespace IntraLattice.CORE.Components
                         }
                     }
 
-                    // Define the uv space map
+                    // Define the uv space tree (used for morphing)
                     if (morphed && u < N[0] && v < N[1])
                     {
                         GH_Path spacePath = new GH_Path(u, v);
@@ -153,8 +167,7 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 7. Generate the struts
-            //    Simply loop through all unit cells, and enforce the cell topology
+            // 7. Map struts to the node tree
             if (morphed) lattice.MorphMapping(cell, spaceTree, N);
             else lattice.ConformMapping(cell, N);
 
@@ -163,7 +176,9 @@ namespace IntraLattice.CORE.Components
 
         }
 
-        // Conform components are in second slot of the grid category
+        /// <summary>
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
         public override GH_Exposure Exposure
         {
             get
@@ -172,6 +187,10 @@ namespace IntraLattice.CORE.Components
             }
         }
 
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
+        /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
             get
@@ -183,9 +202,7 @@ namespace IntraLattice.CORE.Components
         }
 
         /// <summary>
-        /// Each component must have a unique Guid to identify it. 
-        /// It is vital this Guid doesn't change otherwise old ghx files 
-        /// that use the old ID will partially fail during loading.
+        /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid
         {

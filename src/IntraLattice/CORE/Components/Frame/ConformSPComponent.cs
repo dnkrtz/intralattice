@@ -20,12 +20,12 @@ using IntraLattice.CORE.Helpers;
 
 namespace IntraLattice.CORE.Components
 {
-    public class ConformSP : GH_Component
+    public class ConformSPComponent : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the ConformSP class.
+        /// Initializes a new instance of the ConformSPComponent class.
         /// </summary>
-        public ConformSP()
+        public ConformSPComponent()
             : base("Conform Surface-Point", "ConformSP",
                 "Generates a conforming lattice between a surface and a point.",
                 "IntraLattice2", "Frame")
@@ -96,12 +96,12 @@ namespace IntraLattice.CORE.Components
             surface.SetDomain(0, unitDomain); // surface u-direction
             surface.SetDomain(1, unitDomain); // surface v-direction
 
-            // 5. Prepare normalized/formatted unit cell topology
+            // 5. Prepare cell (this is a UnitCell object)
             cell = cell.Duplicate();
-            cell.FormatTopology();          // sets up paths for inter-cell nodes
+            cell.FormatTopology();
 
-            // 6. Let's create the actual lattice nodes now
-            //
+            // 6. Map nodes to design space
+            //    Loop through the uvw cell grid
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
@@ -140,13 +140,13 @@ namespace IntraLattice.CORE.Components
 
                                 // create the node, accounting for the position along the w-direction
                                 var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]);
-                                nodeList.Add(newNode);
+                                nodeList.Add(newNode); // add node to tree
                             }
 
                         }
                     }
 
-                    // Define the uv space map
+                    // Define the uv space tree (used for morphing)
                     if (morphed && u < N[0] && v < N[1])
                     {
                         GH_Path spacePath = new GH_Path(u, v);
@@ -162,8 +162,7 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 7. Generate the struts
-            //    Simply loop through all unit cells, and enforce the cell topology (using cellStruts: pairs of node indices)
+            // 7. Map struts to the node tree
             if (morphed) lattice.MorphMapping(cell, spaceTree, N);
             else lattice.ConformMapping(cell, N);
 
@@ -171,7 +170,9 @@ namespace IntraLattice.CORE.Components
             DA.SetDataList(0, lattice.Struts);
         }
 
-        // Conform components are in second slot of the grid category
+        /// <summary>
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
         public override GH_Exposure Exposure
         {
             get
@@ -182,6 +183,7 @@ namespace IntraLattice.CORE.Components
 
         /// <summary>
         /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {

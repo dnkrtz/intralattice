@@ -7,22 +7,25 @@ using Rhino.DocObjects;
 using IntraLattice.Properties;
 using System.Drawing;
 using Grasshopper.Kernel.Expressions;
+using IntraLattice.CORE.Helpers;
 
-// This component is a post-processing tool used to inspect a mesh
-// ===============================================================
-// Checks that the mesh represents a solid
+// This component generates various gradient expressions, for the HeterogenGradient component. 
+// ===============================================================================
+// Ideally, this should be replaced by a simple value list, this isn't very elegant.
+// ===============================================================================
+// Author(s):   Aidan Kurtz (http://aidankurtz.com)
 
-namespace IntraLattice.CORE.Helpers
+namespace IntraLattice.CORE.MeshModule
 {
-    public class InputGradient : GH_Component
+    public class InputGradientComponent : GH_Component
     {
         GH_Document GrasshopperDocument;
         IGH_Component Component;
 
         /// <summary>
-        /// Initializes a new instance of the InputGradient class.
+        /// Initializes a new instance of the InputGradientComponent class.
         /// </summary>
-        public InputGradient()
+        public InputGradientComponent()
             : base("Select Gradient", "Gradient",
                 "Generates gradient string (i.e. a spatial math expression)",
                 "IntraLattice2", "Mesh")

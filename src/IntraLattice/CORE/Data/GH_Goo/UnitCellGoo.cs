@@ -7,14 +7,14 @@ using Rhino.Geometry;
 
 namespace IntraLattice.CORE.Data.GH_Goo
 {
-    public class LatticeCellGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<UnitCell>, IGH_PreviewData
+    public class UnitCellGoo : Grasshopper.Kernel.Types.GH_GeometricGoo<UnitCell>, IGH_PreviewData
     {
         #region Constructors
-        public LatticeCellGoo()
+        public UnitCellGoo()
         {
             this.Value = new UnitCell();
         }
-        public LatticeCellGoo(UnitCell cell)
+        public UnitCellGoo(UnitCell cell)
         {
             if (cell == null)
             {
@@ -26,9 +26,9 @@ namespace IntraLattice.CORE.Data.GH_Goo
         {
             return DuplicateGoo();
         }
-        public LatticeCellGoo DuplicateGoo()
+        public UnitCellGoo DuplicateGoo()
         {
-            return new LatticeCellGoo(Value == null ? new UnitCell() : Value.Duplicate());
+            return new UnitCellGoo(Value == null ? new UnitCell() : Value.Duplicate());
         }
         #endregion
 

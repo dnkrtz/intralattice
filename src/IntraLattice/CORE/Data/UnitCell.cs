@@ -27,12 +27,18 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
         public UnitCell()
         {
             m_nodes = new Point3dList();
             m_nodePairs = new List<IndexPair>();
             m_nodePaths = new List<int[]>();
         }
+        /// <summary>
+        /// Instance constructor based on a list of lines.
+        /// </summary>
         public UnitCell(List<Line> rawCell)
         {
             m_nodes = new Point3dList();
@@ -42,6 +48,9 @@ namespace IntraLattice.CORE.Data
             ExtractTopology(rawCell);
             NormaliseTopology();
         }
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
         public UnitCell Duplicate()
         {
             UnitCell dup = new UnitCell();
@@ -101,7 +110,6 @@ namespace IntraLattice.CORE.Data
         /// Formats the line input into the UnitCell object. It converts the list of lines into
         /// a list of unique nodes and unique node pairs, ignoring duplicates.
         /// </summary>
-        /// <param name="lines"></param>
         private void ExtractTopology(List<Line> lines)
         {
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
@@ -144,12 +152,10 @@ namespace IntraLattice.CORE.Data
         /// </summary>
         private void NormaliseTopology()
         {
-            // We'll build the bounding box as well
+            // Get the bounding box size (check for extreme values)
             var xRange = new Interval();
             var yRange = new Interval();
             var zRange = new Interval();
-
-            // Get the bounding box size (check for extreme values)
             foreach (Point3d node in this.Nodes)
             {
                 if (node.X < xRange.T0) xRange.T0 = node.X;
@@ -160,10 +166,10 @@ namespace IntraLattice.CORE.Data
                 if (node.Z > zRange.T1) zRange.T1 = node.Z;
             }
 
-            // move bounding box to origin
+            // Move cell to origin (i.e. move all nodes)
             Vector3d toOrigin = new Vector3d(-xRange.T0, -yRange.T0, -zRange.T0);
             this.Nodes.Transform(Transform.Translation(toOrigin));
-            // normalise to 1x1x1 bounding box
+            // Normalise to 1x1x1 bounding box size
             this.Nodes.Transform(Transform.Scale(Plane.WorldXY, 1 / xRange.Length, 1 / yRange.Length, 1 / zRange.Length));
         }
         /// <summary>
@@ -231,7 +237,7 @@ namespace IntraLattice.CORE.Data
                         return -1;
             }
 
-            // Finally, ensure that all faces have a node on it
+            // Finally, ensure that all faces have a node on it (only need to check 3 faces, since mirror condition ensures the others)
             if (minCheck[0] == false || minCheck[1] == false || minCheck[2] == false)
                 return 0;
 
@@ -239,7 +245,7 @@ namespace IntraLattice.CORE.Data
         }
         /// <summary>
         /// Defines relative paths of nodes for node pairing.
-        /// ASSUMPTION: valid, normalized unit cell
+        /// ASSUMPTION: valid, normalized unit cell.
         /// </summary>
         public void FormatTopology()
         {

@@ -11,12 +11,12 @@ using Rhino.Geometry;
 
 namespace IntraLattice.CORE.UtilityModule
 {
-    public class MeshReport : GH_Component
+    public class MeshReportComponent : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the MeshPreview class.
+        /// Initializes a new instance of the MeshReportComponent class.
         /// </summary>
-        public MeshReport()
+        public MeshReportComponent()
             : base("Mesh Report", "MeshReport",
                 "Verifies that the mesh represents a solid, and returns a comprehensive report.",
                 "IntraLattice2", "Utils")
@@ -45,16 +45,17 @@ namespace IntraLattice.CORE.UtilityModule
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // Set the mesh
+            // 1. Retrieve/validate input
             Mesh mesh = null;
             if (!DA.GetData(0, ref mesh)) { return; }
             if (!mesh.IsValid) { return; }
 
+            // 2. Initiliaze variables
             string report = "";     // report string
             bool isValid = true;    // will be false if any of the tests fail
             bool isOriented, hasBoundary;
 
-            // Check 1 - naked edges
+            // 3. Check - naked edges
             report = "- Details -\n";
             if (mesh.GetNakedEdges() == null)
                 report += "Mesh has 0 naked edges. \n";
@@ -64,7 +65,7 @@ namespace IntraLattice.CORE.UtilityModule
                 isValid = false;
             }
 
-            // Check 2 - manifoldness
+            // 4. Check - manifoldness
             if (mesh.IsManifold(true, out isOriented, out hasBoundary))
                 report += "Mesh is manifold. \n";
             else
@@ -73,30 +74,34 @@ namespace IntraLattice.CORE.UtilityModule
                 isValid = false;
             }
 
-            // Check 3 - mesh orientation
+            // 5. Check - mesh orientation
             if (mesh.SolidOrientation() == 1) report += "Mesh is solid. \n";
             else if (mesh.SolidOrientation() == 0)
             {
                 report += "Mesh is not solid. \n";
                 isValid = false;
             }
-            else // inward facing normals
+            // Inward facing normals
+            else
             {
                 mesh.Flip(true, true, true);
                 report += "Mesh is solid. (normals have been flipped) \n";
             }
 
-            // Finally, summarize these results
+            // 6. Finally, summarize these results
             if (isValid)
                 report = "Mesh is VALID.\n\n" + report;
             else
                 report = "Mesh is INVALID.\n\n" + report;
             report = "- Overview -\n" + report;
 
-            // Output report
+            // 7. Output report
             DA.SetData(0, report);
         }
 
+        /// <summary>
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
         public override GH_Exposure Exposure
         {
             get
@@ -107,6 +112,7 @@ namespace IntraLattice.CORE.UtilityModule
 
         /// <summary>
         /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {

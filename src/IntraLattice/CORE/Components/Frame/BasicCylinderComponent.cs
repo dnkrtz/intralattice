@@ -18,15 +18,21 @@ using IntraLattice.CORE.Helpers;
 
 namespace IntraLattice.CORE.Components
 {
-    public class BasicCylinder : GH_Component
+    public class BasicCylinderComponent : GH_Component
     {
-        public BasicCylinder()
+        /// <summary>
+        /// Initializes a new instance of the BasicCylinderComponent class.
+        /// </summary>
+        public BasicCylinderComponent()
             : base("Basic Cylinder", "BasicCylinder",
                 "Generates a conformal lattice cylinder.",
                 "IntraLattice2", "Frame")
         {
         }
 
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
@@ -38,11 +44,19 @@ namespace IntraLattice.CORE.Components
             pManager.AddBooleanParameter("Morph", "Morph", "If true, struts are morphed to the space as curves.", GH_ParamAccess.item, false);
         }
 
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
         }
 
+        /// <summary>
+        /// This is the method that actually does the work.
+        /// </summary>
+        /// <param name="DA">The DA object can be used to retrieve data from input parameters and 
+        /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate data
@@ -88,15 +102,14 @@ namespace IntraLattice.CORE.Components
             cylinder.SetDomain(1, unitDomain); // surface v-direction
             axis.Domain = unitDomain;
 
-            // 6. Prepare unit cell topology
+            // 6. Prepare cell (this is a UnitCell object)
             cell = cell.Duplicate();
             cell.FormatTopology();
 
-            // 7. Create grid of points (as data tree)
-            //    u-direction is along the cylinder
+            // 7. Map nodes to design space
+            //    Loop through the uvw cell grid
             for (int u = 0; u <= N[0]; u++)
             {
-                // v-direction travels around the cylinder axis (about axis)
                 for (int v = 0; v <= N[1]; v++)
                 {
                     for (int w = 0; w <= N[2]; w++)
@@ -132,14 +145,14 @@ namespace IntraLattice.CORE.Components
                                 // create vector joining these two points
                                 Vector3d wVect = pt2 - pt1;
 
-                                // add point to gridTree
-                                var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]);
-                                nodeList.Add(newNode);
+                                
+                                var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]); // construct node
+                                nodeList.Add(newNode); // add new node to tree
                             }
                         }
                     }
 
-                    // Define the uv space map for morphing
+                    // Define the uv space map tree (used for morphing)
                     if (morphed && u < N[0] && v < N[1])
                     {
                         GH_Path spacePath = new GH_Path(u, v);
@@ -147,7 +160,7 @@ namespace IntraLattice.CORE.Components
                         var vInterval = new Interval((v) / N[1], (v + 1) / N[1]);
                         Surface ss1 = cylinder.Trim(uInterval, vInterval);                          // create sub-surface
                         Curve ss2 = axis.Trim(uInterval);
-                        ss1.SetDomain(0, unitDomain); ss1.SetDomain(1, unitDomain);             // normalize domains
+                        ss1.SetDomain(0, unitDomain); ss1.SetDomain(1, unitDomain);                 // normalize domains
                         ss2.Domain = unitDomain;
                         // Save to the space tree
                         spaceTree.Add(ss1, spacePath);
@@ -156,15 +169,17 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 7. Generate the struts using a mapping method
+            // 8. Map struts to the node tree
             if (morphed) lattice.MorphMapping(cell, spaceTree, N);
             else lattice.ConformMapping(cell, N);
 
-            // 8. Set output
+            // 9. Set output
             DA.SetDataList(0, lattice.Struts);            
         }
 
-        // Primitive grid component -> first panel of the toolbar
+        /// <summary>
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
         public override GH_Exposure Exposure
         {
             get
@@ -173,6 +188,10 @@ namespace IntraLattice.CORE.Components
             }
         }
 
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
+        /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
             get
@@ -182,6 +201,9 @@ namespace IntraLattice.CORE.Components
             }
         }
 
+        /// <summary>
+        /// Gets the unique ID for this component. Do not change this ID after release.
+        /// </summary>
         public override Guid ComponentGuid
         {
             get { return new Guid("{9f6769c0-dec5-4a0d-8ade-76fca1dfd4e3}"); }

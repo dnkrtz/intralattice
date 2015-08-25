@@ -23,15 +23,21 @@ using IntraLattice.CORE.Helpers;
 
 namespace IntraLattice.CORE.Components
 {
-    public class ConformSA : GH_Component
+    public class ConformSAComponent : GH_Component
     {
-        public ConformSA()
+        /// <summary>
+        /// Initializes a new instance of the ConformSAComponent class.
+        /// </summary>
+        public ConformSAComponent()
             : base("Conform Surface-Axis", "ConformSA",
                 "Generates a conforming lattice between a surface and an axis.",
                 "IntraLattice2", "Frame")
         {
         }
 
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
@@ -43,11 +49,19 @@ namespace IntraLattice.CORE.Components
             pManager.AddBooleanParameter("Morph", "Morph", "If true, struts are morphed to the space as curves.", GH_ParamAccess.item, false);
         }
 
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
         }
 
+        /// <summary>
+        /// This is the method that actually does the work.
+        /// </summary>
+        /// <param name="DA">The DA object can be used to retrieve data from input parameters and 
+        /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             // 1. Retrieve and validate inputs
@@ -87,7 +101,7 @@ namespace IntraLattice.CORE.Components
             surface.SetDomain(1, unitDomain); // surface v-direction
             axis.Domain = unitDomain; // axis (u-direction)
 
-            // 5. Prepare normalized/formatted unit cell topology
+            // 5. Prepare cell (this is a UnitCell object)
             cell = cell.Duplicate();
             cell.FormatTopology();
 
@@ -97,13 +111,12 @@ namespace IntraLattice.CORE.Components
             //    If axis is closed curve, add last parameter to close the loop
             if (axis.IsClosed) curveParams.Add(0);
 
-            // 7. Let's create the actual lattice nodes now
-            //
+            // 7. Map nodes to design space
+            //    Loop through the uvw cell grid
             for (int u = 0; u <= N[0]; u++)
             {
                 for (int v = 0; v <= N[1]; v++)
                 {
-                    // create grid points on and between surface-axis
                     for (int w = 0; w <= N[2]; w++)
                     {
                         GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
@@ -126,9 +139,8 @@ namespace IntraLattice.CORE.Components
                                 nodeList.Add(null);
                             else
                             {
-                                // evaluate the point on the axis
-                                Point3d pt1;
-                                Point3d pt2; Vector3d[] derivatives; // initialize for surface 2
+                                Point3d pt1; // initialize for axis
+                                Point3d pt2; Vector3d[] derivatives; // initialize for surface
 
                                 // evaluate point on the axis and the surface
                                 pt1 = axis.PointAt(curveParams[u] + usub / N[0]);
@@ -139,12 +151,12 @@ namespace IntraLattice.CORE.Components
 
                                 // create the node, accounting for the position along the w-direction
                                 var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]);
-                                nodeList.Add(newNode);
+                                nodeList.Add(newNode); // add node to tree
                             }
                         }
                     }
 
-                    // Define the uv space map
+                    // Define the uv space tree (used for morphing)
                     if (morphed && u < N[0] && v < N[1])
                     {
                         GH_Path spacePath = new GH_Path(u, v);
@@ -161,8 +173,7 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            // 8. Generate the struts
-            //    Simply loop through all unit cells, and enforce the cell topology
+            // 8. Map struts to the node tree
             if (morphed) lattice.MorphMapping(cell, spaceTree, N);
             else lattice.ConformMapping(cell, N);
 
@@ -170,7 +181,9 @@ namespace IntraLattice.CORE.Components
             DA.SetDataList(0, lattice.Struts);
         }
 
-        // Conform components are in second slot of the grid category
+        /// <summary>
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
         public override GH_Exposure Exposure
         {
             get
@@ -179,6 +192,10 @@ namespace IntraLattice.CORE.Components
             }
         }
 
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
+        /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
             get
@@ -190,9 +207,7 @@ namespace IntraLattice.CORE.Components
         }
 
         /// <summary>
-        /// Each component must have a unique Guid to identify it. 
-        /// It is vital this Guid doesn't change otherwise old ghx files 
-        /// that use the old ID will partially fail during loading.
+        /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid
         {

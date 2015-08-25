@@ -62,16 +62,18 @@ namespace IntraLattice.CORE.Components.Utility
 
             if (surf == null) { return; }
 
-            // Make adjustments, if specified.
+            // 2. Make adjustments, if specified.
             if (swapUV) surf = surf.Transpose();
             if (reverseU) surf.Reverse(0, true);
             if (reverseV) surf.Reverse(1, true);
 
+            // 3. Set output
             DA.SetData(0, surf);
         }
 
         /// <summary>
         /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {

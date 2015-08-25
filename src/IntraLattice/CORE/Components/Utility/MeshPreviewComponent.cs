@@ -15,30 +15,43 @@ using System.Drawing;
 
 namespace IntraLattice.CORE.UtilityModule
 {
-    public class MeshPreview : GH_Component
+    public class MeshPreviewComponent : GH_Component
     {
         // Mesh for previewing, declared at class level
         private List<Mesh> m_mesh = new List<Mesh>();
 
-        public MeshPreview()
+        /// <summary>
+        /// Initializes a new instance of the MeshPreviewComponent class.
+        /// </summary>
+        public MeshPreviewComponent()
             : base("Mesh Preview", "MeshPreview",
-                "Verifies that the mesh represents a solid.",
+                "Generates a preview of the mesh.",
                 "IntraLattice2", "Utils")
         {
         }
 
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddMeshParameter("Mesh", "Mesh", "Mesh(es) to preview.", GH_ParamAccess.list);
         }
 
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
         }
 
+        /// <summary>
+        /// This is the method that actually does the work.
+        /// </summary>
+        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // Set the mesh
+            // 1. Retrieve and validate input
             var mesh = new List<Mesh>();
             if (!DA.GetDataList(0, mesh)) { return; }
             if (mesh == null || mesh.Count == 0) { return; }
@@ -46,7 +59,9 @@ namespace IntraLattice.CORE.UtilityModule
             m_mesh = mesh; // for preview (see DrawViewPortMeshes method below)
         }
 
-        // Override default preview behaviour (mesh and wire colors)
+        /// <summary>
+        /// Override default preview behaviour (mesh and wire colors)
+        /// </summary>
         public override void DrawViewportMeshes(IGH_PreviewArgs args)
         {
             Rhino.Display.DisplayMaterial mat = new Rhino.Display.DisplayMaterial(Color.FromArgb(255, 255, 255), 0);
@@ -61,6 +76,9 @@ namespace IntraLattice.CORE.UtilityModule
             }
         }
 
+        /// <summary>
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
         public override GH_Exposure Exposure
         {
             get
@@ -69,6 +87,10 @@ namespace IntraLattice.CORE.UtilityModule
             }
         }
 
+        /// <summary>
+        /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
+        /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
             get
@@ -79,6 +101,9 @@ namespace IntraLattice.CORE.UtilityModule
             }
         }
 
+        /// <summary>
+        /// Gets the unique ID for this component. Do not change this ID after release.
+        /// </summary>
         public override Guid ComponentGuid
         {
             get { return new Guid("{c5e3b143-5534-4ad3-a711-33881772d683}"); }

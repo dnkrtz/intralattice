@@ -15,32 +15,45 @@ using IntraLattice.CORE.Data;
 
 namespace IntraLattice.CORE.Components
 {
-    public class CustomCell : GH_Component
+    public class CustomCellComponent : GH_Component
     {
-        public CustomCell()
+        /// <summary>
+        /// Initializes a new instance of the CustomCellComponent class.
+        /// </summary>
+        public CustomCellComponent()
             : base("CustomCell", "CustomCell",
                 "Pre-processes a custom unit cell by check validity and outputting topology.",
                 "IntraLattice2", "Cell")
         {
         }
 
+        /// <summary>
+        /// Registers all the input parameters for this component.
+        /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddCurveParameter("Custom Cell", "L", "Unit cell lines (curves must be linear).", GH_ParamAccess.list);
         }
 
+        /// <summary>
+        /// Registers all the output parameters for this component.
+        /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Topology", "Topo", "Verified unit cell topology", GH_ParamAccess.item);
         }
 
+        /// <summary>
+        /// This is the method that actually does the work.
+        /// </summary>
+        /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            // Retrieve input
+            // 1. Retrieve/validate input
             var curves = new List<Curve>();
             if (!DA.GetDataList(0, curves)) { return; }
 
-            // Convert curve input to line input
+            // 2. Convert curve input to line input
             var lines = new List<Line>();
             foreach (Curve curve in curves)
             {
@@ -54,10 +67,10 @@ namespace IntraLattice.CORE.Components
                 lines.Add(new Line(curve.PointAtStart, curve.PointAtEnd));
             }
     
-            // Extract the topology into a UnitCell object.
+            // 3. Extract the topology into a UnitCell object.
             UnitCell cell = new UnitCell(lines);
             
-            // CheckValidity instance method to check the unit cell. Use the return value to output useful error message.
+            // 4. CheckValidity instance method to check the unit cell. Use the return value to output useful error message.
             switch (cell.CheckValidity())
             {
                 case -1:
@@ -71,23 +84,25 @@ namespace IntraLattice.CORE.Components
                     break;
             }
 
+            // 5. Set output
             DA.SetData(0, cell);
 
         }
 
         /// <summary>
-        /// Here we set the exposure of the component (i.e. the toolbar panel it is in)
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
         /// </summary>
         public override GH_Exposure Exposure
         {
             get
             {
-                return GH_Exposure.tertiary;
+                return GH_Exposure.secondary;
             }
         }
 
         /// <summary>
         /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {

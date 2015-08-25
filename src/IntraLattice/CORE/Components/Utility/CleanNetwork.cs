@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using IntraLattice.CORE.Helpers;
 
 // Summary:     This component cleans a curve network.
 // ===============================================================================
@@ -11,15 +12,15 @@ using Rhino.Geometry;
 
 namespace IntraLattice.CORE.Components.Utility
 {
-    public class CleanNetwork : GH_Component
+    public class CleanNetworkComponent : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the CleanNetwork class.
+        /// Initializes a new instance of the CleanNetworkComponent class.
         /// </summary>
-        public CleanNetwork()
-            : base("CleanNetwork", "Nickname",
-                "Description",
-                "Category", "Subcategory")
+        public CleanNetworkComponent()
+            : base("Clean Network", "CleanNetwork",
+                "Removes duplicate curves from a network, within specified tolerance.",
+                "IntraLattice2", "Utils")
         {
         }
 
@@ -28,6 +29,8 @@ namespace IntraLattice.CORE.Components.Utility
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddCurveParameter("Struts", "Struts", "Strut network to clean.", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Tolerance", "Tol", "Tolerance for combining nodes.", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -35,6 +38,7 @@ namespace IntraLattice.CORE.Components.Utility
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddCurveParameter("Struts", "Struts", "Cleaned strut network.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -43,10 +47,27 @@ namespace IntraLattice.CORE.Components.Utility
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            // 1. Declare placeholder variables
+            var struts = new List<Curve>();
+            double tol = 0.0;
+            // 2. Attempt to retrieve input
+            if (!DA.GetDataList(0, struts)) { return; }
+            if (!DA.GetData(1, ref tol)) { return; }
+            // 3. Validate input
+            if (struts == null || struts.Count == 1) { return; }
+            if (tol < 0) { return; }
+
+            // 4. Call cleaning method
+            struts = FrameTools.CleanNetwork(struts, tol);
+
+            // 5. Set output
+            DA.SetDataList(0, struts);
+
         }
 
         /// <summary>
         /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {

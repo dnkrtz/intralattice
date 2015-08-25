@@ -54,6 +54,7 @@ namespace IntraLattice.CORE.Helpers
             Component.Params.Input[index].AddSource(vallist);
             Component.Params.Input[index].CollectData();
         }
+
         /// <summary>
         /// Generates selection list for heterogeneous radii gradients.
         /// </summary>

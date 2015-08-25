@@ -31,11 +31,17 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
         public Lattice()
         {
             m_nodes = new DataTree<LatticeNode>();
             m_struts = new List<Curve>();
         }
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
         public Lattice Duplicate()
         {
             using (MemoryStream stream = new MemoryStream())
@@ -79,7 +85,7 @@ namespace IntraLattice.CORE.Data
 
         #region Methods
         /// <summary>
-        /// Maps cell topology to UVWI node map (linear struts).         
+        /// Maps cell topology to UVWi node map (linear struts).         
         /// </summary>
         public void ConformMapping(UnitCell cell, float[] N)
         {
@@ -170,7 +176,6 @@ namespace IntraLattice.CORE.Data
 
                                     // Discretize the unit cell line for morph mapping
                                     int ptCount = 16;
-                                    //int divNumber = (int)(node1.DistanceTo(node2) / morphTol);    // number of discrete segments
                                     var templatePts = new List<Point3d>();   // unitized cell points (x,y of these points are u,v of sub-surface)
                                     Line templateLine = new Line(cell.Nodes[nodePair.I], cell.Nodes[nodePair.J]);
                                     for (int ptIndex = 0; ptIndex <= ptCount; ptIndex++)
@@ -229,9 +234,7 @@ namespace IntraLattice.CORE.Data
             }
         }
         /// <summary>
-        /// Maps cell topology to the node grid and trims to the design space
-        /// =================================================================
-        /// =================================================================
+        /// Maps cell topology to the node grid and trims to the design space.
         /// </summary>
         public void UniformMapping(UnitCell cell, GeometryBase designSpace, int spaceType, float[] N, double minStrutLength)
         {
@@ -381,16 +384,25 @@ namespace IntraLattice.CORE.Data
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Default constructor.
+        /// </summary>
         public LatticeNode()
         {
             m_point3d = Point3d.Unset;
             m_state = LatticeNodeState.Inside;
         }
+        /// <summary>
+        /// Instance constructor based on a Point3d location.
+        /// </summary>
         public LatticeNode(Point3d point3d)
         {
             m_point3d = point3d;
             m_state = LatticeNodeState.Inside;
         }
+        /// <summary>
+        /// Instance constructor based on a Point3d location and an inside/outside state (wrt design space).
+        /// </summary>
         public LatticeNode(Point3d point3d, LatticeNodeState state)
         {
             m_point3d = point3d;
@@ -407,11 +419,17 @@ namespace IntraLattice.CORE.Data
             get { return m_point3d; }
             set { m_point3d = value; }
         }
+        /// <summary>
+        /// State of the node wrt design space (either inside, outside or on bounary).
+        /// </summary>
         public LatticeNodeState State
         {
             get { return m_state; }
             set { m_state = value; }
         }
+        /// <summary>
+        /// Simplified state, as boolean.
+        /// </summary>
         public bool IsInside
         {
             get

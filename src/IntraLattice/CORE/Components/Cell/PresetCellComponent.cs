@@ -20,15 +20,15 @@ using IntraLattice.CORE.Data;
 
 namespace IntraLattice.CORE.Components
 {
-    public class PresetCell : GH_Component
+    public class PresetCellComponent : GH_Component
     {
         GH_Document GrasshopperDocument;
         IGH_Component Component;
 
         /// <summary>
-        /// Initializes a new instance of the PresetCell class.
+        /// Initializes a new instance of the PresetCellComponent class.
         /// </summary>
-        public PresetCell()
+        public PresetCellComponent()
             : base("PresetCell", "PresetCell",
                 "Built-in selection of unit cell topologies.",
                 "IntraLattice2", "Cell")
@@ -251,13 +251,13 @@ namespace IntraLattice.CORE.Components
                     break;
             }
 
-            // 5. Extract lines in a unit cell object and check validity.
+            // 5. Extract lines into UnitCell object and check validity.
             var cell = new UnitCell(lines);
             if (!cell.isValid)
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - this is embarassing.");
                 
-            // 8. Set output (LatticeCellGoo)
-            DA.SetData(0, new LatticeCellGoo(cell));            
+            // 6. Set output (as LatticeCellGoo)
+            DA.SetData(0, new UnitCellGoo(cell));            
         }
 
         /// <summary>
@@ -276,7 +276,19 @@ namespace IntraLattice.CORE.Components
         }
 
         /// <summary>
+        /// Sets the exposure of the component (i.e. the toolbar panel it is in)
+        /// </summary>
+        public override GH_Exposure Exposure
+        {
+            get
+            {
+                return GH_Exposure.primary;
+            }
+        }
+
+        /// <summary>
         /// Provides an Icon for the component.
+        /// Icons need to be 24x24 pixels.
         /// </summary>
         protected override System.Drawing.Bitmap Icon
         {
