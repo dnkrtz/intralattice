@@ -26,9 +26,10 @@ The complete algorithm is divided into the following modules.
   * [HeterogenCustom](./src/IntraLattice/CORE/Components/Mesh/HeterogenCustomComponent.cs) - Heterogeneous (custom strut radius)
 
 4. **UTILS** - Extra components for pre/post-processing.
-  * [AdjustUV](./src/IntraLattice/CORE/Components/Utility/AdjustUVComponent.cs) - Flip/Reverse UV-map of surface
-  * [MeshReport](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Inspection of mesh
-  * [MeshPreview](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Preview of mesh
+  * [AdjustUV](./src/IntraLattice/CORE/Components/Utility/AdjustUVComponent.cs) - Adjust UV-map of a surface.
+  * [CleanNetwork](./src/IntraLattice/CORE/Components/Utility/CleanNetworkComponent.cs) - Removes duplicate curves from a list of curves.
+  * [MeshReport](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Validate a mesh. (printability)
+  * [MeshPreview](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Preview a mesh.
 
 ## Core Data Layer
 Many of the relevant algorithms are encapsulated in the following classes. Among others, the instance methods include lattice mapping, morphing, incremental 3D convex hull, sleeve meshing and trimming.
