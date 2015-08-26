@@ -2,12 +2,13 @@
 
 Intralattice is a collection of generative CAD components for [Grasshopper](http://www.grasshopper3d.com/), used to generate solid lattice structures within a 3D design space. It was developed as an extensible, open-source alternative to current commercial solutions. As an ongoing project developed at McGill’s Additive Design & Manufacturing Laboratory (ADML), it has been a valuable research tool, serving as a platform for breakthroughs in multi-scale design and optimization. By giving you full access to the source, we hope to collectively explore lattice design at a deeper level, and consequently, engineer better products.
 
-
 Website & documentation - http://intralattice.com
+
+![alt tag](./docs/preview.png)
 
 ## Core Components
 
-The complete algorithm is divided into the following modules.
+The generative process is divided into the following modules.
 
 1. **CELL** - Defines a unit cell topology.
   * [PresetCell](./src/IntraLattice/CORE/Components/Cell/PresetCellComponent.cs) - Library of built-in unit cells
@@ -27,10 +28,10 @@ The complete algorithm is divided into the following modules.
   * [HeterogenCustom](./src/IntraLattice/CORE/Components/Mesh/HeterogenCustomComponent.cs) - Heterogeneous (custom strut radius)
 
 4. **UTILS** - Extra components for pre/post-processing.
-  * [AdjustUV](./src/IntraLattice/CORE/Components/Utility/AdjustUVComponent.cs) - Adjust UV-map of a surface.
-  * [CleanNetwork](./src/IntraLattice/CORE/Components/Utility/CleanNetworkComponent.cs) - Removes duplicate curves from a list of curves.
-  * [MeshReport](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Validate a mesh. (printability)
-  * [MeshPreview](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Preview a mesh.
+  * [AdjustUV](./src/IntraLattice/CORE/Components/Utility/AdjustUVComponent.cs) - Adjust UV-map of a surface
+  * [CleanNetwork](./src/IntraLattice/CORE/Components/Utility/CleanNetworkComponent.cs) - Removes duplicate curves from a list of curves
+  * [MeshReport](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Validate a mesh (printability)
+  * [MeshPreview](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Preview a mesh
 
 ## Core Data Layer
 Many of the relevant algorithms are encapsulated in the following classes. Among others, the instance methods include lattice mapping, morphing, incremental 3D convex hull, sleeve meshing and trimming.
