@@ -2,6 +2,7 @@
 
 Intralattice is a collection of generative CAD components for [Grasshopper](http://www.grasshopper3d.com/), used to generate solid lattice structures within a 3D design space. It was developed as an extensible, open-source alternative to current commercial solutions. As an ongoing project developed at McGill’s Additive Design & Manufacturing Laboratory (ADML), it has been a valuable research tool, serving as a platform for breakthroughs in multi-scale design and optimization. By giving you full access to the source, we hope to collectively explore lattice design at a deeper level, and consequently, engineer better products.
 
+
 Website & documentation - http://intralattice.com
 
 ## Core Components
