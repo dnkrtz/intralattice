@@ -34,10 +34,10 @@ The complete algorithm is divided into the following modules.
 ## Core Data Layer
 Many of the relevant algorithms are encapsulated in the following classes. Among others, the instance methods include lattice mapping, morphing, incremental 3D convex hull, sleeve meshing and trimming.
 
-  * [UnitCell](./src/IntraLattice/CORE/Data/UnitCell.cs) - Unit cell data object.
-  * [Lattice](./src/IntraLattice/CORE/Data/Lattice.cs) - Lattice wireframe data object, and its associated classes.
-  * [ExoMesh](./src/IntraLattice/CORE/Data/ExoMesh.cs) - Lattice mesh data object, and its associated classes.
-  * [EndoMesh](./src/IntraLattice/CORE/Data/EndoMesh.cs) - Coming soon.
+  * [UnitCell](./src/IntraLattice/CORE/Data/UnitCell.cs) - Unit cell data object
+  * [Lattice](./src/IntraLattice/CORE/Data/Lattice.cs) - Lattice wireframe data object, and its associated classes
+  * [ExoMesh](./src/IntraLattice/CORE/Data/ExoMesh.cs) - Lattice mesh data object, and its associated classes
+  * [EndoMesh](./src/IntraLattice/CORE/Data/EndoMesh.cs) - Coming soon
 
 ## Helper Layer
 We also have a set of static methods.
