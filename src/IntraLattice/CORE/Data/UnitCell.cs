@@ -53,13 +53,19 @@ namespace IntraLattice.CORE.Data
         /// </summary>
         public UnitCell Duplicate()
         {
-            UnitCell dup = new UnitCell();
+            var dup = new UnitCell();
             foreach (Point3d node in Nodes)
-                dup.m_nodes.Add(node);
+            {
+                dup.Nodes.Add(node);
+            }
             foreach (IndexPair nodePair in NodePairs)
-                dup.m_nodePairs.Add(nodePair);
+            {
+                dup.NodePairs.Add(nodePair);
+            }
             foreach (int[] nodePath in NodePaths)
-                dup.m_nodePaths = NodePaths;
+            {
+                dup.NodePaths.Add(new int[4] { nodePath[0], nodePath[1], nodePath[2], nodePath[3] });
+            }
             return dup;
         }
         #endregion
@@ -98,9 +104,13 @@ namespace IntraLattice.CORE.Data
             {
                 int flag = this.CheckValidity();
                 if (flag == 1)
+                {
                     return true;
+                }
                 else
+                {
                     return false;
+                }
             }
         }
         #endregion
@@ -129,7 +139,9 @@ namespace IntraLattice.CORE.Data
                     int closestIndex = this.Nodes.ClosestIndex(pt);  // find closest node to current pt
                     // If node already exists
                     if (this.Nodes.Count != 0 && this.Nodes[closestIndex].EpsilonEquals(pt, tol))
+                    {
                         nodeIndices.Add(closestIndex);
+                    }
                     // If it doesn't exist, add it
                     else
                     {
@@ -139,7 +151,7 @@ namespace IntraLattice.CORE.Data
                 }
 
                 IndexPair nodePair = new IndexPair(nodeIndices[0], nodeIndices[1]);
-                // if not duplicate strut, save it
+                // If not duplicate strut, save it
                 if (this.NodePairs.Count == 0 || !NodePairs.Contains(nodePair))
                 {
                     this.NodePairs.Add(nodePair);
@@ -197,7 +209,8 @@ namespace IntraLattice.CORE.Data
             zx[0] = new Plane(new Point3d(0, 0, 0), Plane.WorldXY.YAxis);
             zx[1] = new Plane(new Point3d(0, 1, 0), Plane.WorldXY.YAxis);
 
-            bool[] minCheck = new bool[3] { false, false, false };  // To make sure each pair of faces has a node lying onit
+            // To make sure each pair of faces has a node lying on it
+            bool[] minCheck = new bool[3] { false, false, false }; 
 
             // Loop through nodes
             foreach (Point3d node in this.Nodes)
@@ -229,17 +242,26 @@ namespace IntraLattice.CORE.Data
                     minCheck[2] = true;
                 }
                 if (Math.Abs(zx[1].DistanceTo(node)) < tol)
+                {
                     testPoint = new Point3d(node.X, zx[0].OriginY, node.Z);
+                }
 
                 // Now, check if the mirror node exists
                 if (testPoint != Point3d.Unset)
+                {
                     if (testPoint.DistanceTo(this.Nodes[this.Nodes.ClosestIndex(testPoint)]) > tol)
+                    {
                         return -1;
+                    }
+
+                }
             }
 
             // Finally, ensure that all faces have a node on it (only need to check 3 faces, since mirror condition ensures the others)
             if (minCheck[0] == false || minCheck[1] == false || minCheck[2] == false)
+            {
                 return 0;
+            }
 
             return 1;
         }
@@ -264,27 +286,48 @@ namespace IntraLattice.CORE.Data
                 // Check top plane first
                 if (Math.Abs(xy.DistanceTo(node)) < tol)
                 {
+                    // Node belongs to 1,1,1 neighbour
                     if (node.DistanceTo(new Point3d(1, 1, 1)) < tol)
-                        NodePaths.Add(new int[] { 1, 1, 1, Nodes.ClosestIndex(new Point3d(0, 0, 0)) });            // node belongs to 1,1,1 neighbour
+                    {
+                        NodePaths.Add(new int[] { 1, 1, 1, Nodes.ClosestIndex(new Point3d(0, 0, 0)) });
+                    }
+                    // Node belongs to 1,0,1 neighbour
                     else if (Math.Abs(node.X - 1) < tol && Math.Abs(node.Z - 1) < tol)
-                        NodePaths.Add(new int[] { 1, 0, 1, Nodes.ClosestIndex(new Point3d(0, node.Y, 0)) });       // node belongs to 1,0,1 neighbour
+                    {
+                        NodePaths.Add(new int[] { 1, 0, 1, Nodes.ClosestIndex(new Point3d(0, node.Y, 0)) });
+                    }
+                    // Node belongs to 0,1,1 neighbour
                     else if (Math.Abs(node.Y - 1) < tol && Math.Abs(node.Z - 1) < tol)
-                        NodePaths.Add(new int[] { 0, 1, 1, Nodes.ClosestIndex(new Point3d(node.X, 0, 0)) });       // node belongs to 0,1,1 neighbour
+                    {
+                        NodePaths.Add(new int[] { 0, 1, 1, Nodes.ClosestIndex(new Point3d(node.X, 0, 0)) });
+                    }
+                    // Node belongs to 0,0,1 neighbour
                     else
-                        NodePaths.Add(new int[] { 0, 0, 1, Nodes.ClosestIndex(new Point3d(node.X, node.Y, 0)) });  // node belongs to 0,0,1 neighbour
+                    {
+                        NodePaths.Add(new int[] { 0, 0, 1, Nodes.ClosestIndex(new Point3d(node.X, node.Y, 0)) });
+                    }
                 }
                 // Check yz boundary plane
                 else if (Math.Abs(yz.DistanceTo(node)) < tol)
                 {
+                    // Node belongs to 1,1,0 neighbour
                     if (Math.Abs(node.X - 1) < tol && Math.Abs(node.Y - 1) < tol)
-                        NodePaths.Add(new int[] { 1, 1, 0, Nodes.ClosestIndex(new Point3d(0, 0, node.Z)) });       // node belongs to 1,1,0 neighbour
+                    {
+                        NodePaths.Add(new int[] { 1, 1, 0, Nodes.ClosestIndex(new Point3d(0, 0, node.Z)) }); 
+                    }
+                    // Node belongs to 1,0,0 neighbour      
                     else
-                        NodePaths.Add(new int[] { 1, 0, 0, Nodes.ClosestIndex(new Point3d(0, node.Y, node.Z)) });  // node belongs to 1,0,0 neighbour
+                    {
+                        NodePaths.Add(new int[] { 1, 0, 0, Nodes.ClosestIndex(new Point3d(0, node.Y, node.Z)) }); 
+                    }
                 }
                 // Check last boundary plane
+                // Node belongs to 0,1,0 neighbour
                 else if (Math.Abs(zx.DistanceTo(node)) < tol)
-                    NodePaths.Add(new int[] { 0, 1, 0, Nodes.ClosestIndex(new Point3d(node.X, 0, node.Z)) });      // node belongs to 0,1,0 neighbour
-                // if not on those planes, the node belongs to the current cell
+                {
+                    NodePaths.Add(new int[] { 0, 1, 0, Nodes.ClosestIndex(new Point3d(node.X, 0, node.Z)) });
+                }
+                // If not on those planes, the node belongs to the current cell
                 else
                 {
                     NodePaths.Add(new int[] { 0, 0, 0, Nodes.IndexOf(node) });
@@ -304,7 +347,10 @@ namespace IntraLattice.CORE.Data
                 if (Math.Abs(yz.DistanceTo(node1)) < tol && Math.Abs(yz.DistanceTo(node2)) < tol) toRemove = true;
                 if (Math.Abs(zx.DistanceTo(node1)) < tol && Math.Abs(zx.DistanceTo(node2)) < tol) toRemove = true;
 
-                if (toRemove) strutsToRemove.Add(i);
+                if (toRemove)
+                {
+                    strutsToRemove.Add(i);
+                }
             }
             strutsToRemove.Reverse();
             foreach (int strutToRemove in strutsToRemove) this.NodePairs.RemoveAt(strutToRemove);

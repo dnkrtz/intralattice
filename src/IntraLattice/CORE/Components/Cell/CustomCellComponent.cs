@@ -67,7 +67,7 @@ namespace IntraLattice.CORE.Components
                 lines.Add(new Line(curve.PointAtStart, curve.PointAtEnd));
             }
     
-            // 3. Extract the topology into a UnitCell object.
+            // 3. Instantiate UnitCell object.
             UnitCell cell = new UnitCell(lines);
             
             // 4. CheckValidity instance method to check the unit cell. Use the return value to output useful error message.

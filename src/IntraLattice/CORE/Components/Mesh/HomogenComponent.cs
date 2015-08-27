@@ -97,9 +97,12 @@ namespace IntraLattice.CORE.MeshModule
             // B0. Loop over nodes
             for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
-                // if node has only 1 strut, skip it
-                if (exoMesh.Hulls[i].SleeveIndices.Count < 2) continue;
-                // compute the offsets required to avoid plate overlaps
+                // If node has only 1 strut, skip it
+                if (exoMesh.Hulls[i].SleeveIndices.Count < 2)
+                {
+                    continue;
+                }
+                // Compute the offsets required to avoid plate overlaps
                 bool success = exoMesh.ComputeOffsets(i, tol);
                 // To improve convex hull shape at 'sharp' nodes, we add an extra plate
                 exoMesh.FixSharpNodes(i, sides);

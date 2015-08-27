@@ -59,6 +59,8 @@ namespace IntraLattice.CORE.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
+            pManager.AddPointParameter("pt", "pt", "Strut curve network", GH_ParamAccess.list);
+            pManager.AddPointParameter("pt", "pt", "Strut curve network", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -141,10 +143,12 @@ namespace IntraLattice.CORE.Components
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
-                        var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
+                        // Construct cell path in tree
+                        GH_Path treePath = new GH_Path(u, v, w);
+                        // Fetch the list of nodes to append to, or initialise it
+                        var nodeList = lattice.Nodes.EnsurePath(treePath);      
 
-                        // this loop maps each node in the cell onto the UV-surface maps
+                        // This loop maps each node in the cell
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
                             double usub = cell.Nodes[i].X; // u-position within unit cell (local)
@@ -152,29 +156,57 @@ namespace IntraLattice.CORE.Components
                             double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
                             double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            // Check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
                             bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
 
                             if (isOutsideCell)
+                            {
                                 nodeList.Add(null);
+                            }
                             else
                             {
-                                // compute position vector
+                                // Compute position vector
                                 Vector3d V = uvw[0] * vectorU + uvw[1] * vectorV + uvw[2] * vectorW;
                                 var newNode = new LatticeNode(basePlane.Origin + V);
 
-                                // check if point is inside - use unstrict tolerance, meaning it can be outside the surface by the specified tolerance
+                                // Check if point is inside - use unstrict tolerance, meaning it can be outside the surface by the specified tolerance
                                 bool isInside = FrameTools.IsPointInside(designSpace, newNode.Point3d, spaceType, tol);
 
-                                // set the node state (it's location wrt the design space)
-                                if (isInside) newNode.State = LatticeNodeState.Inside;
-                                else newNode.State = LatticeNodeState.Outside;
+                                // Set the node state (it's location wrt the design space)
+                                if (isInside)
+                                {
+                                    newNode.State = LatticeNodeState.Inside;
+                                }
+                                else
+                                {
+                                    newNode.State = LatticeNodeState.Outside;
+                                }
 
-                                // add node to tree
+                                // Add node to tree
                                 nodeList.Add(newNode);
                             }
                         }
                     }
+                }
+            }
+
+            var inNodes = new List<Point3d>();
+            var outNodes = new List<Point3d>();
+            for (int i=0; i<lattice.Nodes.DataCount; i++)
+            {
+                var node = lattice.Nodes.AllData()[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (node.IsInside)
+                {
+                    inNodes.Add(new Point3d(node.Point3d));
+                }
+                else
+                {
+                    outNodes.Add(new Point3d(node.Point3d));
                 }
             }
 
@@ -183,6 +215,8 @@ namespace IntraLattice.CORE.Components
                 
             // 10. Set output
             DA.SetDataList(0, lattice.Struts);
+            DA.SetDataList(1, inNodes);
+            DA.SetDataList(2, outNodes);
         }
 
         /// <summary>

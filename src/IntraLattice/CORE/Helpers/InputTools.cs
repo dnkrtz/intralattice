@@ -22,18 +22,18 @@ namespace IntraLattice.CORE.Helpers
         /// <param name="offset">Vertical offset of the menu, to help with positioning.</param>
         public static void TopoSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
-            //instantiate  new value list
+            // Instantiate  new value list
             var vallist = new Grasshopper.Kernel.Special.GH_ValueList();
             vallist.ListMode = Grasshopper.Kernel.Special.GH_ValueListMode.Cycle;
             vallist.CreateAttributes();
 
-            //customise value list position
+            // Customise value list position
             float xCoord = (float)Component.Attributes.Pivot.X - 200;
             float yCoord = (float)Component.Attributes.Pivot.Y + index * 40 - offset;
             PointF cornerPt = new PointF(xCoord, yCoord);
             vallist.Attributes.Pivot = cornerPt;
 
-            //populate value list with our own data
+            // Populate value list with our own data
             vallist.ListItems.Clear();
             var items = new List<Grasshopper.Kernel.Special.GH_ValueListItem>();
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Grid", "0"));
@@ -62,18 +62,18 @@ namespace IntraLattice.CORE.Helpers
         /// <param name="offset">Vertical offset of the menu, to help with positioning.</param>
         public static void GradientSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
         {
-            //instantiate  new value list
+            // Instantiate  new value list
             var vallist = new Grasshopper.Kernel.Special.GH_ValueList();
             vallist.ListMode = Grasshopper.Kernel.Special.GH_ValueListMode.DropDown;
             vallist.CreateAttributes();
 
-            //customise value list position
+            // Customise value list position
             float xCoord = (float)Component.Attributes.Pivot.X - 200;
             float yCoord = (float)Component.Attributes.Pivot.Y + index * 40 - offset;
             PointF cornerPt = new PointF(xCoord, yCoord);
             vallist.Attributes.Pivot = cornerPt;
 
-            //populate value list with our own data
+            // Populate value list with our own data
             vallist.ListItems.Clear();
             var items = new List<Grasshopper.Kernel.Special.GH_ValueListItem>();
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Linear (X)", "0"));
@@ -93,7 +93,7 @@ namespace IntraLattice.CORE.Helpers
             // This command makes it 'real' and adds it to the canvas.
             GrasshopperDocument.AddObject(vallist, false);
 
-            //Connect the new slider to this component
+            // Connect the new slider to this component
             Component.Params.Input[index].AddSource(vallist);
             Component.Params.Input[index].CollectData();
         }

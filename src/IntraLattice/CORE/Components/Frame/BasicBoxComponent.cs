@@ -113,8 +113,10 @@ namespace IntraLattice.CORE.Components
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
-                        var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
+                        // Construct cell path in tree
+                        GH_Path treePath = new GH_Path(u, v, w);
+                        // Fetch the list of nodes to append to, or initialise it
+                        var nodeList = lattice.Nodes.EnsurePath(treePath);     
 
                         // This loop maps each node in the cell
                         for (int i = 0; i < cell.Nodes.Count; i++)
@@ -130,12 +132,17 @@ namespace IntraLattice.CORE.Components
                             bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
 
                             if (isOutsideCell || isOutsideSpace)
+                            {
                                 nodeList.Add(null);
+                            }
                             else
                             {
-                                Vector3d V = uvw[0] * vectorX + uvw[1] * vectorY + uvw[2] * vectorZ; // compute position vector
-                                var newNode = new LatticeNode(basePlane.Origin + V); // construct new node
-                                nodeList.Add(newNode); // add new node to tree
+                                // Compute position vector
+                                Vector3d V = uvw[0] * vectorX + uvw[1] * vectorY + uvw[2] * vectorZ;
+                                // Instantiate new node
+                                var newNode = new LatticeNode(basePlane.Origin + V);
+                                // Add new node to tree
+                                nodeList.Add(newNode);
                             }
                         }
                     }

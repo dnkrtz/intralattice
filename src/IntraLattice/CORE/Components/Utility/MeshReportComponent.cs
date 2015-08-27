@@ -58,7 +58,9 @@ namespace IntraLattice.CORE.UtilityModule
             // 3. Check - naked edges
             report = "- Details -\n";
             if (mesh.GetNakedEdges() == null)
+            {
                 report += "Mesh has 0 naked edges. \n";
+            }
             else
             {
                 report += String.Format("Mesh has {0} naked edges. \n", mesh.GetNakedEdges().Length);
@@ -67,7 +69,9 @@ namespace IntraLattice.CORE.UtilityModule
 
             // 4. Check - manifoldness
             if (mesh.IsManifold(true, out isOriented, out hasBoundary))
+            {
                 report += "Mesh is manifold. \n";
+            }
             else
             {
                 report += "Mesh is non-manifold. \n";
@@ -75,7 +79,10 @@ namespace IntraLattice.CORE.UtilityModule
             }
 
             // 5. Check - mesh orientation
-            if (mesh.SolidOrientation() == 1) report += "Mesh is solid. \n";
+            if (mesh.SolidOrientation() == 1)
+            {
+                report += "Mesh is solid. \n";
+            }
             else if (mesh.SolidOrientation() == 0)
             {
                 report += "Mesh is not solid. \n";
@@ -90,12 +97,18 @@ namespace IntraLattice.CORE.UtilityModule
 
             // 6. Finally, summarize these results
             if (isValid)
+            {
                 report = "Mesh is VALID.\n\n" + report;
+            }
             else
+            {
                 report = "Mesh is INVALID.\n\n" + report;
+            }
+
+            // 7. Add title
             report = "- Overview -\n" + report;
 
-            // 7. Output report
+            // 8. Output report
             DA.SetData(0, report);
         }
 

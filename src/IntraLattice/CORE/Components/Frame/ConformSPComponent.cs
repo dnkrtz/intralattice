@@ -108,10 +108,12 @@ namespace IntraLattice.CORE.Components
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
-                        var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
+                        // Construct cell path in tree
+                        GH_Path treePath = new GH_Path(u, v, w);
+                        // Fetch the list of nodes to append to, or initialise it
+                        var nodeList = lattice.Nodes.EnsurePath(treePath); 
 
-                        // this loop maps each node in the cell onto the UV-surface map and axis (U)
+                        // This loop maps each node in the cell onto the UV-surface map
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
                             double usub = cell.Nodes[i].X; // u-position within unit cell (local)
@@ -119,28 +121,33 @@ namespace IntraLattice.CORE.Components
                             double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
                             double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            // Check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
                             bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
-                            // check if current uvw-position is beyond the upper boundary
+                            // Check if current uvw-position is beyond the upper boundary
                             bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
 
                             if (isOutsideCell || isOutsideSpace)
+                            {
                                 nodeList.Add(null);
+                            }
                             else
                             {
-                                // evaluate the point on the axis
-                                Point3d pt1 = pt;
-                                Point3d pt2; Vector3d[] derivatives; // initialize for surface 2
-
-                                // evaluate point and its derivatives on the surface
+                                Point3d pt1;
+                                // Initialize for surface 2
+                                Point3d pt2; Vector3d[] derivatives;
+                                
+                                // Set pt1 (on point)
+                                pt1 = pt;
+                                // Compute pt2 (on surface)
                                 surface.Evaluate(uvw[0] / N[0], uvw[1] / N[1], 2, out pt2, out derivatives);
 
-                                // create vector joining the two points (this is our w-range)
+                                // Create vector joining the two points (this is our w-range)
                                 Vector3d wVect = pt2 - pt1;
 
-                                // create the node, accounting for the position along the w-direction
+                                // Create the node, accounting for the position along the w-direction
                                 var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]);
-                                nodeList.Add(newNode); // add node to tree
+                                // Add node to tree
+                                nodeList.Add(newNode);
                             }
 
                         }
@@ -150,11 +157,14 @@ namespace IntraLattice.CORE.Components
                     if (morphed && u < N[0] && v < N[1])
                     {
                         GH_Path spacePath = new GH_Path(u, v);
-                        var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);           // set trimming interval
+                        // Set trimming interval
+                        var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);
                         var vInterval = new Interval((v) / N[1], (v + 1) / N[1]);
-                        Surface ss1 = surface.Trim(uInterval, vInterval);                   // create sub-surface
-                        Point ss2 = new Point(pt);                                          // point never changes
-                        ss1.SetDomain(0, unitDomain); ss1.SetDomain(1, unitDomain);         // normalize domain
+                        // Create sub-surface and point (never changes)
+                        Surface ss1 = surface.Trim(uInterval, vInterval);
+                        Point ss2 = new Point(pt);
+                        // Unitize domain
+                        ss1.SetDomain(0, unitDomain); ss1.SetDomain(1, unitDomain);
                         // Save to the space tree
                         spaceTree.Add(ss1, spacePath);
                         spaceTree.Add(ss2, spacePath);
