@@ -161,6 +161,54 @@
   <ItemGroup>
     <None Include="Resources\presetGradient Obj_Base.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\basicBox.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSA.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSP.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\customCell.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\heterogenGradient.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\homogen.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\meshPreview.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\meshReport.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\presetCell.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\presetGradient.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uniformDS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uvAdjust.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\basicCylinder.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cleanNetwork.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\adjustUV.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

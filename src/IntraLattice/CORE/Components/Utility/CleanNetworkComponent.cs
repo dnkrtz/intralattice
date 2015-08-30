@@ -4,6 +4,8 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using IntraLattice.CORE.Helpers;
 using IntraLattice.Properties;
+using Rhino.Collections;
+using Rhino;
 
 // Summary:     This component cleans a curve network.
 // ===============================================================================
@@ -39,7 +41,10 @@ namespace IntraLattice.CORE.Components.Utility
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddCurveParameter("Struts", "Struts", "Cleaned strut network.", GH_ParamAccess.list);
+            pManager.AddCurveParameter("Struts", "Struts", "Cleaned curve network.", GH_ParamAccess.list);
+            pManager.AddPointParameter("Nodes", "Nodes", "List of unique nodes.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("CurveStart", "I", "Index in 'Nodes' for the start of each curve in 'Struts'.", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("CurveEnd", "J", "Index in 'Nodes' for the end of each curve in 'Struts'.", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -59,10 +64,24 @@ namespace IntraLattice.CORE.Components.Utility
             if (tol < 0) { return; }
 
             // 4. Call cleaning method
-            struts = FrameTools.CleanNetwork(struts, tol);
+            var nodes = new Point3dList();
+            var nodePairs = new List<IndexPair>();
+            struts = FrameTools.CleanNetwork(struts, tol, out nodes, out nodePairs);
 
-            // 5. Set output
+            // 5. Organize index lists
+            var strutStart = new List<int>();
+            var strutEnd = new List<int>();
+            foreach (IndexPair nodePair in nodePairs)
+            {
+                strutStart.Add(nodePair.I);
+                strutEnd.Add(nodePair.J);
+            }
+
+            // 6. Set output
             DA.SetDataList(0, struts);
+            DA.SetDataList(1, nodes);
+            DA.SetDataList(2, strutStart);
+            DA.SetDataList(3, strutEnd);
 
         }
 

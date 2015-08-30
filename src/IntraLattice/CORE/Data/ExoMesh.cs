@@ -261,7 +261,7 @@ namespace IntraLattice.CORE.Data
             if (isSharp)
             {
                 // Plane offset from node slightly
-                Plane plane = new Plane(node.Point3d - extraNormal * node.AvgRadius / 3, -extraNormal);
+                Plane plane = new Plane(node.Point3d - extraNormal * node.AvgRadius / node.PlateIndices.Count, -extraNormal);
                 // Compute the vertices
                 List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, node.AvgRadius, 0); 
                 // Add new plate and its vertices

@@ -63,6 +63,16 @@ namespace IntraLattice.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap adjustUV {
+            get {
+                object obj = ResourceManager.GetObject("adjustUV", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap basicBox {
             get {
                 object obj = ResourceManager.GetObject("basicBox", resourceCulture);
@@ -206,16 +216,6 @@ namespace IntraLattice.Properties {
         internal static System.Drawing.Bitmap uniformDS {
             get {
                 object obj = ResourceManager.GetObject("uniformDS", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap uvAdjust {
-            get {
-                object obj = ResourceManager.GetObject("uvAdjust", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
