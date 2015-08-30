@@ -5,6 +5,7 @@ using Rhino.Geometry;
 using System.Drawing;
 using Rhino;
 using IntraLattice.CORE.Data;
+using IntraLattice.Properties;
 
 // Summary:     This component processes/verifies user-defined unit cells, and outputs a valid unit cell
 // ===============================================================================
@@ -109,8 +110,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
+                return Resources.customCell;
             }
         }
 

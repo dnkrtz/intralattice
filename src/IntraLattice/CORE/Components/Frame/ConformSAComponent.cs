@@ -211,8 +211,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 // You can add image files to your project resources and access them like this:
-                //return Resources.circle3;
-                return null;
+                return Resources.conformSA;
             }
         }
 

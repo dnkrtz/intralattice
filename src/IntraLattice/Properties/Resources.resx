@@ -118,7 +118,52 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="cyl" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\cyl.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="basicBox" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\basicBox.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="basicCylinder" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\basicCylinder.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="cleanNetwork" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\cleanNetwork.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="conformSA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\conformSA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="conformSP" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\conformSP.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="conformSS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\conformSS.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="customCell" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\customCell.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="heterogenCustom" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\heterogenCustom.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="heterogenGradient" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\heterogenGradient.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="homogen" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\homogen.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="meshPreview" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\meshPreview.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="meshReport" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\meshReport.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="presetCell" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\presetCell.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="presetGradient" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\presetGradient.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="uniformDS" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\uniformDS.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="uvAdjust" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\uvAdjust.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

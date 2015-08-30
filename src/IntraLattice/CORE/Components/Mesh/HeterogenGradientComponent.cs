@@ -10,6 +10,7 @@ using Rhino.Collections;
 using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
+using IntraLattice.Properties;
 
 // Summary:     This component generates a solid mesh of a curve network, with gradient strut radii.
 //              Inspired by Exoskeleton (by David Stasiuk).
@@ -78,7 +79,7 @@ namespace IntraLattice.CORE.MeshModule
             int sides = 6;  // Number of sides on each strut
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
-            // 5. Initialize lattice object
+            // 5. Instantiate ExoMesh object
             // This constructor cleans the curve network (removes duplicates), and formats it as an ExoMesh.
             ExoMesh exoMesh = new ExoMesh(struts);
 
@@ -211,7 +212,7 @@ namespace IntraLattice.CORE.MeshModule
         {
             get
             {
-                return null;
+                return Resources.heterogenGradient;
             }
         }
 

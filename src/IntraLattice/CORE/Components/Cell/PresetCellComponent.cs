@@ -229,7 +229,7 @@ namespace IntraLattice.CORE.Components
             var nodes = new List<Point3d>();
 
             // Generate nodes
-            makeCornerNodes(ref nodes, d);          
+            CellTools.MakeCornerNodes(ref nodes, d);          
             nodes.Add(new Point3d(d / 4, d / 4, d / 4));
             nodes.Add(new Point3d(3 * d / 4, d / 4, d / 4));
             nodes.Add(new Point3d(3 * d / 4, 3 * d / 4, d / 4));
@@ -408,8 +408,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 //You can add image files to your project resources and access them like this:
-                //return Resources.atom;
-                return null;
+                return Resources.presetCell;
             }
         }
 

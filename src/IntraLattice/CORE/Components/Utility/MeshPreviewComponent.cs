@@ -83,7 +83,7 @@ namespace IntraLattice.CORE.UtilityModule
         {
             get
             {
-                return GH_Exposure.secondary;
+                return GH_Exposure.tertiary;
             }
         }
 
@@ -95,9 +95,7 @@ namespace IntraLattice.CORE.UtilityModule
         {
             get
             {
-                // You can add image files to your project resources and access them like this:
-                //return Resources.elec;
-                return null;
+                return Resources.meshPreview;
             }
         }
 

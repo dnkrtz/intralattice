@@ -159,7 +159,10 @@ namespace IntraLattice.CORE.Components
                             // Check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
                             bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
 
-                            if (isOutsideCell)
+                            // Check if current uvw-position is beyond the upper boundary
+                            bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
+
+                            if (isOutsideCell || isOutsideSpace)
                             {
                                 nodeList.Add(null);
                             }
@@ -190,33 +193,11 @@ namespace IntraLattice.CORE.Components
                 }
             }
 
-            var inNodes = new List<Point3d>();
-            var outNodes = new List<Point3d>();
-            for (int i=0; i<lattice.Nodes.DataCount; i++)
-            {
-                var node = lattice.Nodes.AllData()[i];
-                if (node == null)
-                {
-                    continue;
-                }
-
-                if (node.IsInside)
-                {
-                    inNodes.Add(new Point3d(node.Point3d));
-                }
-                else
-                {
-                    outNodes.Add(new Point3d(node.Point3d));
-                }
-            }
-
             // 9. Map struts to the node tree
             lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
                 
             // 10. Set output
             DA.SetDataList(0, lattice.Struts);
-            DA.SetDataList(1, inNodes);
-            DA.SetDataList(2, outNodes);
         }
 
         /// <summary>
@@ -239,8 +220,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 //You can add image files to your project resources and access them like this:
-                //return Resources.checkd;
-                return null;
+                return Resources.uniformDS;
             }
         }
 

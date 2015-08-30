@@ -213,7 +213,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 // You can add image files to your project resources and access them like this:
-                return Resources.cyl;
+                return Resources.basicCylinder;
             }
         }
 
