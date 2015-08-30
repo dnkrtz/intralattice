@@ -21,7 +21,7 @@ namespace IntraLattice.CORE.Components.Utility
         public AdjustUVComponent()
             : base("Adjust UV", "AdjustUV",
                 "Adjusts the UV-map of a surface for proper alignment with other surfaces/axes.",
-                "Intralattice2", "Utils")
+                "Intralattice", "Utils")
         {
         }
 

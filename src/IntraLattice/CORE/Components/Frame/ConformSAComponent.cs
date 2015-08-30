@@ -31,7 +31,7 @@ namespace IntraLattice.CORE.Components
         public ConformSAComponent()
             : base("Conform Surface-Axis", "ConformSA",
                 "Generates a conforming lattice between a surface and an axis.",
-                "IntraLattice2", "Frame")
+                "IntraLattice", "Frame")
         {
         }
 

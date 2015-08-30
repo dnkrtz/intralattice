@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.MeshModule
         public HomogenComponent()
             : base("Homogen","Homogen",
                 "Homogeneous solidification of lattice wireframe",
-                "IntraLattice2", "Mesh")
+                "IntraLattice", "Mesh")
         {
         }
 

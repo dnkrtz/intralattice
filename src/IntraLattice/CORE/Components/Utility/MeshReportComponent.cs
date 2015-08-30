@@ -24,7 +24,7 @@ namespace IntraLattice.CORE.UtilityModule
         public MeshReportComponent()
             : base("Mesh Report", "MeshReport",
                 "Verifies that the mesh represents a solid, and returns a comprehensive report.",
-                "IntraLattice2", "Utils")
+                "IntraLattice", "Utils")
         {
         }
 

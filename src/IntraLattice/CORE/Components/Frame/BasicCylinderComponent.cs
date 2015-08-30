@@ -26,7 +26,7 @@ namespace IntraLattice.CORE.Components
         public BasicCylinderComponent()
             : base("Basic Cylinder", "BasicCylinder",
                 "Generates a conformal lattice cylinder.",
-                "IntraLattice2", "Frame")
+                "IntraLattice", "Frame")
         {
         }
 

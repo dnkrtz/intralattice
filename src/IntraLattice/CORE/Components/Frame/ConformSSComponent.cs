@@ -29,7 +29,7 @@ namespace IntraLattice.CORE.Components
         public ConformSSComponent()
             : base("Conform Surface-Surface", "ConformSS",
                 "Generates a conforming lattice between two surfaces.",
-                "IntraLattice2", "Frame")
+                "IntraLattice", "Frame")
         {
         }
 

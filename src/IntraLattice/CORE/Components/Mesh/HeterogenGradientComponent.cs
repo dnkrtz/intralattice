@@ -29,7 +29,7 @@ namespace IntraLattice.CORE.MeshModule
         public HeterogenGradientComponent()
             : base("Heterogen Gradient", "HeterogenGradient",
                 "Heterogeneous solidification (thickness gradient) of lattice wireframe",
-                "IntraLattice2", "Mesh")
+                "IntraLattice", "Mesh")
         {
         }
 
