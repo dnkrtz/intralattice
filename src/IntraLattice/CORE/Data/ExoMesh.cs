@@ -57,7 +57,10 @@ namespace IntraLattice.CORE.Data
 
             // Set hull locations
             foreach (Point3d node in nodeList)
+            {
                 m_hulls.Add(new ExoHull(node));
+            }
+               
 
             // Create sleeves, plates and relational indices
             for (int i = 0; i < struts.Count; i++)
@@ -127,7 +130,8 @@ namespace IntraLattice.CORE.Data
 
             List<Curve> paths = new List<Curve>();
             List<double> radii = new List<double>();
-            List<double> offsets = new List<double>();  // parameter offset (path domains are unitized)
+            // Parameter offset (path domains are unitized)
+            List<double> offsets = new List<double>();
 
             // Prepare all struts and initialize offsets
             foreach (int strutIndex in node.SleeveIndices)
@@ -136,7 +140,8 @@ namespace IntraLattice.CORE.Data
                 // If curve doesn't start at this node, reverse the curve and save end radius
                 if (curve.PointAtEnd.EpsilonEquals(node.Point3d, 100 * tol))
                 {
-                    curve.Reverse(); // reverse direction of curve to start at this node
+                    // Reverse direction of curve to start at this node
+                    curve.Reverse(); 
                     curve.Domain = new Interval(0, 1);
                     radii.Add(Sleeves[strutIndex].EndRadius);
                 }
@@ -157,7 +162,9 @@ namespace IntraLattice.CORE.Data
             // Compute avg radius at the node (mainly used for sharp node extra plate)
             double sumRadii = 0;
             foreach (double radius in radii)
+            {
                 sumRadii += radius;
+            }
             node.AvgRadius = sumRadii / radii.Count;
 
             bool convexFound = false;
@@ -169,7 +176,7 @@ namespace IntraLattice.CORE.Data
             // - Hulls won't engulf any of the plate points (all points must lie ON the convex hull)
             while (!convexFound && iteration < 500)
             {
-                // Prepare list of circles
+                // Prepare list of circles representing plates
                 List<Circle> circles = new List<Circle>();
                 for (int i = 0; i < paths.Count; i++)
                 {
@@ -178,8 +185,8 @@ namespace IntraLattice.CORE.Data
                     circles.Add(new Circle(plane, radii[i]));
                 }
 
-                // Loop over all pairs of struts
                 travel = new bool[paths.Count];
+                // Loop over all pairs of struts
                 for (int a = 0; a < paths.Count; a++)
                 {
                     for (int b = a + 1; b < paths.Count; b++)
@@ -187,14 +194,20 @@ namespace IntraLattice.CORE.Data
                         double p1, p2;
                         var intAB = Intersection.PlaneCircle(circles[a].Plane, circles[b], out p1, out p2);
                         var intBA = Intersection.PlaneCircle(circles[b].Plane, circles[a], out p1, out p2);
+                        // If a planeA intersects circleB, we need to increment offset on pathA
                         if (intAB == PlaneCircleIntersection.Secant || intAB == PlaneCircleIntersection.Tangent)
+                        {
                             travel[a] = true;
+                        }
+                        // If a planeB intersects circleA, we need to increment offset on pathB
                         if (intBA == PlaneCircleIntersection.Secant || intBA == PlaneCircleIntersection.Tangent)
+                        {
                             travel[b] = true;
+                        }
                     }
                 }
 
-                // Increase offset of plates that intersected, if no intersections, we have a suitable convex layout
+                // Increment offset of plates that intersected, if no intersections, we have a suitable convex layout
                 convexFound = true;
                 for (int i = 0; i < paths.Count; i++)
                 {
@@ -208,6 +221,7 @@ namespace IntraLattice.CORE.Data
                 iteration++;
             }
 
+            // Save the final offsets
             for (int i = 0; i < paths.Count; i++)
             {
                 int plateIndex = node.PlateIndices[i];
@@ -223,25 +237,33 @@ namespace IntraLattice.CORE.Data
         /// <param name="sides"> Number of sides on the sleeve meshes. </param>
         public void FixSharpNodes(int nodeIndex, int sides)
         {
-            ExoHull node = Hulls[nodeIndex];
+            ExoHull node = this.Hulls[nodeIndex];
 
             // The extra plate is in the direction of the negative sum of all normals
-            // We use the new plate normal to check if the node struts are contained within a 180deg peripheral (i.e. the node is 'sharp')
+            // We use the new plate normal to check if the node struts are contained
+            // within a 180deg peripheral (i.e. the node is 'sharp')
             bool isSharp = true;
-            Vector3d extraNormal = new Vector3d();  // sum of all normals
+            // Sum of all normals
+            Vector3d extraNormal = new Vector3d(); 
             foreach (int plateIndex in node.PlateIndices)
+            {
                 extraNormal += this.Plates[plateIndex].Normal;
+            }
             foreach (int plateIndex in node.PlateIndices)
+            {
                 if (Vector3d.VectorAngle(-extraNormal, this.Plates[plateIndex].Normal) < Math.PI / 2)
+                {
                     isSharp = false;
+                }
+            }
 
             //  If struts form a sharp corner, add an extra plate for a better convex hull shape
             if (isSharp)
             {
-
                 // Plane offset from node slightly
-                Plane plane = new Plane(node.Point3d - extraNormal * node.AvgRadius / 3, -extraNormal);
-                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, node.AvgRadius, 0);    // compute the vertices
+                Plane plane = new Plane(node.Point3d - extraNormal * node.AvgRadius / node.PlateIndices.Count, -extraNormal);
+                // Compute the vertices
+                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, node.AvgRadius, 0); 
                 // Add new plate and its vertices
                 this.Plates.Add(new ExoPlate(nodeIndex, -extraNormal));
                 int newPlateIndx = this.Plates.Count - 1;
@@ -262,8 +284,10 @@ namespace IntraLattice.CORE.Data
         {
             Mesh sleeveMesh = new Mesh();
             ExoSleeve strut = this.Sleeves[strutIndex];
-            ExoPlate startPlate = this.Plates[strut.PlatePair.I];   // plate for the start of the strut
+            // Plate for the start/end of the sleeve
+            ExoPlate startPlate = this.Plates[strut.PlatePair.I]; 
             ExoPlate endPlate = this.Plates[strut.PlatePair.J];
+            // Param at the start/end of the sleeve
             double startParam, endParam;
             startParam = startPlate.Offset;
             endParam = 1 - endPlate.Offset;
@@ -296,10 +320,13 @@ namespace IntraLattice.CORE.Data
                     Point3d knucklePt = strut.Curve.PointAt(locParameter);
                     strut.Curve.PerpendicularFrameAt(locParameter, out plane);
                 }
-                double R = strut.StartRadius - j * (strut.StartRadius - strut.EndRadius)/ (double)divisions; //variable radius
-                double startAngle = j * Math.PI / sides; // this twists the plate points along the strut, for triangulation
+                // Compute varriable radius
+                double R = strut.StartRadius - j * (strut.StartRadius - strut.EndRadius)/ (double)divisions;
+                // This angle twists the plate points along the strut, for triangulation
+                double startAngle = j * Math.PI / sides;
 
-                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, R, startAngle);    // compute the vertices
+                // Compute the vertices
+                List<Point3d> Vtc = MeshTools.CreateKnuckle(plane, sides, R, startAngle);
 
                 // If the vertices are hull points (plates that connect sleeves to node hulls), save them
                 if (j == 0) startPlate.Vtc.AddRange(Vtc);
@@ -347,7 +374,10 @@ namespace IntraLattice.CORE.Data
 
             // Collect all hull points (i.e. all plate points at the node)
             List<Point3d> pts = new List<Point3d>();
-            foreach (int pIndex in node.PlateIndices) pts.AddRange(this.Plates[pIndex].Vtc);
+            foreach (int pIndex in node.PlateIndices)
+            {
+                pts.AddRange(this.Plates[pIndex].Vtc);
+            }
 
             // 1. Create initial tetrahedron.
             // Form triangle from 3 first points (lie on same plate, thus, same plane)
@@ -358,7 +388,9 @@ namespace IntraLattice.CORE.Data
             // Form tetrahedron with a 4th point which does not lie on the same plane
             int nextIndex = sides + 1;
             while (Math.Abs(planeStart.DistanceTo(pts[nextIndex])) < planeTolerance)
+            {
                 nextIndex++;
+            }
             hullMesh.Vertices.Add(pts[nextIndex]);
             // Stitch faces of tetrahedron
             hullMesh.Faces.AddFace(0, 2, 1);
@@ -383,7 +415,10 @@ namespace IntraLattice.CORE.Data
                     Vector3d testVect = pts[i] - hullMesh.Faces.GetFaceCenter(faceIndex);
                     double angle = Vector3d.VectorAngle(hullMesh.FaceNormals[faceIndex], testVect);
                     Plane planeTest = new Plane(hullMesh.Faces.GetFaceCenter(faceIndex), hullMesh.FaceNormals[faceIndex]);
-                    if (angle < Math.PI * 0.5 || Math.Abs(planeTest.DistanceTo(pts[i])) < planeTolerance) { seenFaces.Add(faceIndex); }
+                    if (angle < Math.PI * 0.5 || Math.Abs(planeTest.DistanceTo(pts[i])) < planeTolerance) 
+                    {
+                        seenFaces.Add(faceIndex);
+                    }
                 }
 
                 // Remove visible faces
@@ -416,28 +451,40 @@ namespace IntraLattice.CORE.Data
                 foreach (int plateIndx in node.PlateIndices)
                 {
                     List<Point3f> plateVtc = MeshTools.Point3dToPoint3f(this.Plates[plateIndx].Vtc);
-                    // recall that strut plates have 'sides+1' vertices.
-                    // if the plate has only 'sides' vertices, it is an extra plate (for acute nodes), so we should keep it
-                    if (plateVtc.Count < sides + 1) continue;
+                    // Recall that strut plates have 'sides+1' vertices.
+                    // If the plate has only 'sides' vertices, it is an extra plate (for acute nodes), so we should keep it
+                    if (plateVtc.Count < sides + 1)
+                    {
+                        continue;
+                    }
 
                     for (int j = 0; j < hullMesh.Faces.Count; j++)
                     {
                         Point3f ptA, ptB, ptC, ptD;
                         hullMesh.Faces.GetFaceVertices(j, out ptA, out ptB, out ptC, out ptD);
 
-                        // check if the mesh face has vertices that belong to a single plate, if so we need to remove the face
+                        // Check if the mesh face has vertices that belong to a single plate, if so we need to remove the face
                         int matches = 0;
                         foreach (Point3f testPt in plateVtc)
+                        {
                             if (testPt.EpsilonEquals(ptA, (float)tol) || testPt.EpsilonEquals(ptB, (float)tol) || testPt.EpsilonEquals(ptC, (float)tol))
+                            {
                                 matches++;
-                        // if all three face vertices are plate vertices, we should remove the face
+                            }
+                        }
+                        // If all three face vertices are plate vertices, we should remove the face
                         if (matches == 3)
+                        {
                             deleteFaces.Add(j);
+                        }
                     }
                 }
                 // Remove the faces. Reverse the list so that it is in decreasing order.
                 deleteFaces.Reverse();
-                foreach (int faceIndx in deleteFaces) hullMesh.Faces.RemoveAt(faceIndx);
+                foreach (int faceIndx in deleteFaces)
+                {
+                    hullMesh.Faces.RemoveAt(faceIndx);
+                }
             }
             return hullMesh;
         }
@@ -451,11 +498,16 @@ namespace IntraLattice.CORE.Data
             Mesh endMesh = new Mesh();
             // Set vertices
             foreach (Point3d platePoint in this.Plates[this.Hulls[nodeIndex].PlateIndices[0]].Vtc)
+            {
                 endMesh.Vertices.Add(platePoint);
+            }
             // Stitch faces
             for (int i = 1; i < sides; i++)
+            {
                 endMesh.Faces.AddFace(0, i, i + 1);
-            endMesh.Faces.AddFace(0, sides, 1); // last face wraps
+            }
+            // Last face wraps
+            endMesh.Faces.AddFace(0, sides, 1);
 
             return endMesh;
         }
@@ -670,7 +722,7 @@ namespace IntraLattice.CORE.Data
 
         #region Properties
         /// <summary>
-        /// The offset from the hull's center point (lattice node).
+        /// The offset from the hull's center point (PARAMETER offset for strut with unitized domain).
         /// </summary>
         public double Offset
         {

@@ -95,24 +95,26 @@ namespace IntraLattice.CORE.Data
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        // we're inside a unit cell
-                        // loop through all pairs of nodes that make up struts
+                        // We're inside a unit cell
+                        // Loop through all pairs of nodes that make up struts
                         foreach (IndexPair nodePair in cell.NodePairs)
                         {
-                            // prepare the path of the nodes (path in tree)
-                            int[] IRel = cell.NodePaths[nodePair.I];  // relative path of nodes (with respect to current unit cell)
+                            // Prepare the path of the nodes (path in tree)
+                            // First, get relative paths of nodes (with respect to current unit cell)
+                            int[] IRel = cell.NodePaths[nodePair.I];
                             int[] JRel = cell.NodePaths[nodePair.J];
-                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2]); // absolute path
+                            // Next, compute absolute paths
+                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2]);
                             GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2]);
 
-                            // make sure the cell exists
-                            // no cells exist beyond the boundary + 1
+                            // Make sure the cell exists
+                            // No cells exist beyond the boundary + 1
                             if (Nodes.PathExists(IPath) && Nodes.PathExists(JPath))
                             {
                                 LatticeNode node1 = Nodes[IPath, IRel[3]];
                                 LatticeNode node2 = Nodes[JPath, JRel[3]];
-                                // make sure both nodes exist:
-                                // null nodes either belong to other cells, or are beyond the upper uvw boundary
+                                // Make sure both nodes exist:
+                                // Null nodes either belong to other cells, or are beyond the upper uvw boundary
                                 if (node1 != null && node2 != null)
                                 {
                                     LineCurve curve = new LineCurve(node1.Point3d, node2.Point3d);
@@ -139,74 +141,96 @@ namespace IntraLattice.CORE.Data
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        // we're inside a unit cell
-                        // loop through all pairs of nodes that make up struts
+                        // We're inside a unit cell
+                        // Loop through all pairs of nodes that make up struts
                         foreach (IndexPair nodePair in cell.NodePairs)
                         {
-                            // prepare the path of the nodes (path in tree)
-                            int[] IRel = cell.NodePaths[nodePair.I];  // relative path of nodes (with respect to current unit cell)
+                            // Prepare the path of the nodes (path in tree)
+                            // First, get relative paths of nodes (with respect to current unit cell)
+                            int[] IRel = cell.NodePaths[nodePair.I];
                             int[] JRel = cell.NodePaths[nodePair.J];
-                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2]); // absolute path
+                            // Next, compute absolute paths
+                            GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2]);
                             GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2]);
 
-                            // make sure the cell exists
-                            // no cells exist beyond the boundary + 1
+                            // Make sure the cell exists
+                            // No cells exist beyond the boundary + 1
                             if (Nodes.PathExists(IPath) && Nodes.PathExists(JPath))
                             {
                                 LatticeNode node1 = Nodes[IPath, IRel[3]];
                                 LatticeNode node2 = Nodes[JPath, JRel[3]];
-                                // make sure both nodes exist:
-                                // null nodes either belong to other cells, or are beyond the upper uvw boundary
+                                // Make sure both nodes exist:
+                                // Null nodes either belong to other cells, or are beyond the upper uvw boundary.
                                 if (node1 != null && node2 != null)
                                 {
                                     GH_Path spacePath;
 
-                                    // If strut is along boundary, we must use the previous morph space (since one does not exist beyond the boundary) 
+                                    // If strut is along boundary, we must use the previous morph space 
+                                    // Since one does not exist beyond the boundary) 
                                     if (u == N[0] && v == N[1])
+                                    {
                                         spacePath = new GH_Path(u - 1, v - 1);
+                                    }
                                     else if (u == N[0])
+                                    {
                                         spacePath = new GH_Path(u - 1, v);
+                                    }
                                     else if (v == N[1])
+                                    {
                                         spacePath = new GH_Path(u, v - 1);
+                                    }                                        
                                     else
+                                    {
                                         spacePath = new GH_Path(u, v);
+                                    }
 
-                                    GeometryBase ss1 = spaceTree[spacePath, 0]; // retrieve uv cell space (will be casted in the tempPt loop)
+                                    // Retrieve uv cell space (will be casted in the tempPt loop)
+                                    GeometryBase ss1 = spaceTree[spacePath, 0];
                                     GeometryBase ss2 = spaceTree[spacePath, 1];
 
                                     // Discretize the unit cell line for morph mapping
                                     int ptCount = 16;
-                                    var templatePts = new List<Point3d>();   // unitized cell points (x,y of these points are u,v of sub-surface)
+                                    // Template points are unitized cell points (x,y of these points are u,v of sub-surface)
+                                    var templatePts = new List<Point3d>();  
                                     Line templateLine = new Line(cell.Nodes[nodePair.I], cell.Nodes[nodePair.J]);
                                     for (int ptIndex = 0; ptIndex <= ptCount; ptIndex++)
+                                    {
                                         templatePts.Add(templateLine.PointAt(ptIndex / (double)ptCount));
+                                    }
 
                                     // We will map the lines' points to its uvw cell-space
-                                    var controlPoints = new List<Point3d>();    // interpolation points in space
+                                    // Control points are the interpolation points in space
+                                    var controlPoints = new List<Point3d>();
 
                                     foreach (Point3d tempPt in templatePts)
                                     {
                                         Point3d surfPt;
                                         Vector3d[] surfDerivs;
-                                        // uv params on unitized sub-surface are simply the xy coordinate of the template point
+                                        // UV params on unitized sub-surface are simply the xy coordinate of the template point
                                         double uParam = tempPt.X;
                                         double vParam = tempPt.Y;
-                                        // if at boundary, we're using a previous morph space, so reverse the parameter(s)
-                                        if (u == N[0]) uParam = 1 - uParam;
-                                        if (v == N[1]) vParam = 1 - vParam;
+                                        // If at boundary, we're using a previous morph space, so reverse the parameter(s)
+                                        if (u == N[0])
+                                        {
+                                            uParam = 1 - uParam;
+                                        }
+                                        if (v == N[1])
+                                        {
+                                            vParam = 1 - vParam;
+                                        }
 
                                         // Now, we will map the template point to the uvw-space
                                         ((Surface)ss1).Evaluate(uParam, vParam, 0, out surfPt, out surfDerivs);
                                         Vector3d wVect = Vector3d.Unset;
                                         switch (ss2.ObjectType)
                                         {
-                                            case ObjectType.Point:      // point
+                                            case ObjectType.Point:
                                                 wVect = ((Point)ss2).Location - surfPt; ;
                                                 break;
-                                            case ObjectType.Curve:      // axis
+                                            case ObjectType.Curve:
                                                 wVect = ((Curve)ss2).PointAt(uParam) - surfPt;
                                                 break;
-                                            case ObjectType.Surface:    // surface
+                                            case ObjectType.Surface: 
                                                 Point3d surfPt2;
                                                 Vector3d[] surfDerivs2;
                                                 ((Surface)ss2).Evaluate(uParam, vParam, 0, out surfPt2, out surfDerivs2);
@@ -246,23 +270,25 @@ namespace IntraLattice.CORE.Data
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        // we're inside a unit cell
-                        // loop through all pairs of nodes that make up struts
+                        // We're inside a unit cell
+                        // Loop through all pairs of nodes that make up struts
                         foreach (IndexPair nodePair in cell.NodePairs)
                         {
-                            // prepare the path of the nodes (path in tree)
-                            int[] IRel = cell.NodePaths[nodePair.I];  // relative path of nodes (with respect to current unit cell)
+                            // Prepare the path of the nodes (path in tree)
+                            // First, get relative paths of nodes (with respect to current unit cell)
+                            int[] IRel = cell.NodePaths[nodePair.I];
                             int[] JRel = cell.NodePaths[nodePair.J];
+                            // Next, compute absolute paths
                             GH_Path IPath = new GH_Path(u + IRel[0], v + IRel[1], w + IRel[2]);
                             GH_Path JPath = new GH_Path(u + JRel[0], v + JRel[1], w + JRel[2]);
 
-                            // make sure the cell exists
+                            // Make sure the cell exists
                             if (Nodes.PathExists(IPath) && Nodes.PathExists(JPath))
                             {
                                 LatticeNode node1 = Nodes[IPath, IRel[3]];
                                 LatticeNode node2 = Nodes[JPath, JRel[3]];
-                                // make sure both nodes exist:
-                                // null nodes either belong to other cells, or are beyond the upper uvw boundary
+                                // Make sure both nodes exist:
+                                // Null nodes either belong to other cells, or are beyond the upper uvw boundary
                                 if (node1 != null && node2 != null)
                                 {
                                     Curve fullCurve = new LineCurve(node1.Point3d, node2.Point3d);
@@ -290,21 +316,23 @@ namespace IntraLattice.CORE.Data
                                             // Brep design space
                                             case 1:
                                                 strutToTrim = new LineCurve(node1.Point3d, node2.Point3d);
-                                                // find intersection point
+                                                // Find intersection point
                                                 Intersection.CurveBrep(strutToTrim, (Brep)designSpace, tol, out overlapCurves, out intersectionPts);
                                                 break;
                                             // Mesh design space
                                             case 2:
-                                                int[] faceIds;  // dummy variable for MeshLine call
+                                                // Dummy faceIds variable for MeshLine call
+                                                int[] faceIds;
                                                 strutToTrim = new LineCurve(node1.Point3d, node2.Point3d);
-                                                // find intersection point
+                                                // Find intersection point
                                                 intersectionPts = Intersection.MeshLine((Mesh)designSpace, strutToTrim.Line, out faceIds);
                                                 break;
                                             // Solid surface design space
                                             case 3:
-                                                overlapCurves = null;   // dummy variable for CurveBrep call
+                                                // Dummy overlapCurves variable for CurveBrep call
+                                                overlapCurves = null;
                                                 strutToTrim = new LineCurve(node1.Point3d, node2.Point3d);
-                                                // find intersection point
+                                                // Find intersection point
                                                 Intersection.CurveBrep(strutToTrim, ((Surface)designSpace).ToBrep(), tol, out overlapCurves, out intersectionPts);
                                                 break;
                                         }
@@ -314,7 +342,7 @@ namespace IntraLattice.CORE.Data
                                         if (intersectionPts.Length > 0)
                                         {
                                             testLine = AddTrimmedStrut(node1, node2, intersectionPts[0], minStrutLength);
-                                            // if the strut was succesfully trimmed, add it to the list
+                                            // If the strut was succesfully trimmed, add it to the list
                                             if (testLine != null)
                                             {
                                                 Struts.Add(testLine);
@@ -347,11 +375,12 @@ namespace IntraLattice.CORE.Data
                 if (trimmedLength > minStrutLength)
                 {
                     Nodes.Add(new LatticeNode(intersectionPt, LatticeNodeState.Boundary));
-                    
                     return new LineCurve(node1.Point3d, intersectionPt);
                 }
                 else
+                {
                     node1.State = LatticeNodeState.Boundary;
+                }
             }
             
             if (node2.IsInside)
@@ -363,7 +392,9 @@ namespace IntraLattice.CORE.Data
                     return new LineCurve(node2.Point3d, intersectionPt);
                 }
                 else
+                {
                     node2.State = LatticeNodeState.Boundary;
+                }
             }
 
             return null;
@@ -435,9 +466,13 @@ namespace IntraLattice.CORE.Data
             get
             {
                 if (m_state == LatticeNodeState.Outside)
+                {
                     return false;
+                }
                 else
+                {
                     return true;
+                }
             }
         }
         #endregion

@@ -85,7 +85,8 @@ namespace IntraLattice.CORE.Components
 
             // 2. Initialize the lattice
             var lattice = new Lattice();
-            var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
+            // Will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
+            var spaceTree = new DataTree<GeometryBase>(); 
             
             // 3. Define cylinder
             Plane basePlane = Plane.WorldXY;
@@ -114,10 +115,12 @@ namespace IntraLattice.CORE.Components
                 {
                     for (int w = 0; w <= N[2]; w++)
                     {
-                        GH_Path treePath = new GH_Path(u, v, w);                // construct cell path in tree
-                        var nodeList = lattice.Nodes.EnsurePath(treePath);      // fetch the list of nodes to append to, or initialise it
+                        // Construct cell path in tree
+                        GH_Path treePath = new GH_Path(u, v, w);
+                        // Fetch the list of nodes to append to, or initialise it
+                        var nodeList = lattice.Nodes.EnsurePath(treePath);      
 
-                        // this loop maps each node index in the cell onto the UV-surface maps
+                        // This loop maps each node index in the cell onto the UV-surface maps
                         for (int i = 0; i < cell.Nodes.Count; i++)
                         {
                             double usub = cell.Nodes[i].X; // u-position within unit cell (local)
@@ -125,29 +128,33 @@ namespace IntraLattice.CORE.Components
                             double wsub = cell.Nodes[i].Z; // w-position within unit cell (local)
                             double[] uvw = { u + usub, v + vsub, w + wsub }; // uvw-position (global)
 
-                            // check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
+                            // Check if the node belongs to another cell (i.e. it's relative path points outside the current cell)
                             bool isOutsideCell = (cell.NodePaths[i][0] > 0 || cell.NodePaths[i][1] > 0 || cell.NodePaths[i][2] > 0);
-                            // check if current uvw-position is beyond the upper boundary
+                            // Check if current uvw-position is beyond the upper boundary
                             bool isOutsideSpace = (uvw[0] > N[0] || uvw[1] > N[1] || uvw[2] > N[2]);
 
                             if (isOutsideCell || isOutsideSpace)
+                            {
                                 nodeList.Add(null);
+                            }
                             else
                             {
                                 Point3d pt1, pt2;
                                 Vector3d[] derivatives;
 
-                                // construct z-position vector
+                                // Construct z-position vector
                                 Vector3d vectorZ = height * basePlane.ZAxis * uvw[0] / N[0];
-                                pt1 = basePlane.Origin + vectorZ;                                                   // compute pt1 (is on axis)
-                                cylinder.Evaluate(uvw[0] / N[0], uvw[1] / N[1], 2, out pt2, out derivatives);       // compute pt2 (on surface)
+                                // Compute pt1 (on axis)
+                                pt1 = basePlane.Origin + vectorZ;
+                                // Compute pt2 (on surface)
+                                cylinder.Evaluate(uvw[0] / N[0], uvw[1] / N[1], 2, out pt2, out derivatives);       
 
-                                // create vector joining these two points
+                                // Create vector joining these two points
                                 Vector3d wVect = pt2 - pt1;
-
-                                
-                                var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]); // construct node
-                                nodeList.Add(newNode); // add new node to tree
+                                // Instantiate new node
+                                var newNode = new LatticeNode(pt1 + wVect * uvw[2] / N[2]);
+                                // Add new node to tree
+                                nodeList.Add(newNode); 
                             }
                         }
                     }
@@ -156,11 +163,14 @@ namespace IntraLattice.CORE.Components
                     if (morphed && u < N[0] && v < N[1])
                     {
                         GH_Path spacePath = new GH_Path(u, v);
-                        var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);                   // set trimming interval
+                        // Set trimming interval
+                        var uInterval = new Interval((u) / N[0], (u + 1) / N[0]);                   
                         var vInterval = new Interval((v) / N[1], (v + 1) / N[1]);
-                        Surface ss1 = cylinder.Trim(uInterval, vInterval);                          // create sub-surface
+                        // Create sub-surface and sub axis
+                        Surface ss1 = cylinder.Trim(uInterval, vInterval);                          
                         Curve ss2 = axis.Trim(uInterval);
-                        ss1.SetDomain(0, unitDomain); ss1.SetDomain(1, unitDomain);                 // normalize domains
+                        // Unitize domains
+                        ss1.SetDomain(0, unitDomain); ss1.SetDomain(1, unitDomain);                 
                         ss2.Domain = unitDomain;
                         // Save to the space tree
                         spaceTree.Add(ss1, spacePath);
@@ -170,8 +180,14 @@ namespace IntraLattice.CORE.Components
             }
 
             // 8. Map struts to the node tree
-            if (morphed) lattice.MorphMapping(cell, spaceTree, N);
-            else lattice.ConformMapping(cell, N);
+            if (morphed)
+            {
+                lattice.MorphMapping(cell, spaceTree, N);
+            }
+            else
+            {
+                lattice.ConformMapping(cell, N);
+            }
 
             // 9. Set output
             DA.SetDataList(0, lattice.Struts);            
@@ -197,7 +213,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 // You can add image files to your project resources and access them like this:
-                return Resources.cyl;
+                return Resources.basicCylinder;
             }
         }
 

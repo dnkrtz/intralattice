@@ -5,6 +5,7 @@ using Rhino.Geometry;
 using System.Drawing;
 using Rhino;
 using IntraLattice.CORE.Data;
+using IntraLattice.Properties;
 
 // Summary:     This component processes/verifies user-defined unit cells, and outputs a valid unit cell
 // ===============================================================================
@@ -21,7 +22,7 @@ namespace IntraLattice.CORE.Components
         /// Initializes a new instance of the CustomCellComponent class.
         /// </summary>
         public CustomCellComponent()
-            : base("CustomCell", "CustomCell",
+            : base("Custom Cell", "CustomCell",
                 "Pre-processes a custom unit cell by check validity and outputting topology.",
                 "IntraLattice2", "Cell")
         {
@@ -67,7 +68,7 @@ namespace IntraLattice.CORE.Components
                 lines.Add(new Line(curve.PointAtStart, curve.PointAtEnd));
             }
     
-            // 3. Extract the topology into a UnitCell object.
+            // 3. Instantiate UnitCell object.
             UnitCell cell = new UnitCell(lines);
             
             // 4. CheckValidity instance method to check the unit cell. Use the return value to output useful error message.
@@ -109,8 +110,7 @@ namespace IntraLattice.CORE.Components
             get
             {
                 //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
+                return Resources.customCell;
             }
         }
 

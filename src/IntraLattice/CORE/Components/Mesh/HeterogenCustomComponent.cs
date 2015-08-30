@@ -9,9 +9,10 @@ using Rhino.Collections;
 using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
+using IntraLattice.Properties;
 
 // Summary:     This component generates a solid mesh of a curve network, with custom strut radii.
-//              General approach based on Exoskeleton by David Stasiuk.
+//              Inspired by Exoskeleton (by David Stasiuk).
 // ===============================================================================
 // Details:     - Strut radii specified as a list of start/end radii. (parallel to curves list)
 // ===============================================================================
@@ -80,7 +81,7 @@ namespace IntraLattice.CORE.MeshModule
             int sides = 6;  // Number of sides on each strut
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
-            // 5. Initialize lattice object
+            // 5. Instantiate ExoMesh object
             // This constructor cleans the curve network (removes duplicates), and formats it as an ExoMesh.
             ExoMesh exoMesh = new ExoMesh(struts);
 
@@ -97,17 +98,19 @@ namespace IntraLattice.CORE.MeshModule
             //====================================================================================
             // PART B - Compute plate offsets
             // Each plate is offset from its parent node, to avoid mesh overlaps.
-            // We also ensure that the no plates are engulfed by the hulls, so we're looking for
+            // We also ensure that no plates are engulfed by the hulls, so we're looking for
             // a convex plate layout. If any plate vertex gets engulfed, meshing will fail.
             //====================================================================================
 
             // B0. Loop over nodes
             for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
-                // if node has only 1 strut, skip it
-                if (exoMesh.Hulls[i].SleeveIndices.Count < 2) continue;
-
-                // compute the offsets required to avoid plate overlaps
+                // If node has only 1 strut, skip it
+                if (exoMesh.Hulls[i].SleeveIndices.Count < 2)
+                {
+                    continue;
+                }
+                // Compute the offsets required to avoid plate overlaps
                 exoMesh.ComputeOffsets(i, tol);
                 exoMesh.FixSharpNodes(i, sides);
             }
@@ -123,7 +126,7 @@ namespace IntraLattice.CORE.MeshModule
             for (int i = 0; i < exoMesh.Sleeves.Count; i++)
             {
                 Mesh sleeveMesh = exoMesh.MakeSleeve(i, sides);
-                // append the new sleeve mesh to the full lattice mesh
+                // Append the new sleeve mesh to the full lattice mesh
                 exoMesh.Mesh.Append(sleeveMesh);
             }
 
@@ -182,8 +185,7 @@ namespace IntraLattice.CORE.MeshModule
         {
             get
             {
-                //return Exoskeleton.Properties.Resources.exoskel;
-                return null;
+                return Resources.heterogenCustom;
             }
         }
 

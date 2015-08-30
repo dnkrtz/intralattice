@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using IntraLattice.Properties;
+using System.Drawing;
 
 // Summary:     This component is a post-processing tool used to inspect a mesh.
 // ===============================================================================
@@ -13,6 +15,9 @@ namespace IntraLattice.CORE.UtilityModule
 {
     public class MeshReportComponent : GH_Component
     {
+        // Naked edges for previewing, declared at class level
+        private Polyline[] m_nakedEdges;
+
         /// <summary>
         /// Initializes a new instance of the MeshReportComponent class.
         /// </summary>
@@ -57,17 +62,24 @@ namespace IntraLattice.CORE.UtilityModule
 
             // 3. Check - naked edges
             report = "- Details -\n";
-            if (mesh.GetNakedEdges() == null)
+
+            m_nakedEdges = mesh.GetNakedEdges();
+
+            if (m_nakedEdges == null)
+            {
                 report += "Mesh has 0 naked edges. \n";
+            }
             else
             {
-                report += String.Format("Mesh has {0} naked edges. \n", mesh.GetNakedEdges().Length);
+                report += String.Format("Mesh has {0} naked edges. \n", m_nakedEdges.Length);
                 isValid = false;
             }
 
             // 4. Check - manifoldness
             if (mesh.IsManifold(true, out isOriented, out hasBoundary))
+            {
                 report += "Mesh is manifold. \n";
+            }
             else
             {
                 report += "Mesh is non-manifold. \n";
@@ -75,7 +87,10 @@ namespace IntraLattice.CORE.UtilityModule
             }
 
             // 5. Check - mesh orientation
-            if (mesh.SolidOrientation() == 1) report += "Mesh is solid. \n";
+            if (mesh.SolidOrientation() == 1)
+            {
+                report += "Mesh is solid. \n";
+            }
             else if (mesh.SolidOrientation() == 0)
             {
                 report += "Mesh is not solid. \n";
@@ -90,13 +105,39 @@ namespace IntraLattice.CORE.UtilityModule
 
             // 6. Finally, summarize these results
             if (isValid)
+            {
                 report = "Mesh is VALID.\n\n" + report;
+            }
             else
+            {
                 report = "Mesh is INVALID.\n\n" + report;
+            }
+
+            // 7. Add title
             report = "- Overview -\n" + report;
 
-            // 7. Output report
+            // 8. Output report
             DA.SetData(0, report);
+        }
+
+        /// <summary>
+        /// Display naked edges
+        /// </summary>
+        public override void DrawViewportWires(IGH_PreviewArgs args)
+        {
+            base.DrawViewportWires(args);
+
+            if (m_nakedEdges != null)
+            {
+                foreach (Polyline nakedEdge in m_nakedEdges)
+                {
+                    if (nakedEdge.IsValid)
+                    {
+                        args.Display.DrawPolyline(nakedEdge, Color.DarkRed);
+                    }
+                }
+            }
+            
         }
 
         /// <summary>
@@ -106,7 +147,7 @@ namespace IntraLattice.CORE.UtilityModule
         {
             get
             {
-                return GH_Exposure.secondary;
+                return GH_Exposure.tertiary;
             }
         }
 
@@ -118,9 +159,7 @@ namespace IntraLattice.CORE.UtilityModule
         {
             get
             {
-                //You can add image files to your project resources and access them like this:
-                // return Resources.IconForThisComponent;
-                return null;
+                return Resources.meshReport;
             }
         }
 

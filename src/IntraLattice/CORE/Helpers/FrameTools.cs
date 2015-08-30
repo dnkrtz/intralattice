@@ -54,9 +54,15 @@ namespace IntraLattice.CORE.Helpers
             for (int i = 0; i < inputStruts.Count; i++)
             {
                 Curve strut = inputStruts[i];
-                strut.Domain = new Interval(0, 1); // unitize domain
-                // if strut is invalid, ignore it
-                if (strut == null || !strut.IsValid || strut.IsShort(100*tol)) continue;
+                // Unitize domain
+                strut.Domain = new Interval(0, 1);
+                // Minimum strut length (if user defined very small tolerance, use 100*rhinotolerance)
+                double minLength = Math.Max(tol, 100*RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+                // If strut is invalid, ignore it
+                if (strut == null || !strut.IsValid || strut.IsShort(minLength))
+                {
+                    continue;
+                }
 
                 Point3d[] pts = new Point3d[2] { strut.PointAtStart, strut.PointAtEnd };
                 List<int> nodeIndices = new List<int>();
@@ -65,15 +71,18 @@ namespace IntraLattice.CORE.Helpers
                 for (int j = 0; j < 2; j++)
                 {
                     Point3d pt = pts[j];
-                    int closestIndex = nodes.ClosestIndex(pt);  // find closest node to current pt
+                    // Find closest node to current pt
+                    int closestIndex = nodes.ClosestIndex(pt); 
 
                     // If node already exists (within tolerance), set the index
                     if (nodes.Count != 0 && pt.EpsilonEquals(nodes[closestIndex], tol))
+                    {
                         nodeIndices.Add(closestIndex);
+                    }
                     // If node doesn't exist
                     else
                     {
-                        // update lookup list
+                        // Update lookup list
                         nodes.Add(pt);
                         nodeIndices.Add(nodes.Count - 1);
                     }
@@ -97,7 +106,7 @@ namespace IntraLattice.CORE.Helpers
                 // So we only create the strut if it doesn't exist yet (check nodePairLookup list)
                 if (!isDuplicate)
                 {
-                    // update the lookup list
+                    // Update the lookup list
                     nodePairs.Add(nodePair);
                     strut.Domain = new Interval(0, 1);
                     struts.Add(strut);
@@ -116,11 +125,17 @@ namespace IntraLattice.CORE.Helpers
             int type = 0;
 
             if (designSpace.ObjectType == ObjectType.Brep)
+            {
                 type = 1;
+            }
             else if (designSpace.ObjectType == ObjectType.Mesh && ((Mesh)designSpace).IsClosed)
+            {
                 type = 2;
+            }
             else if (designSpace.ObjectType == ObjectType.Surface && ((Surface)designSpace).IsSolid)
+            {
                 type = 3;
+            }
 
             return type;
         }
@@ -134,13 +149,16 @@ namespace IntraLattice.CORE.Helpers
 
             switch (spaceType)
             {
-                case 1: // Brep design space
+                // Brep design space
+                case 1:
                     isInside = ((Brep)geometry).IsPointInside(testPoint, tol, false);
                     break;
-                case 2: // Mesh design space
+                // Mesh design space
+                case 2:
                     isInside = ((Mesh)geometry).IsPointInside(testPoint, tol, false);
                     break;
-                case 3: // Solid surface design space (must be converted to brep)
+                // Solid surface design space (must be converted to brep)
+                case 3:
                     isInside = ((Surface)geometry).ToBrep().IsPointInside(testPoint, tol, false);
                     break;
             }
@@ -158,15 +176,18 @@ namespace IntraLattice.CORE.Helpers
 
             switch (spaceType)
             {
-                case 1: // Brep design space
+                // Brep design space
+                case 1:
                     closestPoint = ((Brep)geometry).ClosestPoint(testPoint);
                     distanceTo = testPoint.DistanceTo(closestPoint);
                     break;
-                case 2: // Mesh design space
+                // Mesh design space
+                case 2:
                     closestPoint = ((Mesh)geometry).ClosestPoint(testPoint);
                     distanceTo = testPoint.DistanceTo(closestPoint);
                     break;
-                case 3: // Solid surface design space (must be converted to brep)
+                // Solid surface design space (must be converted to brep)
+                case 3:
                     closestPoint = ((Surface)geometry).ToBrep().ClosestPoint(testPoint);
                     distanceTo = testPoint.DistanceTo(closestPoint);
                     break;

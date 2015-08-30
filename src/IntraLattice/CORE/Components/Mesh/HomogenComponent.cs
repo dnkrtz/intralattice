@@ -9,6 +9,7 @@ using Rhino.Collections;
 using IntraLattice.CORE.Data;
 using IntraLattice.CORE.Components;
 using IntraLattice.CORE.Helpers;
+using IntraLattice.Properties;
 
 // Summary:     This component generates a solid mesh of a curve network, with constant strut radii.
 //              General approach based on Exoskeleton by David Stasiuk.
@@ -71,7 +72,7 @@ namespace IntraLattice.CORE.MeshModule
             int sides = 6;  // Number of sides on each strut
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
-            // 5. Initialize lattice object
+            // 5. Instantiate ExoMesh object
             // This constructor cleans the curve network (removes duplicates), and formats it as an ExoMesh.
             ExoMesh exoMesh = new ExoMesh(struts);
 
@@ -97,9 +98,12 @@ namespace IntraLattice.CORE.MeshModule
             // B0. Loop over nodes
             for (int i = 0; i < exoMesh.Hulls.Count; i++)
             {
-                // if node has only 1 strut, skip it
-                if (exoMesh.Hulls[i].SleeveIndices.Count < 2) continue;
-                // compute the offsets required to avoid plate overlaps
+                // If node has only 1 strut, skip it
+                if (exoMesh.Hulls[i].SleeveIndices.Count < 2)
+                {
+                    continue;
+                }
+                // Compute the offsets required to avoid plate overlaps
                 bool success = exoMesh.ComputeOffsets(i, tol);
                 // To improve convex hull shape at 'sharp' nodes, we add an extra plate
                 exoMesh.FixSharpNodes(i, sides);
@@ -113,12 +117,16 @@ namespace IntraLattice.CORE.MeshModule
             // 
             //====================================================================================
 
+            var sleeveMeshList = new List<Mesh>();
+
             // E0. Loop over all sleeves
             for (int i = 0; i < exoMesh.Sleeves.Count; i++)
             {
                 Mesh sleeveMesh = exoMesh.MakeSleeve(i, sides);
                 // append the new sleeve mesh to the full lattice mesh
                 exoMesh.Mesh.Append(sleeveMesh);
+
+                sleeveMeshList.Add(sleeveMesh);
             }
 
             //====================================================================================
@@ -147,13 +155,6 @@ namespace IntraLattice.CORE.MeshModule
                     hullMeshList.Add(hullMesh);
                     exoMesh.Mesh.Append(hullMesh);
                 }
-            }
-
-            List<Circle> plateCircles = new List<Circle>();
-
-            foreach (ExoPlate plate in exoMesh.Plates)
-            {
-                plateCircles.Add(new Circle(plate.Vtc[1], plate.Vtc[2], plate.Vtc[3]));
             }
 
             // 6. Post-process the final mesh.
@@ -185,7 +186,7 @@ namespace IntraLattice.CORE.MeshModule
         {
             get
             {
-                return null;
+                return Resources.homogen;
             }
         }
 

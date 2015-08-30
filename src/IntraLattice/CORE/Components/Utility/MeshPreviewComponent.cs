@@ -69,11 +69,18 @@ namespace IntraLattice.CORE.UtilityModule
             base.DrawViewportMeshes(args);
             base.DrawViewportWires(args);
 
-            foreach (Mesh mesh in m_mesh)
+            if (m_mesh != null)
             {
-                args.Display.DrawMeshShaded(mesh, mat);
-                args.Display.DrawMeshWires(mesh, Color.Black);  
+                foreach (Mesh mesh in m_mesh)
+                {
+                    if (mesh != null && mesh.IsValid)
+                    {
+                        args.Display.DrawMeshShaded(mesh, mat);
+                        args.Display.DrawMeshWires(mesh, Color.Black);
+                    }
+                }
             }
+            
         }
 
         /// <summary>
@@ -83,7 +90,7 @@ namespace IntraLattice.CORE.UtilityModule
         {
             get
             {
-                return GH_Exposure.secondary;
+                return GH_Exposure.tertiary;
             }
         }
 
@@ -95,9 +102,7 @@ namespace IntraLattice.CORE.UtilityModule
         {
             get
             {
-                // You can add image files to your project resources and access them like this:
-                //return Resources.elec;
-                return null;
+                return Resources.meshPreview;
             }
         }
 

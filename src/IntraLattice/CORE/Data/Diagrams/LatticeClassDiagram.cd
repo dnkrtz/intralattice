@@ -4,7 +4,6 @@
     <Position X="0.5" Y="0.5" Width="2.5" />
     <Members>
       <Method Name="Duplicate" Hidden="true" />
-      <Method Name="Lattice" Hidden="true" />
     </Members>
     <TypeIdentifier>
       <HashCode>CAQgAAAAABAAAAAAAAAAACCAAAAQIAAAAAAEAAAAAAA=</HashCode>
