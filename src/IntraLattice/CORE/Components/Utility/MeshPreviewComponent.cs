@@ -69,11 +69,18 @@ namespace IntraLattice.CORE.UtilityModule
             base.DrawViewportMeshes(args);
             base.DrawViewportWires(args);
 
-            foreach (Mesh mesh in m_mesh)
+            if (m_mesh != null)
             {
-                args.Display.DrawMeshShaded(mesh, mat);
-                args.Display.DrawMeshWires(mesh, Color.Black);  
+                foreach (Mesh mesh in m_mesh)
+                {
+                    if (mesh != null && mesh.IsValid)
+                    {
+                        args.Display.DrawMeshShaded(mesh, mat);
+                        args.Display.DrawMeshWires(mesh, Color.Black);
+                    }
+                }
             }
+            
         }
 
         /// <summary>

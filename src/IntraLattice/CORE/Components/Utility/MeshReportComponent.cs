@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 using IntraLattice.Properties;
+using System.Drawing;
 
 // Summary:     This component is a post-processing tool used to inspect a mesh.
 // ===============================================================================
@@ -14,6 +15,9 @@ namespace IntraLattice.CORE.UtilityModule
 {
     public class MeshReportComponent : GH_Component
     {
+        // Naked edges for previewing, declared at class level
+        private Polyline[] m_nakedEdges;
+
         /// <summary>
         /// Initializes a new instance of the MeshReportComponent class.
         /// </summary>
@@ -58,13 +62,16 @@ namespace IntraLattice.CORE.UtilityModule
 
             // 3. Check - naked edges
             report = "- Details -\n";
-            if (mesh.GetNakedEdges() == null)
+
+            m_nakedEdges = mesh.GetNakedEdges();
+
+            if (m_nakedEdges == null)
             {
                 report += "Mesh has 0 naked edges. \n";
             }
             else
             {
-                report += String.Format("Mesh has {0} naked edges. \n", mesh.GetNakedEdges().Length);
+                report += String.Format("Mesh has {0} naked edges. \n", m_nakedEdges.Length);
                 isValid = false;
             }
 
@@ -111,6 +118,26 @@ namespace IntraLattice.CORE.UtilityModule
 
             // 8. Output report
             DA.SetData(0, report);
+        }
+
+        /// <summary>
+        /// Display naked edges
+        /// </summary>
+        public override void DrawViewportWires(IGH_PreviewArgs args)
+        {
+            base.DrawViewportWires(args);
+
+            if (m_nakedEdges != null)
+            {
+                foreach (Polyline nakedEdge in m_nakedEdges)
+                {
+                    if (nakedEdge.IsValid)
+                    {
+                        args.Display.DrawPolyline(nakedEdge, Color.DarkRed);
+                    }
+                }
+            }
+            
         }
 
         /// <summary>

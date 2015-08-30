@@ -54,9 +54,12 @@ namespace IntraLattice.CORE.Helpers
             for (int i = 0; i < inputStruts.Count; i++)
             {
                 Curve strut = inputStruts[i];
-                strut.Domain = new Interval(0, 1); // unitize domain
+                // Unitize domain
+                strut.Domain = new Interval(0, 1);
+                // Minimum strut length (if user defined very small tolerance, use 100*rhinotolerance)
+                double minLength = Math.Max(tol, 100*RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
                 // If strut is invalid, ignore it
-                if (strut == null || !strut.IsValid || strut.IsShort(100 * tol))
+                if (strut == null || !strut.IsValid || strut.IsShort(minLength))
                 {
                     continue;
                 }
