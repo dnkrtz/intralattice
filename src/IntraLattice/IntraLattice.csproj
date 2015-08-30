@@ -39,6 +39,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="GH_IO">
@@ -60,34 +61,34 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CORE\Cell\CellTools.cs" />
-    <Compile Include="CORE\Cell\CustomCell.cs" />
-    <Compile Include="CORE\Cell\TopologySymmetryCheck.cs" />
-    <Compile Include="FEAInterface\Components\FEAInterfaceComponent.cs" />
-    <Compile Include="FEAInterface\Components\PointLoadComponent.cs" />
-    <Compile Include="FEAInterface\Components\SPCComponentComponent.cs" />
-    <Compile Include="FEAInterface\Data\BeamCrossection.cs" />
-    <Compile Include="FEAInterface\Data\BeamElement.cs" />
-    <Compile Include="FEAInterface\Data\Load.cs" />
-    <Compile Include="FEAInterface\Data\MAT1.cs" />
-    <Compile Include="FEAInterface\Data\SPC.cs" />
-    <Compile Include="FEAInterface\Manager\FileManager.cs" />
-    <Compile Include="CORE\Frame\ConformSP.cs" />
-    <Compile Include="CORE\Frame\ConformCylinder.cs" />
-    <Compile Include="CORE\Frame\ConformSS.cs" />
-    <Compile Include="CORE\Frame\ConformSA.cs" />
-    <Compile Include="CORE\Frame\InputTools.cs" />
-    <Compile Include="CORE\Frame\FrameTools.cs" />
-    <Compile Include="CORE\Cell\PresetCell.cs" />
+    <Compile Include="CORE\Components\Utility\AdjustUVComponent.cs" />
+    <Compile Include="CORE\Components\Utility\CleanNetworkComponent.cs" />
+    <Compile Include="CORE\Data\GH_Goo\UnitCellGoo.cs" />
+    <Compile Include="CORE\Data\GH_Goo\LatticeGoo.cs" />
+    <Compile Include="CORE\Data\EndoMesh.cs" />
+    <Compile Include="CORE\Data\Lattice.cs" />
+    <Compile Include="CORE\Data\ExoMesh.cs" />
+    <Compile Include="CORE\Helpers\CellTools.cs" />
+    <Compile Include="CORE\Components\Cell\CustomCellComponent.cs" />
+    <Compile Include="CORE\Components\Frame\BasicBoxComponent.cs" />
+    <Compile Include="CORE\Data\UnitCell.cs" />
+    <Compile Include="CORE\Helpers\MeshTools.cs" />
+    <Compile Include="CORE\Components\Utility\MeshReportComponent.cs" />
+    <Compile Include="CORE\Components\Frame\ConformSPComponent.cs" />
+    <Compile Include="CORE\Components\Frame\BasicCylinderComponent.cs" />
+    <Compile Include="CORE\Components\Frame\ConformSSComponent.cs" />
+    <Compile Include="CORE\Components\Frame\ConformSAComponent.cs" />
+    <Compile Include="CORE\Helpers\InputTools.cs" />
+    <Compile Include="CORE\Helpers\FrameTools.cs" />
+    <Compile Include="CORE\Components\Cell\PresetCellComponent.cs" />
     <Compile Include="IntraLatticeInfo.cs" />
-    <Compile Include="CORE\Frame\UniformDS.cs" />
-    <Compile Include="CORE\Mesh\ExoTools.cs" />
-    <Compile Include="CORE\Mesh\HeterogenCustom.cs" />
-    <Compile Include="CORE\Mesh\Homogen.cs" />
-    <Compile Include="CORE\Mesh\HeterogenGradient.cs" />
-    <Compile Include="CORE\Mesh\InputGradient.cs" />
+    <Compile Include="CORE\Components\Frame\UniformDSComponent.cs" />
+    <Compile Include="CORE\Components\Mesh\HeterogenCustomComponent.cs" />
+    <Compile Include="CORE\Components\Mesh\HomogenComponent.cs" />
+    <Compile Include="CORE\Components\Mesh\HeterogenGradientComponent.cs" />
+    <Compile Include="CORE\Components\Utility\PresetGradientComponent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CORE\Mesh\ViewReport.cs" />
+    <Compile Include="CORE\Components\Utility\MeshPreviewComponent.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -95,27 +96,118 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\viral24.png" />
-    <None Include="Resources\cellpreset.png" />
-    <None Include="Resources\biology24.png" />
-    <None Include="Resources\Icon1.ico" />
-    <None Include="Resources\Icon2.ico" />
-    <None Include="Resources\atom1124.png" />
-    <None Include="Resources\cells24.png" />
-    <None Include="Resources\checked824.png" />
-    <None Include="Resources\circle5424.png" />
-    <None Include="Resources\circular13124.png" />
-    <None Include="Resources\circular13524.png" />
-    <None Include="Resources\circular14424.png" />
-    <None Include="Resources\pie3024.png" />
-    <None Include="Resources\electronic4624.png" />
-    <Content Include="Resources\presetcell.png" />
+    <None Include="CORE\Data\Diagrams\ExoMeshClassDiagram.cd" />
+    <None Include="CORE\Data\Diagrams\UnitCellClassDiagram.cd" />
+    <None Include="CORE\Data\Diagrams\LatticeClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cyl.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\basicCylinder Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSA Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSS Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSP Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\basicBox Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uniformDS Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\customCell Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\presetCell Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\homogen Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\heterogenGradient Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\meshReport Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\heterogenCustom.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\heterogenCustom Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uvAdjust Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\meshPreview Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cleanNetwork Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\presetGradient Obj_Base.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\basicBox.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSA.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSP.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\conformSS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\customCell.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\heterogenGradient.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\homogen.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\meshPreview.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\meshReport.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\presetCell.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\presetGradient.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uniformDS.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\uvAdjust.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\basicCylinder.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cleanNetwork.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\adjustUV.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -134,6 +226,7 @@ Erase "$(TargetPath)"</PostBuildEvent>
     </StartArguments>
     <StartAction>Program</StartAction>
     <StartProgram>C:\Program Files (x86)\Rhinoceros 5\System\Rhino4.exe</StartProgram>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup>
     <FallbackCulture>en-US</FallbackCulture>
@@ -143,5 +236,7 @@ Erase "$(TargetPath)"</PostBuildEvent>
     <StartArguments>
     </StartArguments>
     <StartAction>Program</StartAction>
+    <PlatformTarget>x64</PlatformTarget>
+    <WarningLevel>2</WarningLevel>
   </PropertyGroup>
 </Project>
