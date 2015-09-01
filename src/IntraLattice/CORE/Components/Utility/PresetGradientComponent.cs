@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.MeshModule
         public PresetGradientComponent()
             : base("Preset Gradient", "PresetGradient",
                 "Generates gradient string (i.e. a spatial math expression)",
-                "IntraLattice2", "Utils")
+                "IntraLattice", "Utils")
         {
         }
 

@@ -26,7 +26,7 @@ namespace IntraLattice.CORE.UtilityModule
         public MeshPreviewComponent()
             : base("Mesh Preview", "MeshPreview",
                 "Generates a preview of the mesh.",
-                "IntraLattice2", "Utils")
+                "IntraLattice", "Utils")
         {
         }
 

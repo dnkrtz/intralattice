@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.MeshModule
         public HeterogenCustomComponent()
             : base("Heterogen Custom", "HeterogenCustom",
                 "Heterogeneous solidification of lattice wireframe",
-                "IntraLattice2", "Mesh")
+                "IntraLattice", "Mesh")
         {
         }
 

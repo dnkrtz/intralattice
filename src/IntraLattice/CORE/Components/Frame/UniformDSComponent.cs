@@ -35,7 +35,7 @@ namespace IntraLattice.CORE.Components
         public UniformDSComponent()
             : base("Uniform DS", "UniformDS",
                 "Generates a uniform lattice within by a design space",
-                "IntraLattice2", "Frame")
+                "IntraLattice", "Frame")
         {
         }
 

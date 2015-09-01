@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.Components
         public ConformSPComponent()
             : base("Conform Surface-Point", "ConformSP",
                 "Generates a conforming lattice between a surface and a point.",
-                "IntraLattice2", "Frame")
+                "IntraLattice", "Frame")
         {
         }
 

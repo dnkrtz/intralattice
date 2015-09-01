@@ -29,7 +29,7 @@ namespace IntraLattice.CORE.Components
         public BasicBoxComponent()
             : base("Basic Box", "BasicBox",
                 "Generates a lattice box.",
-                "IntraLattice2", "Frame")
+                "IntraLattice", "Frame")
         {
         }
 

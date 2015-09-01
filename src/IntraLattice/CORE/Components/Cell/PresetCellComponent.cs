@@ -31,7 +31,7 @@ namespace IntraLattice.CORE.Components
         public PresetCellComponent()
             : base("Preset Cell", "PresetCell",
                 "Built-in selection of unit cell topologies.",
-                "IntraLattice2", "Cell")
+                "IntraLattice", "Cell")
         {
         }
 

@@ -23,7 +23,7 @@ namespace IntraLattice.CORE.Components.Utility
         public CleanNetworkComponent()
             : base("Clean Network", "CleanNetwork",
                 "Removes duplicate curves from a network, within specified tolerance.",
-                "IntraLattice2", "Utils")
+                "IntraLattice", "Utils")
         {
         }
 

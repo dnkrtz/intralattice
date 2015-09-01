@@ -24,7 +24,7 @@ namespace IntraLattice.CORE.Components
         public CustomCellComponent()
             : base("Custom Cell", "CustomCell",
                 "Pre-processes a custom unit cell by check validity and outputting topology.",
-                "IntraLattice2", "Cell")
+                "IntraLattice", "Cell")
         {
         }
 
