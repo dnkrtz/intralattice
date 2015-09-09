@@ -117,24 +117,18 @@ namespace IntraLattice.CORE.MeshModule
             // 
             //====================================================================================
 
-            var sleeveMeshList = new List<Mesh>();
-
             // E0. Loop over all sleeves
             for (int i = 0; i < exoMesh.Sleeves.Count; i++)
             {
                 Mesh sleeveMesh = exoMesh.MakeSleeve(i, sides);
                 // append the new sleeve mesh to the full lattice mesh
                 exoMesh.Mesh.Append(sleeveMesh);
-
-                sleeveMeshList.Add(sleeveMesh);
             }
 
             //====================================================================================
             // PART D - Construct hull meshes
             // Generates convex hulls, then removes the faces that lie on the plates.
             //====================================================================================
-
-            var hullMeshList = new List<Mesh>();
 
             // D0. Loop over all hulls
             for (int i = 0; i < exoMesh.Hulls.Count; i++)
@@ -152,7 +146,6 @@ namespace IntraLattice.CORE.MeshModule
                 else
                 {
                     Mesh hullMesh = exoMesh.MakeConvexHull(i, sides, tol, true);
-                    hullMeshList.Add(hullMesh);
                     exoMesh.Mesh.Append(hullMesh);
                 }
             }
