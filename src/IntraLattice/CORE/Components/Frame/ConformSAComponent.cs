@@ -90,8 +90,9 @@ namespace IntraLattice.CORE.Components
 
             // 2. Initialize the lattice
             var lattice = new Lattice();
-            var spaceTree = new DataTree<GeometryBase>(); // will contain the morphed uv spaces (as surface-surface, surface-axis or surface-point)
-
+            // Will contain the morphed uv spaces (as surface-axis)
+            var spaceTree = new DataTree<GeometryBase>(); 
+            
             // 3. Package the number of cells in each direction into an array
             float[] N = new float[3] { nU, nV, nW };
 
