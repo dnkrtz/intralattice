@@ -36,10 +36,10 @@ The generative process is divided into the following modules.
   * [MeshPreview](./src/IntraLattice/CORE/Components/Utility/MeshReportComponent.cs) - Preview a mesh
 
 ## Core Data
-Many of the relevant algorithms are encapsulated in the following classes. Among others, the instance methods include lattice mapping, morphing, incremental 3D convex hull, sleeve meshing and trimming.
+Many of the relevant algorithms, and data structures, are encapsulated in the following classes.
 
-  * [UnitCell](./src/IntraLattice/CORE/Data/UnitCell.cs) - Unit cell data object
-  * [Lattice](./src/IntraLattice/CORE/Data/Lattice.cs) - Lattice wireframe data object, and its associated classes
-  * [ExoMesh](./src/IntraLattice/CORE/Data/ExoMesh.cs) - Lattice mesh data object, and its associated classes
+  * [UnitCell](./src/IntraLattice/CORE/Data/UnitCell.cs) - For constructing/validating unit cell.
+  * [Lattice](./src/IntraLattice/CORE/Data/Lattice.cs) - For lattice wireframe mapping.
+  * [ExoMesh](./src/IntraLattice/CORE/Data/ExoMesh.cs) - For solid mesh generation.
   * [EndoMesh](./src/IntraLattice/CORE/Data/EndoMesh.cs) - Coming soon
 
