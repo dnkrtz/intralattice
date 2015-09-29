@@ -37,6 +37,7 @@ namespace FEA_Interface.Component
             pManager.AddPointParameter("Node_Position","N_P","Position of Node",GH_ParamAccess.list);
             pManager.AddIntegerParameter("Start_Node", "S_Node", "Index of start node for each strut (begin from 0)", GH_ParamAccess.list);
             pManager.AddIntegerParameter("End_Node", "E_Node", "Index of end node for each strut (begin from 0)", GH_ParamAccess.list);
+            pManager.AddLineParameter("Struts_List", "Struts", "Output struts list (short struts have been removed)", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -53,6 +54,7 @@ namespace FEA_Interface.Component
             List<Point3d> oListOfNodes = new List<Point3d>();
             List<int> oSNode = new List<int>();
             List<int> oENode = new List<int>();
+            List<Line> oStruts = new List<Line>();
             // Retrieve input
             if (!DA.GetDataList(0, listOfStruts)) { return; }
             if (!DA.GetData(1, ref Tol)) { return; }
@@ -78,29 +80,41 @@ namespace FEA_Interface.Component
                         EndPosition = IoN;
                     }
                 }
+                int SNode = -1;
+                int ENode = -1;
                 if (StartPosition != -1)
                 {
-                     oSNode.Add(StartPosition + 1);
+                    SNode = StartPosition + 1;
                 }
                 else
                 {
                     oListOfNodes.Add(StartP);
-                    oSNode.Add(oListOfNodes.Count);
+                    SNode = oListOfNodes.Count;
                 }
                 if (EndPosition != -1)
                 {
-                    oENode.Add(EndPosition + 1);
+                    ENode = EndPosition + 1;
                 }
                 else
                 {
                     oListOfNodes.Add(EndP);
-                    oENode.Add(oListOfNodes.Count);
+                    ENode = oListOfNodes.Count;
                 }
+
+                // Check enode equal to enode
+                if(ENode!=SNode&&ENode>0&&SNode>0)
+                {
+                    oENode.Add(ENode);
+                    oSNode.Add(SNode);
+                    oStruts.Add(CLine);
+                }
+               
 
             }
             DA.SetDataList(0, oListOfNodes);
             DA.SetDataList(1, oSNode);
             DA.SetDataList(2, oENode);
+            DA.SetDataList(3, oStruts);
         }
 
         /// <summary>
