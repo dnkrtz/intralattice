@@ -51,6 +51,7 @@ namespace IntraLattice.CORE.Components
             pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Tolerance", "Tol", "Smallest allowed strut length", GH_ParamAccess.item, 0.2);
+            pManager.AddBooleanParameter("Strict tolerance", "Strict", "Specifies if we use a strict tolerance.", GH_ParamAccess.item, false);
         }
 
         /// <summary>
@@ -59,8 +60,6 @@ namespace IntraLattice.CORE.Components
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddCurveParameter("Struts", "Struts", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("pt", "pt", "Strut curve network", GH_ParamAccess.list);
-            pManager.AddPointParameter("pt", "pt", "Strut curve network", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -77,6 +76,7 @@ namespace IntraLattice.CORE.Components
             double yCellSize = 0;
             double zCellSize = 0;
             double minLength = 0; // the trim tolerance (i.e. minimum strut length)
+            bool strictlyIn = false;
 
             if (!DA.GetData(0, ref cell)) { return; }
             if (!DA.GetData(1, ref designSpace)) { return; }
@@ -85,6 +85,7 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(4, ref yCellSize)) { return; }
             if (!DA.GetData(5, ref zCellSize)) { return; }
             if (!DA.GetData(6, ref minLength)) { return; }
+            if (!DA.GetData(7, ref strictlyIn)) { return; }
 
             if (!cell.isValid) { return; }
             if (!designSpace.IsValid) { return; }
@@ -173,7 +174,7 @@ namespace IntraLattice.CORE.Components
                                 var newNode = new LatticeNode(basePlane.Origin + V);
 
                                 // Check if point is inside - use unstrict tolerance, meaning it can be outside the surface by the specified tolerance
-                                bool isInside = FrameTools.IsPointInside(designSpace, newNode.Point3d, spaceType, tol);
+                                bool isInside = FrameTools.IsPointInside(designSpace, newNode.Point3d, spaceType, tol, strictlyIn);
 
                                 // Set the node state (it's location wrt the design space)
                                 if (isInside)

@@ -143,7 +143,7 @@ namespace IntraLattice.CORE.Helpers
         /// <summary>
         /// Determines if a point is inside a geometry. (Brep, Mesh or closed Surface)
         /// </summary>
-        public static bool IsPointInside(GeometryBase geometry, Point3d testPoint, int spaceType, double tol)
+        public static bool IsPointInside(GeometryBase geometry, Point3d testPoint, int spaceType, double tol, bool strictlyIn)
         {
             bool isInside = false;
 
@@ -151,15 +151,15 @@ namespace IntraLattice.CORE.Helpers
             {
                 // Brep design space
                 case 1:
-                    isInside = ((Brep)geometry).IsPointInside(testPoint, tol, false);
+                    isInside = ((Brep)geometry).IsPointInside(testPoint, tol, strictlyIn);
                     break;
                 // Mesh design space
                 case 2:
-                    isInside = ((Mesh)geometry).IsPointInside(testPoint, tol, false);
+                    isInside = ((Mesh)geometry).IsPointInside(testPoint, tol, strictlyIn);
                     break;
                 // Solid surface design space (must be converted to brep)
                 case 3:
-                    isInside = ((Surface)geometry).ToBrep().IsPointInside(testPoint, tol, false);
+                    isInside = ((Surface)geometry).ToBrep().IsPointInside(testPoint, tol, strictlyIn);
                     break;
             }
 
