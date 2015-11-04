@@ -247,14 +247,15 @@ namespace IntraLattice.CORE.Data
                 }
 
                 // Now, check if the mirror node exists
-                if (testPoint != Point3d.Unset)
-                {
-                    if (testPoint.DistanceTo(this.Nodes[this.Nodes.ClosestIndex(testPoint)]) > tol)
-                    {
-                        return -1;
-                    }
+                //if (testPoint != Point3d.Unset)
+                //{
+                //    if (testPoint.X != 1 && testPoint.Y !=1 && testPoint.)
+                //    if (testPoint.DistanceTo(this.Nodes[this.Nodes.ClosestIndex(testPoint)]) > tol)
+                //    {
+                //        return -1;
+                //    }
 
-                }
+                //}
             }
 
             // Finally, ensure that all faces have a node on it (only need to check 3 faces, since mirror condition ensures the others)
@@ -282,7 +283,6 @@ namespace IntraLattice.CORE.Data
             // Create the relative uvw tree paths, refer to dev docs for better understanding
             foreach (Point3d node in Nodes)
             {
-                bool nodeToRemove = true;
                 // Check top plane first
                 if (Math.Abs(xy.DistanceTo(node)) < tol)
                 {

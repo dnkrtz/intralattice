@@ -107,6 +107,10 @@ namespace IntraLattice.CORE.Components
                 case 6:
                     lines = OctetLines(d);
                     break;
+                // "DIAMOND"
+                case 7:
+                    lines = DiamondLines(d);
+                    break;
             }
 
             // 5. Instantiate UnitCell object and check validity.
@@ -193,6 +197,52 @@ namespace IntraLattice.CORE.Components
             {
                 lines.Add(new Line(nodes[7], nodes[i]));
             }
+
+            return lines;
+        }
+
+        private List<Line> DiamondLines(double d)
+        {
+            var lines = new List<Line>();
+            var nodes = new List<Point3d>();
+
+            //corner points
+            nodes.Add(new Point3d(0, 0, 0));
+            // face-centered points
+            nodes.Add(new Point3d(0, d / 2, d / 2));
+            nodes.Add(new Point3d(d / 2, 0 , d / 2));
+            nodes.Add(new Point3d(d / 2, d / 2, 0));
+            // others
+            nodes.Add(new Point3d(d/4, d/4, d/4));
+
+            lines.Add(new Line(nodes[4], nodes[0]));
+            lines.Add(new Line(nodes[4], nodes[1]));
+            lines.Add(new Line(nodes[4], nodes[2]));
+            lines.Add(new Line(nodes[4], nodes[3]));
+
+            var lines2 = new List<Line>(lines);
+            foreach (var line in lines)
+            {
+                var newLine = new Line(line.From, line.To);
+                newLine.Transform(Transform.Translation(d / 2, d / 2, 0));
+                lines2.Add(newLine);
+            }
+            foreach (var line in lines)
+            {
+                var newLine = new Line(line.From, line.To);
+                newLine.Transform(Transform.Rotation(Math.PI / 2, nodes[4]));
+                newLine.Transform(Transform.Translation(d / 2, d / 2, d/2));
+                lines2.Add(newLine);
+            }
+            foreach (var line in lines)
+            {
+                var newLine = new Line(line.From, line.To);
+                newLine.Transform(Transform.Rotation(Math.PI / 2, nodes[4]));
+                newLine.Transform(Transform.Translation(0, 0, d / 2));
+                lines2.Add(newLine);
+            }
+            
+            lines.AddRange(lines2);
 
             return lines;
         }
