@@ -41,6 +41,7 @@ namespace IntraLattice.CORE.Components
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddIntegerParameter("Cell Tye", "Type", "Unit cell topology type", GH_ParamAccess.item, 0);
+            pManager.AddIntegerParameter("Cartesian orientation", "Orientation", "The orientation of the cell, mainly used with asymmetric cell types.", GH_ParamAccess.item, 0);
         }
 
         /// <summary>
@@ -63,12 +64,18 @@ namespace IntraLattice.CORE.Components
             // Only generate it if the input has no source
             if (Component.Params.Input[0].SourceCount == 0)
             {
-                InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 11);
+                InputTools.TopoSelect(ref Component, ref GrasshopperDocument, 0, 33);
+            }
+            if (Component.Params.Input[1].SourceCount == 0)
+            {
+                InputTools.OrientSelect(ref Component, ref GrasshopperDocument, 1, 33);
             }
 
             // 1. Retrieve input
             int cellType = 0;
+            int orientation = 0;
             if (!DA.GetData(0, ref cellType)) { return; }
+            if (!DA.GetData(1, ref orientation)) { return; }
 
             // 2. Instantiate line list
             var lines = new List<Line>();
@@ -113,12 +120,55 @@ namespace IntraLattice.CORE.Components
                     break;
             }
 
+            var lines2 = new List<Line>();
+
+            // Apply rotation to the cell
+            switch (orientation)
+            {
+                // no rotation
+                case 0:
+                    foreach (var line in lines)
+                    {
+                        var newLine = new Line(line.From, line.To);
+                        lines2.Add(newLine);
+                    }
+                    break;
+                // rotate about z-axis
+                case 1:
+                    foreach (var line in lines)
+                    {
+                        var newLine = new Line(line.From, line.To);
+                        newLine.Transform(Transform.Rotation(Math.PI / 2, Plane.WorldXY.ZAxis ,new Point3d(d / 2, d / 2, d / 2)));
+                        lines2.Add(newLine);
+                    }
+                    break;
+                // rotate about x-axis
+                case 2:
+                    foreach (var line in lines)
+                    {
+                        var newLine = new Line(line.From, line.To);
+                        line.Transform(Transform.Rotation(Math.PI / 2, Plane.WorldYZ.ZAxis, new Point3d(d / 2, d / 2, d / 2)));
+                        lines2.Add(newLine);
+                    }
+                    break;
+                // rotate about y-axis
+                case 3:
+                    foreach (var line in lines)
+                    {
+                        var newLine = new Line(line.From, line.To);
+                        line.Transform(Transform.Rotation(Math.PI / 2, Plane.WorldZX.ZAxis, new Point3d(d / 2, d / 2, d / 2)));
+                        lines2.Add(newLine);
+                    }
+                    break;  
+            }
+
             // 5. Instantiate UnitCell object and check validity.
-            var cell = new UnitCell(lines);
+            var cell = new UnitCell(lines2);
             if (!cell.isValid)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - this is embarassing.");
             }
+
 
             // 6. Set output (as LatticeCellGoo)
             DA.SetData(0, new UnitCellGoo(cell));
