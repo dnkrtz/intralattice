@@ -130,9 +130,16 @@ namespace IntraLattice.CORE.Components
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - this is embarassing.");
             }
 
-            // 6. Set output (as LatticeCellGoo)
+            // 6. Construct normalized cell lines (for optional output)
+            var lines2 = new List<Line>();
+            foreach (IndexPair nodePair in cell.NodePairs)
+            {
+                lines2.Add(new Line(cell.Nodes[nodePair.I], cell.Nodes[nodePair.J]));
+            }
+
+            // 7. Set output (as LatticeCellGoo)
             DA.SetData(0, new UnitCellGoo(cell));
-            DA.SetDataList(1, lines);
+            DA.SetDataList(1, lines2);
         }
 
         #region Line Generation Methods
