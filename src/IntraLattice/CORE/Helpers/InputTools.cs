@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.Helpers
             vallist.CreateAttributes();
 
             // Customise value list position
-            float xCoord = (float)Component.Attributes.Pivot.X - 200;
+            float xCoord = (float)Component.Attributes.Pivot.X - 250;
             float yCoord = (float)Component.Attributes.Pivot.Y + index * 40 - offset;
             PointF cornerPt = new PointF(xCoord, yCoord);
             vallist.Attributes.Pivot = cornerPt;
@@ -44,6 +44,8 @@ namespace IntraLattice.CORE.Helpers
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Vintiles", "5"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Octet", "6"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Diamond", "7"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Honeycomb 1", "8"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Honeycomb 2", "9"));
 
             vallist.ListItems.AddRange(items);
 
