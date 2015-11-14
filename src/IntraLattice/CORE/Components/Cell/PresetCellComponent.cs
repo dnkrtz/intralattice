@@ -48,7 +48,9 @@ namespace IntraLattice.CORE.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Topology", "Topo", "Line topology", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Topology", "Topo", "Unit cell topology", GH_ParamAccess.item);
+            pManager.AddLineParameter("Lines", "L", "Optional output so you can modify the unit cell lines. Pass through the CustomCell component when you're done.", GH_ParamAccess.list);
+            pManager.HideParameter(1);
         }
 
         /// <summary>
@@ -111,6 +113,14 @@ namespace IntraLattice.CORE.Components
                 case 7:
                     lines = DiamondLines(d);
                     break;
+                // "HONEYCOMB"
+                case 8:
+                    lines = Honeycomb(d);
+                    break;
+                // "AUXETIC HONEYCOMB"
+                case 9:
+                    lines = AuxeticHoneycomb(d);
+                    break;
             }
 
             // 5. Instantiate UnitCell object and check validity.
@@ -120,8 +130,16 @@ namespace IntraLattice.CORE.Components
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Invalid cell - this is embarassing.");
             }
 
-            // 6. Set output (as LatticeCellGoo)
+            // 6. Construct normalized cell lines (for optional output)
+            var lines2 = new List<Line>();
+            foreach (IndexPair nodePair in cell.NodePairs)
+            {
+                lines2.Add(new Line(cell.Nodes[nodePair.I], cell.Nodes[nodePair.J]));
+            }
+
+            // 7. Set output (as LatticeCellGoo)
             DA.SetData(0, new UnitCellGoo(cell));
+            DA.SetDataList(1, lines2);
         }
 
         #region Line Generation Methods
@@ -432,6 +450,135 @@ namespace IntraLattice.CORE.Components
             foreach (int i in new int[6] { 0, 1, 4, 5, 8, 10 })
             {
                 lines.Add(new Line(nodes[11], nodes[i]));
+            }
+
+            return lines;
+        }
+
+        private List<Line> Honeycomb(double d)
+        {
+            var lines = new List<Line>();
+            var nodes = new List<Point3d>();
+
+            // This is a bit messy, but I'm too lazy for elegance right now
+            // First, we loop to create the same set of nodes on two parallel faces
+            for (int i = 0; i < 2; i++ )
+            {
+                double y = 3 * d * i;
+                nodes.Add(new Point3d(2.25 * d, y, 2 * d));
+                nodes.Add(new Point3d(2.25 * d, y,  d));
+                nodes.Add(new Point3d(0.75 * d, y, 2 * d));
+                nodes.Add(new Point3d(0.75 * d, y, d));
+
+                nodes.Add(new Point3d(0, y, 0));
+                nodes.Add(new Point3d(0, y, 0.5*d));
+                nodes.Add(new Point3d(0, y, 2.5 * d));
+                nodes.Add(new Point3d(0, y, 3 * d));
+
+                nodes.Add(new Point3d(1.5 * d, y, 0));
+                nodes.Add(new Point3d(1.5 * d, y, 0.5 * d));
+                nodes.Add(new Point3d(1.5 * d, y, 2.5 * d));
+                nodes.Add(new Point3d(1.5 * d, y, 3 * d));
+
+                nodes.Add(new Point3d(3 * d, y, 0));
+                nodes.Add(new Point3d(3 * d, y, 0.5 * d));
+                nodes.Add(new Point3d(3 * d, y, 2.5 * d));
+                nodes.Add(new Point3d(3 * d, y, 3 * d));
+            }
+
+            // Create both faces
+            for (int i = 0; i < 2; i++ )
+            {
+                int indexOffset = i * 16;
+                foreach (int j in new int[3] { 2, 5, 9 })
+                {
+                    lines.Add(new Line(nodes[3 + indexOffset], nodes[j + indexOffset]));
+                }
+                foreach (int j in new int[3] { 0,9,13 })
+                {
+                    lines.Add(new Line(nodes[1 + indexOffset], nodes[j + indexOffset]));
+                }
+                foreach (int j in new int[3] { 0, 2, 11 })
+                {
+                    lines.Add(new Line(nodes[10 + indexOffset], nodes[j + indexOffset]));
+                }
+                lines.Add(new Line(nodes[6 + indexOffset], nodes[7 + indexOffset]));
+                lines.Add(new Line(nodes[14 + indexOffset], nodes[15 + indexOffset]));
+                lines.Add(new Line(nodes[4 + indexOffset], nodes[5 + indexOffset]));
+                lines.Add(new Line(nodes[8 + indexOffset], nodes[9 + indexOffset]));
+                lines.Add(new Line(nodes[13 + indexOffset], nodes[12 + indexOffset]));
+                lines.Add(new Line(nodes[0 + indexOffset], nodes[14 + indexOffset]));
+                lines.Add(new Line(nodes[2 + indexOffset], nodes[6 + indexOffset]));
+            }
+
+            // Create interface lines
+            for (int i = 0; i < 16; i++ )
+            {
+                lines.Add(new Line(nodes[i], nodes[i + 16]));
+            }
+
+            return lines;
+        }
+        private List<Line> AuxeticHoneycomb(double d)
+        {
+            var lines = new List<Line>();
+            var nodes = new List<Point3d>();
+
+            // This is a bit messy, but I'm too lazy for elegance right now
+            // First, we loop to create the same set of nodes on two parallel faces
+            for (int i = 0; i < 2; i++)
+            {
+                double y = 3 * d * i;
+                nodes.Add(new Point3d(2.25 * d, y, 2.5 * d));
+                nodes.Add(new Point3d(2.25 * d, y, 0.5 * d));
+                nodes.Add(new Point3d(0.75 * d, y, 2.5 * d));
+                nodes.Add(new Point3d(0.75 * d, y, 0.5 * d));
+
+                nodes.Add(new Point3d(0, y, 0));
+                nodes.Add(new Point3d(0, y, d));
+                nodes.Add(new Point3d(0, y, 2 * d));
+                nodes.Add(new Point3d(0, y, 3 * d));
+
+                nodes.Add(new Point3d(1.5 * d, y, 0));
+                nodes.Add(new Point3d(1.5 * d, y, d));
+                nodes.Add(new Point3d(1.5 * d, y, 2 * d));
+                nodes.Add(new Point3d(1.5 * d, y, 3 * d));
+
+                nodes.Add(new Point3d(3 * d, y, 0));
+                nodes.Add(new Point3d(3 * d, y, d));
+                nodes.Add(new Point3d(3 * d, y, 2 * d));
+                nodes.Add(new Point3d(3 * d, y, 3 * d));
+            }
+
+            // Now create struts for each face
+            for (int i = 0; i < 2; i++)
+            {
+                int indexOffset = i * 16;
+                foreach (int j in new int[3] { 2, 5, 9 })
+                {
+                    lines.Add(new Line(nodes[3 + indexOffset], nodes[j + indexOffset]));
+                }
+                foreach (int j in new int[3] { 0, 9, 13 })
+                {
+                    lines.Add(new Line(nodes[1 + indexOffset], nodes[j + indexOffset]));
+                }
+                foreach (int j in new int[3] { 0, 2, 11 })
+                {
+                    lines.Add(new Line(nodes[10 + indexOffset], nodes[j + indexOffset]));
+                }
+                lines.Add(new Line(nodes[6 + indexOffset], nodes[7 + indexOffset]));
+                lines.Add(new Line(nodes[14 + indexOffset], nodes[15 + indexOffset]));
+                lines.Add(new Line(nodes[4 + indexOffset], nodes[5 + indexOffset]));
+                lines.Add(new Line(nodes[8 + indexOffset], nodes[9 + indexOffset]));
+                lines.Add(new Line(nodes[13 + indexOffset], nodes[12 + indexOffset]));
+                lines.Add(new Line(nodes[0 + indexOffset], nodes[14 + indexOffset]));
+                lines.Add(new Line(nodes[2 + indexOffset], nodes[6 + indexOffset]));
+            }
+
+            // Create struts between faces
+            for (int i = 0; i < 16; i++)
+            {
+                lines.Add(new Line(nodes[i], nodes[i + 16]));
             }
 
             return lines;

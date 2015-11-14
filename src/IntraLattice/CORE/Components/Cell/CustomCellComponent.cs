@@ -6,6 +6,7 @@ using System.Drawing;
 using Rhino;
 using IntraLattice.CORE.Data;
 using IntraLattice.Properties;
+using IntraLattice.CORE.Data.GH_Goo;
 
 // Summary:     This component processes/verifies user-defined unit cells, and outputs a valid unit cell
 // ===============================================================================
@@ -86,7 +87,7 @@ namespace IntraLattice.CORE.Components
             }
 
             // 5. Set output
-            DA.SetData(0, cell);
+            DA.SetData(0, new UnitCellGoo(cell));
 
         }
 

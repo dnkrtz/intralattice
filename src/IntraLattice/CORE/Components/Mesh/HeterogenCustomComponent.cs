@@ -69,8 +69,8 @@ namespace IntraLattice.CORE.MeshModule
 
             // 3. Validate data
             if (struts == null || struts.Count == 0) { return; }
-            if (startRadius != null || startRadius.Count == 0) { return; }
-            if (endRadius != null || endRadius.Count == 0) { return; }
+            if (startRadius == null || startRadius.Count == 0) { return; }
+            if (endRadius == null || endRadius.Count == 0) { return; }
             if (startRadius.Count != struts.Count || endRadius.Count != struts.Count)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Number of radii in each list must have same number of elements as the struts list.");

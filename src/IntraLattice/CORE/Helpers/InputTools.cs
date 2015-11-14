@@ -28,7 +28,7 @@ namespace IntraLattice.CORE.Helpers
             vallist.CreateAttributes();
 
             // Customise value list position
-            float xCoord = (float)Component.Attributes.Pivot.X - 200;
+            float xCoord = (float)Component.Attributes.Pivot.X - 250;
             float yCoord = (float)Component.Attributes.Pivot.Y + index * 40 - offset;
             PointF cornerPt = new PointF(xCoord, yCoord);
             vallist.Attributes.Pivot = cornerPt;
@@ -44,6 +44,45 @@ namespace IntraLattice.CORE.Helpers
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Vintiles", "5"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Octet", "6"));
             items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Diamond", "7"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Honeycomb 1", "8"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Honeycomb 2", "9"));
+
+            vallist.ListItems.AddRange(items);
+
+            // Until now, the slider is a hypothetical object.
+            // This command makes it 'real' and adds it to the canvas.
+            GrasshopperDocument.AddObject(vallist, false);
+
+            //Connect the new slider to this component
+            Component.Params.Input[index].AddSource(vallist);
+            Component.Params.Input[index].CollectData();
+        }
+
+        /// <summary>
+        /// Generates selection list for cell oritentation.
+        /// </summary>
+        /// <param name="index">Component input index. (first input is index 0)</param>
+        /// <param name="offset">Vertical offset of the menu, to help with positioning.</param>
+        public static void OrientSelect(ref IGH_Component Component, ref GH_Document GrasshopperDocument, int index, float offset)
+        {
+            // Instantiate  new value list
+            var vallist = new Grasshopper.Kernel.Special.GH_ValueList();
+            vallist.ListMode = Grasshopper.Kernel.Special.GH_ValueListMode.Cycle;
+            vallist.CreateAttributes();
+
+            // Customise value list position
+            float xCoord = (float)Component.Attributes.Pivot.X - 200;
+            float yCoord = (float)Component.Attributes.Pivot.Y + index * 40 - offset;
+            PointF cornerPt = new PointF(xCoord, yCoord);
+            vallist.Attributes.Pivot = cornerPt;
+
+            // Populate value list with our own data
+            vallist.ListItems.Clear();
+            var items = new List<Grasshopper.Kernel.Special.GH_ValueListItem>();
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("Default", "0"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("RotateZ", "1"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("RotateY", "2"));
+            items.Add(new Grasshopper.Kernel.Special.GH_ValueListItem("RotateX", "3"));
 
             vallist.ListItems.AddRange(items);
 
