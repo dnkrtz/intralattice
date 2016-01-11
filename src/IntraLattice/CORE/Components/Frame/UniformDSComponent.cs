@@ -50,8 +50,9 @@ namespace IntraLattice.CORE.Components
             pManager.AddNumberParameter("Cell Size ( x )", "CSx", "Size of unit cell (x)", GH_ParamAccess.item, 5); // default is 5
             pManager.AddNumberParameter("Cell Size ( y )", "CSy", "Size of unit cell (y)", GH_ParamAccess.item, 5);
             pManager.AddNumberParameter("Cell Size ( z )", "CSz", "Size of unit cell (z)", GH_ParamAccess.item, 5);
-            pManager.AddNumberParameter("Tolerance", "Tol", "Smallest allowed strut length", GH_ParamAccess.item, 0.2);
-            pManager.AddBooleanParameter("Strict tolerance", "Strict", "Specifies if we use a strict tolerance.", GH_ParamAccess.item, false);
+            pManager.AddNumberParameter("Min Strut Length", "MinL", "Minimum allowable strut length for trimmed struts.", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Max Strut Length", "MaxL", "Maxmimum allowable strut length for trimmed struts.", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Strict tolerance", "Strict", "Specifies if we use a strict tolerance (i.e. strictly inside design space).", GH_ParamAccess.item, false);
         }
 
         /// <summary>
@@ -76,6 +77,7 @@ namespace IntraLattice.CORE.Components
             double yCellSize = 0;
             double zCellSize = 0;
             double minLength = 0; // the trim tolerance (i.e. minimum strut length)
+            double maxLength = 0;
             bool strictlyIn = false;
 
             if (!DA.GetData(0, ref cell)) { return; }
@@ -85,7 +87,8 @@ namespace IntraLattice.CORE.Components
             if (!DA.GetData(4, ref yCellSize)) { return; }
             if (!DA.GetData(5, ref zCellSize)) { return; }
             if (!DA.GetData(6, ref minLength)) { return; }
-            if (!DA.GetData(7, ref strictlyIn)) { return; }
+            if (!DA.GetData(7, ref maxLength)) { return; }
+            if (!DA.GetData(8, ref strictlyIn)) { return; }
 
             if (!cell.isValid) { return; }
             if (!designSpace.IsValid) { return; }
@@ -195,7 +198,7 @@ namespace IntraLattice.CORE.Components
             }
 
             // 9. Map struts to the node tree
-            lattice.UniformMapping(cell, designSpace, spaceType, N, minLength);
+            lattice.UniformMapping(cell, designSpace, spaceType, N, minLength, maxLength);
                 
             // 10. Set output
             DA.SetDataList(0, lattice.Struts);

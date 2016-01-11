@@ -251,7 +251,7 @@ namespace IntraLattice.CORE.Data
             }
             foreach (int plateIndex in node.PlateIndices)
             {
-                if (Vector3d.VectorAngle(-extraNormal, this.Plates[plateIndex].Normal) < Math.PI / 2)
+                if (Vector3d.VectorAngle(-extraNormal, this.Plates[plateIndex].Normal) < Math.PI / 4)
                 {
                     isSharp = false;
                 }
@@ -370,7 +370,7 @@ namespace IntraLattice.CORE.Data
             ExoHull node = this.Hulls[nodeIndex];
             double radius = node.AvgRadius;
 
-            double planeTolerance = tol * radius / 10;
+            double planeTolerance = tol * radius / 25;
 
             // Collect all hull points (i.e. all plate points at the node)
             List<Point3d> pts = new List<Point3d>();

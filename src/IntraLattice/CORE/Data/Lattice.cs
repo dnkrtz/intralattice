@@ -260,7 +260,7 @@ namespace IntraLattice.CORE.Data
         /// <summary>
         /// Maps cell topology to the node grid and trims to the design space.
         /// </summary>
-        public void UniformMapping(UnitCell cell, GeometryBase designSpace, int spaceType, float[] N, double minStrutLength)
+        public void UniformMapping(UnitCell cell, GeometryBase designSpace, int spaceType, float[] N, double minStrutLength, double maxStrutLength)
         {
             double tol = RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
 
@@ -341,7 +341,7 @@ namespace IntraLattice.CORE.Data
                                         // Now, if an intersection point was found, trim the strut
                                         if (intersectionPts.Length > 0)
                                         {
-                                            testLine = AddTrimmedStrut(node1, node2, intersectionPts[0], minStrutLength);
+                                            testLine = AddTrimmedStrut(node1, node2, intersectionPts[0], minStrutLength, maxStrutLength);
                                             // If the strut was succesfully trimmed, add it to the list
                                             if (testLine != null)
                                             {
@@ -364,7 +364,7 @@ namespace IntraLattice.CORE.Data
         /// <summary>
         /// Trims strut with known intersection point, returning  the trimmed LineCurve which is inside the space.
         /// </summary>
-        public LineCurve AddTrimmedStrut(LatticeNode node1, LatticeNode node2, Point3d intersectionPt, double minStrutLength)
+        public LineCurve AddTrimmedStrut(LatticeNode node1, LatticeNode node2, Point3d intersectionPt, double minLength, double maxLength)
         {
 
             LineCurve testStrut = new LineCurve(new Line(node1.Point3d, node2.Point3d), 0, 1);  // set line, with curve parameter domain [0,1]
@@ -372,7 +372,7 @@ namespace IntraLattice.CORE.Data
             if (node1.IsInside)
             {
                 double trimmedLength = intersectionPt.DistanceTo(node1.Point3d);
-                if (trimmedLength > minStrutLength)
+                if (trimmedLength > minLength && trimmedLength < maxLength)
                 {
                     Nodes.Add(new LatticeNode(intersectionPt, LatticeNodeState.Boundary));
                     return new LineCurve(node1.Point3d, intersectionPt);
@@ -386,7 +386,7 @@ namespace IntraLattice.CORE.Data
             if (node2.IsInside)
             {
                 double trimmedLength = intersectionPt.DistanceTo(node2.Point3d);
-                if (trimmedLength > minStrutLength)
+                if (trimmedLength > minLength && trimmedLength < maxLength)
                 {
                     Nodes.Add(new LatticeNode(intersectionPt, LatticeNodeState.Boundary));
                     return new LineCurve(node2.Point3d, intersectionPt);
