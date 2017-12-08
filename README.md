@@ -1,8 +1,3 @@
-**Coming in 2017** - *Completely revamped standalone version.*
-* Faster.
-* More robust.
-* Extended functionality.
-
 ----------------
 
 ## Overview
