@@ -1,7 +1,8 @@
 Due to various obligations, I no longer maintain this project.
 
-For the latest version, visit 
+For the latest version begin developed at the McGill ADML, please visit 
 http://www.intralatticepro.com/download/preview/
+
 ----------------
 
 ## Overview
