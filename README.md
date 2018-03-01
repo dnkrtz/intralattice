@@ -1,5 +1,4 @@
-Due to various obligations, I no longer maintain this project.
-
+Due to various obligations, *I no longer maintain this project*.
 For the latest version, please visit:
 www.intralatticepro.com/
 
