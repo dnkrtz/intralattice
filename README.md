@@ -1,3 +1,7 @@
+Due to various obligations, I no longer maintain this project.
+
+For the latest version, visit 
+http://www.intralatticepro.com/download/preview/
 ----------------
 
 ## Overview
