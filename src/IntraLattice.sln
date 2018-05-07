@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntraLattice", "IntraLattice\IntraLattice.csproj", "{4E3A1B92-133D-4281-B447-FBE163285209}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FEA_Interface", "FEA_Interface\FEA_Interface.csproj", "{D3EA84B4-C11A-4E27-AD6F-C59628C43263}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +20,12 @@ Global
 		{4E3A1B92-133D-4281-B447-FBE163285209}.Debug64|Any CPU.Build.0 = Release|Any CPU
 		{4E3A1B92-133D-4281-B447-FBE163285209}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E3A1B92-133D-4281-B447-FBE163285209}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3EA84B4-C11A-4E27-AD6F-C59628C43263}.Debug32|Any CPU.ActiveCfg = Debug32|Any CPU
+		{D3EA84B4-C11A-4E27-AD6F-C59628C43263}.Debug32|Any CPU.Build.0 = Debug32|Any CPU
+		{D3EA84B4-C11A-4E27-AD6F-C59628C43263}.Debug64|Any CPU.ActiveCfg = Debug64|Any CPU
+		{D3EA84B4-C11A-4E27-AD6F-C59628C43263}.Debug64|Any CPU.Build.0 = Debug64|Any CPU
+		{D3EA84B4-C11A-4E27-AD6F-C59628C43263}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3EA84B4-C11A-4E27-AD6F-C59628C43263}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
