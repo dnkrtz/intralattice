@@ -26,7 +26,7 @@ namespace IntraLattice
             get
             {
                 //Return a short string describing the purpose of this GHA library.
-                return "";
+                return "IntraLattice plugin by Aidan Kurtz. Modified for compatibility with ShapeDiver Cloud Platform.";
             }
         }
         public override Guid Id
@@ -53,5 +53,8 @@ namespace IntraLattice
                 return "aidan.kurtz@mail.mcgill.ca";
             }
         }
+
+        public override string Version => "0.7.7.1";
+        public override string AssemblyVersion => this.Version;
     }
 }
