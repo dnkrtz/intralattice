@@ -1,6 +1,6 @@
 Due to various obligations, *I no longer maintain this project*.
 
-www.intralattice.com/
+[Visit Website](https://www.intralattice.com/overview)
 
 ----------------
 
