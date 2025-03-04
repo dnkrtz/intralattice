@@ -1,7 +1,5 @@
 Due to various obligations, *I no longer maintain this project*.
 
-[Visit Website](https://www.intralattice.com/overview)
-
 ----------------
 
 ## Overview
