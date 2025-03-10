@@ -8,7 +8,7 @@ using Rhino.PlugIns;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("IntraLattice")]
-[assembly: AssemblyDescription("Set of components for generating lattice structures within a design space.")]
+[assembly: AssemblyDescription("Set of components for generating lattice structures within a design space. Modified for compatibility with ShapeDiver Cloud Platform.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("IntraLattice")]
@@ -34,5 +34,5 @@ using Rhino.PlugIns;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.7.5")]
-[assembly: AssemblyFileVersion("0.7.5")]
+[assembly: AssemblyVersion("0.7.7.1")]
+[assembly: AssemblyFileVersion("0.7.7.1")]
